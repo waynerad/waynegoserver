@@ -1018,13 +1018,13 @@ jQuery(function () {
 		}
 		fmt.Fprint(w, "<tr "+backgroundColor+"><td> "+timeCodeToString(entry.currenttime, timeZoneOffset)+" </td>")
 		// if crossedNow {
-			fmt.Fprint(w, `<td align="right"> <input type="hidden" id="timerem_code_`+strconv.FormatInt(int64(count), 10)+`" value="`)
-			timeNums := timeCodeToTimeNumbers(uint64(int64(entry.currenttime) + timeZoneOffset))
-			fmt.Fprintf(w, "%d-%s-%sT%s:%s:%s.000Z", timeNums.year, twodigits(timeNums.month), twodigits(timeNums.day), twodigits(timeNums.hour), twodigits(timeNums.minute), twodigits(timeNums.second))
-			fmt.Fprint(w, `" /><span id="timerem_disp_`+strconv.FormatInt(int64(count), 10)+`"></span> </td>`)
-			count++
+		fmt.Fprint(w, `<td align="right"> <input type="hidden" id="timerem_code_`+strconv.FormatInt(int64(count), 10)+`" value="`)
+		timeNums := timeCodeToTimeNumbers(uint64(int64(entry.currenttime) + timeZoneOffset))
+		fmt.Fprintf(w, "%d-%s-%sT%s:%s:%s.000Z", timeNums.year, twodigits(timeNums.month), twodigits(timeNums.day), twodigits(timeNums.hour), twodigits(timeNums.minute), twodigits(timeNums.second))
+		fmt.Fprint(w, `" /><span id="timerem_disp_`+strconv.FormatInt(int64(count), 10)+`"></span> </td>`)
+		count++
 		// } else {
-			// fmt.Fprint(w, "<td> &nbsp; </td>")
+		// fmt.Fprint(w, "<td> &nbsp; </td>")
 		// }
 		fmt.Fprint(w, "<td> <a href=\"view?entry="+strconv.FormatUint(entry.idCalEnt, 10)+"\">"+html.EscapeString(entry.title)+"</a> </td>")
 		if showFull {
@@ -1506,6 +1506,7 @@ function chimesExecUseTimeNow() {
     document.getElementById("as_text").value = chimesConvertTimeCodeToOurString(curtim);
     document.getElementById("title").innerHTML = "";
     document.getElementById("description").innerHTML = "";
+    document.getElementById("do_dis").style.display = "none";
 }
 
 // main
