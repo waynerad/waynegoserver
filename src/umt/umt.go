@@ -734,6 +734,7 @@ function InstantiateTuningForkObj() {
     this.getParams = function () {
         return {
             percussion: false,
+            fixed: [],
             parameters: [
                 { name: "clipping", display: "Clipping" },
                 { name: "lean", display: "Lean" }
@@ -763,6 +764,7 @@ function InstantiateSineStartStopObj() {
     this.getParams = function () {
         return {
             percussion: false,
+            fixed: [],
             parameters: [
                 { name: "startclipping", display: "Clipping start" },
                 { name: "startlean", display: "Lean start" },
@@ -794,7 +796,7 @@ function InstantiateSineStartStopObj() {
 function InstantiateSquareWaveObj() {
     "use strict";
     this.getParams = function () {
-        return { percussion: false, parameters: [] };
+        return { percussion: false, fixed: [], parameters: [] };
     };
     this.queUpANote = function (startMoment, frequency, duration, amplitude, instSpecificParams) {
         var idxname, theBuffer, node;
@@ -816,7 +818,7 @@ function InstantiateSquareWaveObj() {
 function InstantiateSquareVarObj() {
     "use strict";
     this.getParams = function () {
-        return { percussion: false, parameters: [ { name: "unsquareness", display: "Un-square-ness" } ] };
+        return { percussion: false, fixed: [], parameters: [ { name: "unsquareness", display: "Un-square-ness" } ] };
     };
     this.queUpANote = function (startMoment, frequency, duration, amplitude, instSpecificParams) {
         var idxname, theBuffer, node, threshold;
@@ -840,6 +842,7 @@ function InstantiateSquareRisingPitchObj() {
     this.getParams = function () {
         return {
             percussion: false,
+            fixed: false,
             parameters: [
                 { name: "unsquareness", display: "Un-square-ness" },
                 { name: "riserate", display: "Pitch rise rate" }
@@ -870,6 +873,7 @@ function InstantiateSquareStartStopObj() {
     this.getParams = function () {
         return {
             percussion: false,
+            fixed: false,
             parameters: [
                 { name: "startunsquareness", display: "Start un-square-ness" },
                 { name: "stopunsquareness", display: "Stop un-square-ness" }
@@ -897,7 +901,7 @@ function InstantiateSquareStartStopObj() {
 function InstantiateTriangleWaveObj() {
     "use strict";
     this.getParams = function () {
-        return { percussion: false, parameters: [] };
+        return { percussion: false, fixed: false, parameters: [] };
     };
     this.queUpANote = function (startMoment, frequency, duration, amplitude, instSpecificParams) {
         var idxname, theBuffer, node;
@@ -919,7 +923,7 @@ function InstantiateTriangleWaveObj() {
 function InstantiateTriangleVarObj() {
     "use strict";
     this.getParams = function () {
-        return { percussion: false, parameters: [ { name: "untriangleness", display: "Un-Triangleness" } ] };
+        return { percussion: false, fixed: [], parameters: [ { name: "untriangleness", display: "Un-Triangleness" } ] };
     };
     this.queUpANote = function (startMoment, frequency, duration, amplitude, instSpecificParams) {
         var variance, idxname, theBuffer, node;
@@ -943,6 +947,7 @@ function InstantiateTriangleStartStopObj() {
     this.getParams = function () {
         return {
             percussion: false,
+            fixed: [],
             parameters: [
                 { name: "startuntriangleness", display: "Un-Triangleness start" },
                 { name: "stopuntriangleness", display: "Un-Triangleness stop" }
@@ -970,7 +975,7 @@ function InstantiateTriangleStartStopObj() {
 function InstantiateSawtoothWaveObj() {
     "use strict";
     this.getParams = function () {
-        return { percussion: false, parameters: [] };
+        return { percussion: false, fixed: [], parameters: [] };
     };
     this.queUpANote = function (startMoment, frequency, duration, amplitude, instSpecificParams) {
         var idxname, theBuffer, node;
@@ -992,7 +997,7 @@ function InstantiateSawtoothWaveObj() {
 function InstantiateSawtoothVarObj() {
     "use strict";
     this.getParams = function () {
-        return { percussion: false, parameters: [ { name: "unsawtoothness", display: "Un-Sawtoothness" } ] };
+        return { percussion: false, fixed: [], parameters: [ { name: "unsawtoothness", display: "Un-Sawtoothness" } ] };
     };
     this.queUpANote = function (startMoment, frequency, duration, amplitude, instSpecificParams) {
         var variance, idxname, theBuffer, node;
@@ -1016,6 +1021,7 @@ function InstantiateSawtoothStartStopObj() {
     this.getParams = function () {
         return {
             percussion: false,
+            fixed: [],
             parameters: [
                 { name: "startunsawtoothness", display: "Un-Sawtoothness start" },
                 { name: "stopunsawtoothness", display: "Un-Sawtoothness stop" },
@@ -1045,7 +1051,7 @@ function InstantiateSawtoothStartStopObj() {
 function InstantiateNoiseObj() {
     "use strict";
     this.getParams = function () {
-        return { percussion: true, parameters: [] };
+        return { percussion: true, fixed: [], parameters: [] };
     };
     this.queUpANote = function (startMoment, frequency, duration, amplitude, instSpecificParams) {
         var idxname, theBuffer, node;
@@ -1067,7 +1073,7 @@ function InstantiateNoiseObj() {
 function InstantiateBackwardsNoiseObj() {
     "use strict";
     this.getParams = function () {
-        return { percussion: true, parameters: [] };
+        return { percussion: true, fixed: [], parameters: [] };
     };
     this.queUpANote = function (startMoment, frequency, duration, amplitude, instSpecificParams) {
         var idxname, theBuffer, node;
@@ -1089,7 +1095,7 @@ function InstantiateBackwardsNoiseObj() {
 function InstantiateSteamPopObj() {
     "use strict";
     this.getParams = function () {
-        return { percussion: true, parameters: [] };
+        return { percussion: true, fixed: [], parameters: [] };
     };
     this.queUpANote = function (startMoment, frequency, duration, amplitude, instSpecificParams) {
         var idxname, theBuffer, node;
@@ -1111,7 +1117,7 @@ function InstantiateSteamPopObj() {
 function InstantiateFMSynthOriginalObj() {
     "use strict";
     this.getParams = function () {
-        return { percussion: false, parameters: [] };
+        return { percussion: false, fixed: [], parameters: [] };
     };
     this.queUpANote = function (startMoment, frequency, duration, amplitude, instSpecificParams) {
         var idxname, theBuffer, node;
@@ -1133,7 +1139,7 @@ function InstantiateFMSynthOriginalObj() {
 function InstantiateFMSynthVarObj() {
     "use strict";
     this.getParams = function () {
-        return { percussion: false, parameters: [
+        return { percussion: false, fixed: [], parameters: [
             { name: "modulator", display: "Modulator" },
             { name: "beta", display: "Beta" }
         ] };
@@ -1159,7 +1165,7 @@ function InstantiateFMSynthVarObj() {
 function InstantiateFMSynthStartStopObj() {
     "use strict";
     this.getParams = function () {
-        return { percussion: false, parameters: [
+        return { percussion: false, fixed: [], parameters: [
             { name: "startmodulator", display: "Start modulator" },
             { name: "startbeta", display: "Start beta" },
             { name: "stopmodulator", display: "Stop modulator" },
@@ -1191,6 +1197,7 @@ function InstantiateFMSynthSquareObj() {
     this.getParams = function () {
         return {
             percussion: false,
+            fixed: [],
             parameters: [
                 { name: "startunsquareness", display: "Start un-square-ness" },
                 { name: "startmodulator", display: "Start modulator" },
@@ -1228,6 +1235,7 @@ function InstantiateFMSynthCrossNoteObj() {
     this.getParams = function () {
         return {
             percussion: false,
+            fixed: [],
             parameters: [
                 { name: "modulator", display: "Modulator" },
                 { name: "beta", display: "Beta" }
@@ -1249,7 +1257,7 @@ function InstantiateFMSynthCrossNoteObj() {
 function InstantiateWadSinObj() {
     "use strict";
     this.getParams = function () {
-        return { percussion: false, parameters: [] };
+        return { percussion: false, fixed: [], parameters: [] };
     };
     this.queUpANote = function (startMoment, frequency, duration, amplitude, instSpecificParams) {
         var idxname, theWad;
@@ -1268,7 +1276,7 @@ function InstantiateWadSinObj() {
 function InstantiateWadKickObj() {
     "use strict";
     this.getParams = function () {
-        return { percussion: true, parameters: [] };
+        return { percussion: true, fixed: [], parameters: [] };
     };
     this.queUpANote = function (startMoment, frequency, duration, amplitude, instSpecificParams) {
         var idxname, theWad;
@@ -1289,7 +1297,7 @@ function InstantiateWadKickObj() {
 function InstantiateWadBassObj() {
     "use strict";
     this.getParams = function () {
-        return { percussion: false, parameters: [] };
+        return { percussion: false, fixed: [], parameters: [] };
     };
     this.queUpANote = function (startMoment, frequency, duration, amplitude, instSpecificParams) {
         var idxname, theWad;
@@ -1308,7 +1316,7 @@ function InstantiateWadBassObj() {
 function InstantiateWadSnareObj() {
     "use strict";
     this.getParams = function () {
-        return { percussion: true, parameters: [] };
+        return { percussion: true, fixed: [], parameters: [] };
     };
     this.queUpANote = function (startMoment, frequency, duration, amplitude, instSpecificParams) {
         var idxname, theWad;
@@ -1328,7 +1336,7 @@ function InstantiateWadSnareObj() {
 function InstantiateWadHihatOpenObj() {
     "use strict";
     this.getParams = function () {
-        return { percussion: false, parameters: [] };
+        return { percussion: false, fixed: [], parameters: [] };
     };
     this.queUpANote = function (startMoment, frequency, duration, amplitude, instSpecificParams) {
         var idxname, theWad;
@@ -1350,7 +1358,7 @@ function InstantiateWadHihatOpenObj() {
 function InstantiateWadHihatClosedObj() {
     "use strict";
     this.getParams = function () {
-        return { percussion: false, parameters: [] };
+        return { percussion: false, fixed: [], parameters: [] };
     };
     this.queUpANote = function (startMoment, frequency, duration, amplitude, instSpecificParams) {
         var idxname, theWad;
@@ -1372,7 +1380,7 @@ function InstantiateWadHihatClosedObj() {
 function InstantiateWadFluteObj() {
     "use strict";
     this.getParams = function () {
-        return { percussion: false, parameters: [] };
+        return { percussion: false, fixed: [], parameters: [] };
     };
     this.queUpANote = function (startMoment, frequency, duration, amplitude, instSpecificParams) {
         var idxname, theWad;
@@ -1393,7 +1401,7 @@ function InstantiateWadFluteObj() {
 function InstantiateWadPianoObj() {
     "use strict";
     this.getParams = function () {
-        return { percussion: false, parameters: [] };
+        return { percussion: false, fixed: [], parameters: [] };
     };
     this.queUpANote = function (startMoment, frequency, duration, amplitude, instSpecificParams) {
         var idxname, theWad;
@@ -1408,6 +1416,23 @@ function InstantiateWadPianoObj() {
             gUmt.cachedWads[idxname] = theWad;
         }
         theWad.play({ exactTime: startMoment, pitch: frequency, volume: amplitude, env: {hold: duration} });
+    };
+}
+
+function InstantiateDanLights() {
+    "use strict";
+    this.getParams = function () {
+        return {
+            percussion: true,
+            fixed: [
+                { name: "bay", display: "Bay", type: "list", values: ["lobby=Lobby", "main=Main"], default: "main" },
+                { name: "unit", display: "Unit", type: "list", values: ["1=1", "2=2", "3=3"], default: "1" },
+                { name: "basecolor", display: "Base Color", type: "list", values: ["red=Red", "yellow=Yellow", "green=Green", "cyan=Cyan", "blue=Blue", "magenta=Magenta"], default: "red" },
+            ],
+            parameters: []
+        };
+    };
+    this.queUpANote = function (startMoment, frequency, duration, amplitude, instSpecificParams) {
     };
 }
 
@@ -1442,7 +1467,8 @@ function umtCreateInstrumentBank() {
         wadhihatopen: new InstantiateWadHihatOpenObj(),
         wadhihatclosed: new InstantiateWadHihatClosedObj(),
         wadflute: new InstantiateWadFluteObj(),
-        wadpiano: new InstantiateWadPianoObj()
+        wadpiano: new InstantiateWadPianoObj(),
+        danlights: new InstantiateDanLights()
     };
     gUmt.instrumentParams = {};
     for (instrumentName in gUmt.instrumentBank) {
@@ -3815,6 +3841,131 @@ function umtUiSetInstrumentSpecificSliders(voiceNumber) {
     }
 }
 
+function umtUiSetDefaultInstFixedParamsForNewInstrument(voiceNumber, instrumentName) {
+    "use strict";
+    var tab, instFixed, instFixedIdx, instFixedSet, fixedName;
+    tab = gUmt.UIParams.currentTab;
+    instFixed = gUmt.instrumentParams[instrumentName].fixed;
+    for (instFixedIdx in instFixed) {
+        if (instFixed.hasOwnProperty(instFixedIdx)) {
+            instFixedSet = instFixed[instFixedIdx];
+            fixedName = instFixedSet.name;
+            if (!gUmt.UIParams.songTab[tab].voice[voiceNumber].instFixedParams.hasOwnProperty(instrumentName + "_" + fixedName)) {
+                gUmt.UIParams.songTab[tab].voice[voiceNumber].instFixedParams[instrumentName + "_" + fixedName] = instFixedSet.default;
+            }
+        }
+    }
+}
+
+function umtExecPervoiceFixedChange(event) {
+    "use strict";
+    var elemid, listbox, selectedvalue, i, voiceNumber, symSize, symmetryPattern, tab, paramName, voiceNum, instrumentName;
+    tab = gUmt.UIParams.currentTab;
+    elemid = event.target.id;
+    // what user selected
+    listbox = event.target;
+    selectedvalue = listbox.options[listbox.selectedIndex].value;
+    // remove choose_fixed_
+    elemid = elemid.substring(13);
+    // instrument name
+    i = elemid.indexOf("_");
+    instrumentName = elemid.substring(0, i);
+    elemid = elemid.substring(i + 1);
+    // param name
+    i = elemid.indexOf("_");
+    paramName = elemid.substring(0, i);
+    // voice number
+    voiceNum = Number(elemid.substring(i + 1));
+    // put it all together and set the parameter
+    gUmt.UIParams.songTab[tab].voice[voiceNum].instFixedParams[instrumentName + "_" + paramName] = selectedvalue
+    if (gUmt.UIParams.songTab[tab].voice[voiceNum].playing) {
+        umtAutomaticallyRecomposeLoopFromUIParams();
+    }
+}
+
+function umtUiCreateClosureFunctionsForInstrumentFixedParametersOutsideALoop(instrumentName, paramName, voiceNumber) {
+    "use strict";
+    var listenElement;
+    listenElement = document.getElementById("choose_fixed_" + instrumentName + "_" + paramName + "_" + voiceNumber);
+    listenElement.addEventListener("change", umtExecPervoiceFixedChange, true);
+}
+
+function umtCreateInstrumentFixedParameterControls(voiceNumber, instrumentName) {
+    "use strict";
+    var cellidname, text, i, instrFixedControlHTML, instFixed, instFixedIdx, instFixedSet, template, fixedName, optionText, optionIdx, optionList, optionStr, optionCode, optionDisplay, osidx;
+    cellidname = "fixedparams";
+    text = document.getElementById(cellidname + "xx").innerHTML;
+    i = text.indexOf("xx"); // this should actually be nothing, but included for consistency with instrument-specific params
+    while (i >= 0) {
+        text = text.substring(0, i) + voiceNumber + text.substring(i + 2);
+        i = text.indexOf("xx");
+    }
+    instrFixedControlHTML = '';
+    instFixed = gUmt.instrumentParams[instrumentName].fixed;
+    for (instFixedIdx in instFixed) {
+        if (instFixed.hasOwnProperty(instFixedIdx)) {
+            instFixedSet = instFixed[instFixedIdx];
+            fixedName = instFixedSet.name;
+            instrFixedControlHTML = instrFixedControlHTML + instFixedSet.display + '<br />';
+            template = document.getElementById("instrument_fixed_param_template").innerHTML;
+            i = template.indexOf("ZZ");
+            while (i >= 0) {
+                template = template.substring(0, i) + instrumentName + template.substring(i + 2);
+                i = template.indexOf("ZZ");
+            }
+            i = template.indexOf("YY");
+            while (i >= 0) {
+                template = template.substring(0, i) + fixedName + template.substring(i + 2);
+                i = template.indexOf("YY");
+            }
+            i = template.indexOf("XX");
+            while (i >= 0) {
+                template = template.substring(0, i) + voiceNumber + template.substring(i + 2);
+                i = template.indexOf("XX");
+            }
+            i = template.indexOf("inst_fixed_param_listbox_options_ins_point");
+            if (i >= 0) {
+                optionText = "";
+                optionList = instFixedSet.values;
+                for (optionIdx in optionList) {
+                    if (optionList.hasOwnProperty(optionIdx)) {
+                        optionStr = optionList[optionIdx];
+                        osidx = optionStr.indexOf("=");
+                        optionCode = optionStr.substring(0, osidx);
+                        optionDisplay = optionStr.substring(osidx + 1);
+                        optionText = optionText + '<option value="' + optionCode + '">' + optionDisplay + '</option>';
+                    }
+                }
+                template = template.substring(0, i - 5) + optionText + template.substring(i + 42 + 4); // -5 and +4 to remove the HTML comment tags
+            }
+            instrFixedControlHTML = instrFixedControlHTML + template + '<br />';
+        }
+    }
+    document.getElementById(cellidname + voiceNumber).innerHTML = instrFixedControlHTML;
+    for (instFixedIdx in instFixed) {
+        if (instFixed.hasOwnProperty(instFixedIdx)) {
+            instFixedSet = instFixed[instFixedIdx];
+            umtUiCreateClosureFunctionsForInstrumentFixedParametersOutsideALoop(instrumentName, instFixedSet.name, voiceNumber);
+        }
+    }
+}
+
+function umtUiSetInstrumentFixedParams(voiceNumber) {
+    "use strict";
+    var tab, instrumentName, instFixed, instFixedIdx, instFixedSet, paramName, paramValue;
+    tab = gUmt.UIParams.currentTab;
+    instrumentName = gUmt.UIParams.songTab[tab].voice[voiceNumber].instrument;
+    instFixed = gUmt.instrumentParams[instrumentName].fixed;
+    for (instFixedIdx in instFixed) {
+        if (instFixed.hasOwnProperty(instFixedIdx)) {
+            instFixedSet = instFixed[instFixedIdx];
+            paramName = instFixedSet.name;
+            paramValue = gUmt.UIParams.songTab[tab].voice[voiceNumber].instFixedParams[instrumentName + "_" + paramName];
+            // qz
+        }
+    }
+}
+
 function umtExecInstrumentChange() {
     "use strict";
     var elemid, UIVoiceNum, listbox, newinstr, tab;
@@ -3824,7 +3975,9 @@ function umtExecInstrumentChange() {
     newinstr = listbox.options[listbox.selectedIndex].value;
     tab = gUmt.UIParams.currentTab;
     gUmt.UIParams.songTab[tab].voice[UIVoiceNum].instrument = newinstr;
+    umtUiSetDefaultInstFixedParamsForNewInstrument(UIVoiceNum, newinstr);
     umtUiSetDefaultInstSpecificParamsForNewInstrument(UIVoiceNum, newinstr);
+    umtCreateInstrumentFixedParameterControls(UIVoiceNum, newinstr);
     umtCreateInstrumentSpecificParameterControls(UIVoiceNum, newinstr);
     umtUiSetInstrumentSpecificSliders(UIVoiceNum);
     if (gUmt.noReenterAddingVoice === false) {
@@ -3851,7 +4004,7 @@ function umtUiCopySymmetry(fromTab, fromVoice, fromSymSize, toTab, toVoice, toSy
 // universal voice copy function -- used by both Add Voice and Add Tab
 function umtUiCopyTabVoice(fromTab, fromVoice, toTab, toVoice) {
     "use strict";
-    var prev, pvinstspec, currentinstspec, instParamName, mult, keepGoing, tdvidx, currentTimeDiv;
+    var prev, pvinstspec, currentinstspec, pvinstfixed, currentinstfixed, instParamName, mult, keepGoing, tdvidx, currentTimeDiv;
     prev = gUmt.UIParams.songTab[fromTab].voice[fromVoice];
     gUmt.UIParams.songTab[toTab].voice[toVoice] = {
         playing: prev.playing,
@@ -3872,6 +4025,7 @@ function umtUiCopyTabVoice(fromTab, fromVoice, toTab, toVoice) {
         frameSize: prev.frameSize,
         symmetry: {},
         instSpecificParams: {},
+        instFixedParams: {},
         copyChangesToOtherTabs: false
     };
     mult = 1;
@@ -3888,11 +4042,20 @@ function umtUiCopyTabVoice(fromTab, fromVoice, toTab, toVoice) {
             }
         }
     }
+    // instrument-specifc
     pvinstspec = gUmt.UIParams.songTab[fromTab].voice[fromVoice].instSpecificParams;
     currentinstspec = gUmt.UIParams.songTab[toTab].voice[toVoice].instSpecificParams;
     for (instParamName in pvinstspec) {
         if (pvinstspec.hasOwnProperty(instParamName)) {
             currentinstspec[instParamName] = pvinstspec[instParamName];
+        }
+    }
+    // instrument-fixed
+    pvinstfixed = gUmt.UIParams.songTab[fromTab].voice[fromVoice].instFixedParams;
+    currentinstfixed = gUmt.UIParams.songTab[toTab].voice[toVoice].instFixedParams;
+    for (instParamName in pvinstfixed) {
+        if (pvinstfixed.hasOwnProperty(instParamName)) {
+            currentinstfixed[instParamName] = pvinstfixed[instParamName];
         }
     }
 }
@@ -4545,6 +4708,9 @@ function umtUiCopyUiParamsToActualUi() {
         // slidervalue = Math.floor((Math.log(absvalue) / Math.log(2)) + 0.01);
         slidervalue = umtUiTimeDivMultToIdx(absvalue);
         jQuery("#slider_framesize" + vcnum).slider({ value: slidervalue });
+        // fixed but instrument-specific parameters
+        umtCreateInstrumentFixedParameterControls(vcnum, gUmt.UIParams.songTab[tab].voice[vcnum].instrument);
+        umtUiSetInstrumentFixedParams(vcnum);
         // symmetry patterns and parameters
         umtCreateInstrumentSpecificParameterControls(vcnum, gUmt.UIParams.songTab[tab].voice[vcnum].instrument);
         umtUiSetInstrumentSpecificSliders(vcnum);
@@ -4759,6 +4925,7 @@ function umtExecAddVoice() {
             frameSize: 16,
             symmetry: {},
             instSpecificParams: {},
+            instFixedParams: {},
             copyChangesToOtherTabs: true
         };
         umtUiSetDefaultsForSymmetryForTabAndVoice(tab, voiceNum);
@@ -4774,6 +4941,7 @@ function umtExecAddVoice() {
         }
     }
     umtUiSetDefaultInstSpecificParamsForNewInstrument(voiceNum, gUmt.UIParams.songTab[tab].voice[voiceNum].instrument);
+    umtUiSetDefaultInstFixedParamsForNewInstrument(voiceNum, gUmt.UIParams.songTab[tab].voice[voiceNum].instrument);
     gUmt.UIParams.parts = gUmt.UIParams.parts + 1;
     umtUiCopyUiParamsToActualUi();
 }
@@ -5420,7 +5588,9 @@ Tab time divisions:
 					<option value="wadhihatclosed">WAD Hihat Closed</option>
 					<option value="wadflute">WAD Flute</option>
 					<option value="wadpiano">WAD Piano</option>
+					<option value="danlights">Dan Lights</option>
 				</select>
+				<div id="fixedparamsxx"></div>
 			</td><td id="voiceexemptharmonizationcellxx" valign="top">
 				EFH
 				<br />
@@ -5578,7 +5748,15 @@ Tab time divisions:
 			<div id="slider_instr_ZZ_YY_XX_patterns" class="ddrg" style="height:100px;"></div> <br />
 			<div id="display_instr_ZZ_YY_XX_patterns"></div><br />
 		</td>
-	</table>
+	</tr></table>
+</div>
+
+<div id="instrument_fixed_param_template" style="display:none;" >
+	<div style="display:block;">
+		<select id="choose_fixed_ZZ_YY_XX">
+		<!-- inst_fixed_param_listbox_options_ins_point -->
+		</select>
+	</div>
 </div>
 
 <div id="voices_section">
