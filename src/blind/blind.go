@@ -948,6 +948,12 @@ func recalculateLaplace(db mysql.Conn, userid uint64, setid uint64, popFactor fl
 
 }
 
+func showBlindMenuBar(w http.ResponseWriter) {
+	fmt.Fprint(w, `
+<p><a href="scrape">Scrape</a></p>
+`)
+}
+
 func showListPage(w http.ResponseWriter, r *http.Request, op string, userid uint64) {
 	var sql string
 	var book struct {
@@ -970,6 +976,11 @@ func showListPage(w http.ResponseWriter, r *http.Request, op string, userid uint
 </head>
 <body>
   <section>
+`)
+	if userid == 1 {
+		showBlindMenuBar(w)
+	}
+	fmt.Fprint(w, `
     <h1>List of Books</h1>
 `)
 	db, err := getDbConnection()
@@ -1914,7 +1925,7 @@ func showScrapePage(w http.ResponseWriter, r *http.Request, op string, userid ui
 			}
 			save.idBook = bookid
 			save.idUser = userid
-			save.idSet = 1 // hardcoded for now
+			save.idSet = 3 // hardcoded for now
 			save.title = title
 			save.authors = authors
 			save.stars5 = stars5
@@ -1963,7 +1974,7 @@ func showScrapePage(w http.ResponseWriter, r *http.Request, op string, userid ui
 				fmt.Println(err)
 				panic("Exec failed")
 			}
-			setid := 1 // BUGBUG this is hard-coded but shouldn't be
+			setid := 3 // BUGBUG this is hardcoded but shouldn't be
 			http.Redirect(w, r, "list?set="+inttostr(setid), 302)
 		}
 	}
