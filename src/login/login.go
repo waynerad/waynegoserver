@@ -245,12 +245,12 @@ func editAccount(w http.ResponseWriter, r *http.Request, operation string, newAc
 				saveRecord.lname = postform["lname"][0]
 				stmt.Bind(saveRecord.createdGmt, saveRecord.email, saveRecord.password, saveRecord.salt, saveRecord.fname, saveRecord.lname)
 				_, _, err = stmt.Exec()
-fmt.Println("THE Exec() CALL WAS DONE")
+				fmt.Println("THE Exec() CALL WAS DONE")
 				if err != nil {
 					fmt.Fprintln(w, err)
 					panic("point 243")
 				}
-fmt.Println("THE Exec() CALL WAS SUCCESSFUL")
+				fmt.Println("THE Exec() CALL WAS SUCCESSFUL")
 			} else {
 				db, err := getDbConnection()
 				if err != nil {
@@ -378,7 +378,7 @@ fmt.Println("THE Exec() CALL WAS SUCCESSFUL")
 <table border="0" cellpadding="5">
 <tr><td> Created </td><td> <input name="user" id="user" value="`+strconv.FormatInt(userid, 10)+`" type="hidden" /> <input name="created" id="created" type="text" value="`+html.EscapeString(uiFrm.created)+`" readonly="readonly" /> </td></tr>
 <tr><td> Email </td><td> <input name="email" id="email" type="text" value="`+html.EscapeString(uiFrm.email)+`" style="width:400px;" /> </td></tr>
-<tr><td> Password </td><td> <input name="password" id="password" type="text" value="`+html.EscapeString(uiFrm.password)+`" style="width:400px;" /> </td></tr>
+<tr><td> Password </td><td> <input name="password" id="password" type="password" value="`+html.EscapeString(uiFrm.password)+`" style="width:400px;" /> </td></tr>
 <tr><td> Salt </td><td> <input name="salt" id="salt" type="text" value="`+html.EscapeString(uiFrm.salt)+`" style="width:400px;" /> </td></tr>
 <tr><td> First Name </td><td> <input name="fname" id="fname" type="text" value="`+html.EscapeString(uiFrm.fname)+`" style="width:400px;" /> </td></tr>
 <tr><td> Last Name </td><td> <input name="lname" id="lname" type="text" value="`+html.EscapeString(uiFrm.lname)+`" style="width:400px;" /> </td></tr>
@@ -512,8 +512,8 @@ func doLogin(w http.ResponseWriter, r *http.Request, operation string) {
 			panic("point 504")
 		}
 		postform := r.Form
-		uiFrm.email = postform["email"][0]
-		uiFrm.password = postform["password"][0]
+		uiFrm.email = postform["epaqlzmhi"][0]
+		uiFrm.password = postform["pzsaqwsxrdio"][0]
 		if uiFrm.email == "" {
 			showform = true
 			errorOccurred = true
@@ -638,15 +638,15 @@ func doLogin(w http.ResponseWriter, r *http.Request, operation string) {
 <form action="login" method="post">
 
 <table border="0" cellspacing="5">
-<tr><td> Email </td><td> <input name="email" id="email" type="text" value="`+html.EscapeString(uiFrm.email)+`" style="width:400px;" /> </td></tr>
-<tr><td> Password </td><td> <input name="password" id="password" type="password" value="`+html.EscapeString(uiFrm.password)+`" style="width:400px;" /> </td></tr>
+<tr><td> Email </td><td> <input name="epaqlzmhi" id="epaqlzmhi" type="text" value="`+html.EscapeString(uiFrm.email)+`" style="width:400px;" /> </td></tr>
+<tr><td> Password </td><td> <input name="pzsaqwsxrdio" id="pzsaqwsxrdio" type="password" value="`+html.EscapeString(uiFrm.password)+`" style="width:400px;" /> </td></tr>
 </table>
 
 <p><input name="submit" id="submit" type="submit" />
 
 </form>
 
-</body></html`)
+</body></html>`)
 	}
 }
 
@@ -655,8 +655,8 @@ func deleteAccount(w http.ResponseWriter, r *http.Request, operation string) {
 
 func showApps(w http.ResponseWriter) {
 
-		fmt.Fprint(w, getDoctype())
-		fmt.Fprint(w, `<title> Apps on this server</title>
+	fmt.Fprint(w, getDoctype())
+	fmt.Fprint(w, `<title> Apps on this server</title>
 </head><body>
   <section>
     <h1>Apps on this server</h1>
@@ -692,7 +692,7 @@ func Handler(w http.ResponseWriter, r *http.Request, operation string, userid ui
 			deleteAccount(w, r, operation)
 		}
 	case operation == "apps":
-			showApps(w)
+		showApps(w)
 	default:
 		fmt.Fprintln(w, "Could not find operation:", operation)
 	}
