@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+"static"
 )
 
 func getDoctype() string {
@@ -1326,6 +1327,8 @@ func Handler(w http.ResponseWriter, r *http.Request, host string, op string, use
 	case op == "home":
 		homepage(w, r, op, userid, music)
 	default:
-		fmt.Fprintln(w, "Could not find page:", op)
+		// fmt.Fprintln(w, "Could not find page:", op)
+		filename := "/home/ec2-user/wayneserver/staticappcontent/links/" + op
+                static.OutputStaticFileWithContentType(w, filename)
 	}
 }
