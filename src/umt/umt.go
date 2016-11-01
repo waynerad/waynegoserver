@@ -231,6 +231,10 @@ globalAudioContext = umtGetAudioContext();
 <script src="wad.js"></script>
 <script>
 
+function umtSendLocalMsg(msg) {
+    umtlocalSocket.send(msg);
+}
+
 function umtGetRando(seedNum) {
     "use strict";
     var mt1, initAry, x;
@@ -1034,7 +1038,7 @@ function InstantiateSawtoothStartStopObj() {
         startvariance = instSpecificParams.startunsawtoothness;
         stopvariance = instSpecificParams.stopunsawtoothness;
         riserate = instSpecificParams.riserate;
-        idxname = "sawtoothvar" + frequency + "x" + duration + "x" + amplitude + "x" + startvariance + "x" + stopvariance + "x" + riserate
+        idxname = "sawtoothvar" + frequency + "x" + duration + "x" + amplitude + "x" + startvariance + "x" + stopvariance + "x" + riserate;
         if (gUmt.cachedNotes.hasOwnProperty(idxname)) {
             theBuffer = gUmt.cachedNotes[idxname];
         } else {
@@ -1427,12 +1431,33 @@ function InstantiateDanLights() {
             fixed: [
                 { name: "bay", display: "Bay", type: "list", values: ["lobby=Lobby", "main=Main"], default: "main" },
                 { name: "unit", display: "Unit", type: "list", values: ["1=1", "2=2", "3=3"], default: "1" },
-                { name: "basecolor", display: "Base Color", type: "list", values: ["red=Red", "yellow=Yellow", "green=Green", "cyan=Cyan", "blue=Blue", "magenta=Magenta"], default: "red" },
+                { name: "basecolor", display: "Base Color", type: "list", values: ["red=Red", "yellow=Yellow", "green=Green", "cyan=Cyan", "blue=Blue", "magenta=Magenta"], default: "red" }
             ],
-            parameters: []
+            parameters: [
+                { name: "pastelness", display: "Pastel-ness" }
+            ]
         };
     };
     this.queUpANote = function (startMoment, frequency, duration, amplitude, instSpecificParams) {
+        console.log("startMoment");
+        console.log(startMoment);
+        console.log("frequency");
+        console.log(frequency);
+        console.log("duration");
+        console.log(duration);
+        console.log("amplitude");
+        console.log(amplitude);
+        console.log("instSpecificParams");
+        console.log(instSpecificParams);
+        console.log("-----");
+        // time now, start time, duration, instrument, instrument specific params...
+        // our inst specific params: hue, saturation
+        currentTime = gUmt.globalCtx.currentTime;
+        hue = 64;
+        saturation = (1.0 - instSpecificParams["pastelness"]) * 254.0;
+        saturation = Math.floor(saturation);
+        sendMsg(currentTime + "," + startMoment + "," + duration + ",lights," + hue + "," + saturation);
+// qz
     };
 }
 
@@ -2510,9 +2535,9 @@ function umtGenerateRhythm(randomObj, minSize, maxSize, chunkSize, totalLength) 
     return rv;
 }
 
-function umtAddSymmetryBaseToVoice(lpnum, tab, vcnum, minSize, maxSize, chunkSize, totalLength, centerOctave, restyness, noteDistance, relativeNotes, ampVariation, volume, voiceSkew, instrumentName, instrumentParamNames, instSpecificParams) {
+function umtAddSymmetryBaseToVoice(lpnum, tab, vcnum, minSize, maxSize, chunkSize, totalLength, centerOctave, restyness, noteDistance, relativeNotes, ampVariation, volume, voiceSkew, instrumentName, instrumentParamNames, instSpecificParams, instFixedParams) {
     "use strict";
-    var rhythm, lenRhy, idx, duration, pitch, amplitude, noteSkew, volscalar, instParamCurrent, instParCount, instParamIdx, ourParamName, paramvalue, halfVoiceSkew, previousPitch;
+    var rhythm, lenRhy, idx, duration, pitch, amplitude, noteSkew, volscalar, instParamCurrent, instParCount, instParamIdx, ourParamName, paramvalue, instFixedIdx, ourFixedValue, halfVoiceSkew, previousPitch;
     volscalar = 2.7;
     volume = Math.exp(volume * volscalar) / Math.exp(volscalar); // this is done to "logarithmize" the volume slider
     rhythm = umtGenerateRhythm(gUmt.loop[lpnum].score.songTab[tab].voice[vcnum].randRhythm, minSize, maxSize, chunkSize, totalLength);
@@ -2545,6 +2570,17 @@ function umtAddSymmetryBaseToVoice(lpnum, tab, vcnum, minSize, maxSize, chunkSiz
                     if (instSpecificParams.hasOwnProperty(instrumentName + "_" + ourParamName + "_patterns")) {
                         paramvalue = instSpecificParams[instrumentName + "_" + ourParamName + "_patterns"];
                         instParamCurrent[ourParamName] = gUmt.loop[lpnum].score.songTab[tab].voice[vcnum].randInstPat.genrandReal2() * paramvalue;
+                        instParCount = instParCount + 1;
+                    }
+                }
+            }
+            // qz
+            // we just copy in the fixed parameters here -- it wastes space in the composition and we should probably put this at a per-voice level, but we're lazy, so we don't
+            for (instFixedIdx in instFixedParams) {
+                if (instFixedParams.hasOwnProperty(instFixedIdx)) {
+                    if (instFixedIdx.substring(0, instrumentName.length) === instrumentName) {
+                        ourFixedValue = instFixedParams[instFixedIdx];
+                        instParamCurrent[instFixedIdx.substring(instrumentName.length + 1)] = ourFixedValue;
                         instParCount = instParCount + 1;
                     }
                 }
@@ -2978,7 +3014,7 @@ function umtUiIsPartInUI(ptnum) {
 
 function umtComposeTab(lpnum, tab) {
     "use strict";
-    var compositionVoice, UIVoice, songNumber, octave, rangeMin, rangeMax, instrumentName, percussion, exemptFromHarmonization, noRepeatNotes, relativeNotes, minSize, maxSize, chunkSize, totalLength, centerOctave, restyness, ampVariation, volume, skew, noteDistance, startTime, endTime, rhythmDirection, pitchesDirection, timeRhythmScroll, timePitchScroll, actualPitchScroll, pitchScale, pitchBevel, pitchTranspose, symmetryPattern, csrPos, csrStart, duration, tdvidx, currentTimeDiv, keepGoing, loopDuration, symSwitchPoint, sspidx, symPoint, vcnum, instParamNames, instSpecificParams;
+    var compositionVoice, UIVoice, songNumber, octave, rangeMin, rangeMax, instrumentName, percussion, exemptFromHarmonization, noRepeatNotes, relativeNotes, minSize, maxSize, chunkSize, totalLength, centerOctave, restyness, ampVariation, volume, skew, noteDistance, startTime, endTime, rhythmDirection, pitchesDirection, timeRhythmScroll, timePitchScroll, actualPitchScroll, pitchScale, pitchBevel, pitchTranspose, symmetryPattern, csrPos, csrStart, duration, tdvidx, currentTimeDiv, keepGoing, loopDuration, symSwitchPoint, sspidx, symPoint, vcnum, instParamNames, instSpecificParams, instFixedParams;
     if (gUmt.noReenterAddingVoice) {
         jsabort("umtComposeTab called during add voice");
     }
@@ -3031,7 +3067,8 @@ function umtComposeTab(lpnum, tab) {
             skew = gUmt.UIParams.songTab[tab].voice[UIVoice].skew;
             instParamNames = gUmt.instrumentParams[instrumentName].parameters;
             instSpecificParams = gUmt.UIParams.songTab[tab].voice[UIVoice].instSpecificParams;
-            umtAddSymmetryBaseToVoice(lpnum, tab, compositionVoice, minSize, maxSize, chunkSize, totalLength, centerOctave, restyness, noteDistance, relativeNotes, ampVariation, volume, skew, instrumentName, instParamNames, instSpecificParams);
+            instFixedParams = gUmt.UIParams.songTab[tab].voice[UIVoice].instFixedParams;
+            umtAddSymmetryBaseToVoice(lpnum, tab, compositionVoice, minSize, maxSize, chunkSize, totalLength, centerOctave, restyness, noteDistance, relativeNotes, ampVariation, volume, skew, instrumentName, instParamNames, instSpecificParams, instFixedParams);
             // we have voices and base rhythms; now need symmetry
             startTime = 0;
             csrPos = gUmt.loop[lpnum].score.songTab[tab].voice[compositionVoice].cursor;
@@ -3859,7 +3896,7 @@ function umtUiSetDefaultInstFixedParamsForNewInstrument(voiceNumber, instrumentN
 
 function umtExecPervoiceFixedChange(event) {
     "use strict";
-    var elemid, listbox, selectedvalue, i, voiceNumber, symSize, symmetryPattern, tab, paramName, voiceNum, instrumentName;
+    var elemid, listbox, selectedvalue, i, voiceNum, tab, paramName, instrumentName;
     tab = gUmt.UIParams.currentTab;
     elemid = event.target.id;
     // what user selected
@@ -3877,7 +3914,7 @@ function umtExecPervoiceFixedChange(event) {
     // voice number
     voiceNum = Number(elemid.substring(i + 1));
     // put it all together and set the parameter
-    gUmt.UIParams.songTab[tab].voice[voiceNum].instFixedParams[instrumentName + "_" + paramName] = selectedvalue
+    gUmt.UIParams.songTab[tab].voice[voiceNum].instFixedParams[instrumentName + "_" + paramName] = selectedvalue;
     if (gUmt.UIParams.songTab[tab].voice[voiceNum].playing) {
         umtAutomaticallyRecomposeLoopFromUIParams();
     }
@@ -3961,7 +3998,7 @@ function umtUiSetInstrumentFixedParams(voiceNumber) {
             instFixedSet = instFixed[instFixedIdx];
             paramName = instFixedSet.name;
             paramValue = gUmt.UIParams.songTab[tab].voice[voiceNumber].instFixedParams[instrumentName + "_" + paramName];
-            // qz
+            umtUiSetListboxByValue(document.getElementById("choose_fixed_" + instrumentName + "_" + paramName + "_" + voiceNumber), paramValue);
         }
     }
 }
@@ -5185,7 +5222,8 @@ gUmt = {
         playAllTabs: false,
         timeDivisions: [ 2, 2, 2, 2, 2, 2 ]
     },
-    tabRecomposeFlags: []
+    tabRecomposeFlags: [],
+    localSocket: false,
 };
 // for fixing duplicate notes bug
 // testDupDetectSet: {}
@@ -5352,6 +5390,12 @@ jQuery(function () {
             tabs.tabs("refresh");
         }
     });
+
+    // qz
+    gUmt.localSocket = new WebSocket("ws://127.0.0.1:46398/umtlocal");
+    gUmt.localSocket.onmessage = function (event) {
+        console.log(event.data);
+    }
 
     // start song
     umtCreateInstrumentBank();
