@@ -6,10 +6,10 @@ import (
 	_ "github.com/ziutek/mymysql/native" // Native engine
 	"html"
 	"net/http"
+	"static"
 	"strconv"
 	"strings"
 	"time"
-"static"
 )
 
 func getDoctype() string {
@@ -27,6 +27,13 @@ func getDbConnection() (mysql.Conn, error) {
 	db := mysql.New("tcp", "", "127.0.0.1:3306", user, pass, dbname)
 	err := db.Connect()
 	return db, err
+}
+
+func showLinksMenuBar(w http.ResponseWriter) {
+	fmt.Fprint(w, `
+<p><a href="add">Add</a>
+<a href="list">List</a></p>
+`)
 }
 
 func showExposition(w http.ResponseWriter, targetUrl string, imageUrl string, description string) {
@@ -122,6 +129,9 @@ func add(w http.ResponseWriter, r *http.Request, op string) {
 </head>
 <body>
   <section>
+`)
+			showLinksMenuBar(w)
+			fmt.Fprint(w, `
     <h1>URL grabber</h1>
 	<a href="add">Next</a>
 	<a href="list">List</a>
@@ -479,6 +489,9 @@ timeridUrl = window.setInterval(execUrlGrab, 100);
 </head>
 <body>
   <section>
+`)
+		showLinksMenuBar(w)
+		fmt.Fprint(w, `
     <h1>URL grabber</h1>
 
 <p>Email count: `+html.EscapeString(strconv.FormatUint(email_count, 10))+`
@@ -575,6 +588,9 @@ func list(w http.ResponseWriter, r *http.Request, op string) {
 </head>
 <body>
   <section>
+`)
+	showLinksMenuBar(w)
+	fmt.Fprint(w, `
     <h1>List of URLs</h1>
 `)
 	db, err := getDbConnection()
@@ -681,6 +697,9 @@ func exposit(w http.ResponseWriter, r *http.Request, op string) {
 </head>
 <body>
   <section>
+`)
+	showLinksMenuBar(w)
+	fmt.Fprint(w, `
     <h1>Exposition</h1>
 `)
 	db, err := getDbConnection()
@@ -889,6 +908,9 @@ func edit(w http.ResponseWriter, r *http.Request, op string) {
 		fmt.Fprint(w, `<title>URL saver</title>
 </head><body>
   <section>
+`)
+		showLinksMenuBar(w)
+		fmt.Fprint(w, `
     <h1>Edit URL</h1>
 
 <form action="edit" method="post">
@@ -1008,6 +1030,9 @@ func delete(w http.ResponseWriter, r *http.Request, op string) {
 		fmt.Fprint(w, `<title>URL saver</title>
 </head><body>
   <section>
+`)
+		showLinksMenuBar(w)
+		fmt.Fprint(w, `
     <h1>Delete URL</h1>
 
 <form action="delete" method="post">
@@ -1059,6 +1084,9 @@ func email(w http.ResponseWriter, r *http.Request, op string) {
 </head>
 <body>
   <section>
+`)
+	showLinksMenuBar(w)
+	fmt.Fprint(w, `
     <h1>For Emails</h1>
 <textarea rows="100" cols="80">
 === News bits ===
@@ -1178,11 +1206,16 @@ func homepage(w http.ResponseWriter, r *http.Request, op string, userid uint64, 
 	if showMusic {
 		title = "Music For Today"
 	}
-	fmt.Fprint(w, `<title>` + title + `</title>
+	fmt.Fprint(w, `<title>`+title+`</title>
+<style>
+body {
+        font-family: "Trebuchet MS", "Helvetica", "Arial",  "Verdana", "sans-serif";
+}
+</style>
 </head>
 <body>
   <section>
-    <h1>` + title + `</h1>
+    <h1>`+title+`</h1>
 `)
 	db, err := getDbConnection()
 	if err != nil {
@@ -1233,13 +1266,13 @@ func homepage(w http.ResponseWriter, r *http.Request, op string, userid uint64, 
 							music = true
 						}
 						if music {
-							sql = "SELECT id_lnk, created_gmt, target_url, image_url, description FROM link_link WHERE (is_video = 1) AND (description LIKE 'Music%') ORDER BY id_lnk DESC;" //  LIMIT 0, 100;"
+							sql = "SELECT id_lnk, created_gmt, target_url, image_url, description FROM link_link WHERE (is_video = 1) AND (description LIKE 'Music for today%') ORDER BY id_lnk DESC;" //  LIMIT 0, 100;"
 						} else {
 							_, private := getform["private"]
 							if private {
-								sql = "SELECT id_lnk, created_gmt, target_url, image_url, description FROM link_link WHERE (is_video = 1) AND (is_public = 0) AND (description NOT LIKE 'Music%') ORDER BY id_lnk DESC LIMIT 0, 100;"
+								sql = "SELECT id_lnk, created_gmt, target_url, image_url, description FROM link_link WHERE (is_video = 1) AND (is_public = 0) AND (description NOT LIKE 'Music for today%') ORDER BY id_lnk DESC LIMIT 0, 100;"
 							} else {
-								sql = "SELECT id_lnk, created_gmt, target_url, image_url, description FROM link_link WHERE (is_video = 1) AND (is_public = 1) AND (description NOT LIKE 'Music%') ORDER BY id_lnk DESC LIMIT 0, 100;"
+								sql = "SELECT id_lnk, created_gmt, target_url, image_url, description FROM link_link WHERE (is_video = 1) AND (is_public = 1) AND (description NOT LIKE 'Music for today%') ORDER BY id_lnk DESC LIMIT 0, 100;"
 							}
 						}
 					}
@@ -1274,7 +1307,7 @@ func homepage(w http.ResponseWriter, r *http.Request, op string, userid uint64, 
 			}
 			fmt.Fprint(w, `<tr><td valign="top">`)
 			if imageUrl != "" {
-				fmt.Fprint(w, `<a href="`+targetUrl+`"><img src="`+imageUrl+`" alt="Thumbnail" /></a>`)
+				fmt.Fprint(w, `<a href="`+targetUrl+`"><img width="196" src="`+imageUrl+`" alt="Thumbnail" /></a>`)
 			}
 			fmt.Fprint(w, ` </td><td valign="top"> `)
 			fmt.Fprint(w, html.EscapeString(description))
@@ -1282,8 +1315,8 @@ func homepage(w http.ResponseWriter, r *http.Request, op string, userid uint64, 
 				fmt.Fprint(w, `<br />`)
 				fmt.Fprint(w, "<a href="+targetUrl+">"+html.EscapeString(targetUrl)+"</a>")
 				fmt.Fprint(w, ` &middot; <a href="exposit?link=`+strconv.FormatUint(linkid, 10)+`">exposit</a> &middot; <a href="edit?link=`+strconv.FormatUint(linkid, 10)+`">edit</a> &middot; <a href="delete?link=`+strconv.FormatUint(linkid, 10)+`">delete</a>`)
-			} else {
-				fmt.Fprint(w, " <a href="+targetUrl+">" + urlToDomainOnly(targetUrl) + "</a>")
+				// } else {
+				// fmt.Fprint(w, " <a href="+targetUrl+">"+urlToDomainOnly(targetUrl)+"</a>")
 			}
 			fmt.Fprint(w, " </td></tr>")
 		}
@@ -1329,6 +1362,6 @@ func Handler(w http.ResponseWriter, r *http.Request, host string, op string, use
 	default:
 		// fmt.Fprintln(w, "Could not find page:", op)
 		filename := "/home/ec2-user/wayneserver/staticappcontent/links/" + op
-                static.OutputStaticFileWithContentType(w, filename)
+		static.OutputStaticFileWithContentType(w, filename)
 	}
 }
