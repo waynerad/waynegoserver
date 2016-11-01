@@ -662,9 +662,9 @@ func showApps(w http.ResponseWriter) {
     <h1>Apps on this server</h1>
     <ul>
         <li><a href="../calcron/list">Calcron Chimes</a></li>
-        <li><a href="../rand/list">Rand</a></li>
         <li><a href="../links/add">Links</a></li>
-        <li><a href="../login/login">Login (this app)</a></li>
+        <li><a href="../fitb/listtopics">Fitb</a></li>
+        <li><a href="../rand/list">Rand</a></li>
         <li><a href="../umt/umt">UMT</a></li>
     </ul>
   </section>
