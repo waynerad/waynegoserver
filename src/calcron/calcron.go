@@ -472,6 +472,14 @@ func getTimeZoneOffset(db mysql.Conn, userid uint64) int64 {
 	return timeZoneOffset
 }
 
+func showCalcronMenuBar(w http.ResponseWriter) {
+	fmt.Fprint(w, `
+<p><a href="chimes">Chimes</a>
+<a href="add">Add</a>
+<a href="list">List</a></p>
+`)
+}
+
 func showEditPage(w http.ResponseWriter, r *http.Request, op string, userid uint64) {
 	showform := false
 	errorList := make(map[string]string)
@@ -806,6 +814,9 @@ function ctstr(anyparameter) {
 </head>
 <body>
   <section>
+`)
+		showCalcronMenuBar(w)
+		fmt.Fprint(w, `
     <h1>CalCron Entry</h1>
 
 <form action="edit" method="post">
@@ -915,6 +926,9 @@ jQuery(function () {
 </head>
 <body>
   <section>
+`)
+	showCalcronMenuBar(w)
+	fmt.Fprint(w, `
     <h1>List of Calcron Entries</h1>
 `)
 	db, err := getDbConnection()
@@ -1528,6 +1542,9 @@ jQuery(function () {
 </head>
 <body>
   <section>
+`)
+	showCalcronMenuBar(w)
+	fmt.Fprint(w, `
 <form action="dismiss" method="get">
 
 <p> Next event: `)
@@ -1670,6 +1687,9 @@ func showViewPage(w http.ResponseWriter, r *http.Request, op string, userid uint
 </head>
 <body>
   <section>
+`)
+	showCalcronMenuBar(w)
+	fmt.Fprint(w, `
     <h1>CalCron Entry</h1>
 
 `)
@@ -1716,6 +1736,9 @@ func showRecalcPage(w http.ResponseWriter, r *http.Request, op string, userid ui
 </head>
 <body>
   <section>
+`)
+	showCalcronMenuBar(w)
+	fmt.Fprint(w, `
 <form>
 
     <h1 id="title">Recalc</h1>
