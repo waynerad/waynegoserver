@@ -818,7 +818,7 @@ func calculateLnum(str string) float64 {
 	inAnswer := false
 	var rv float64
 	for _, char := range str {
-		fmt.Println("char", char)
+		// fmt.Println("char", char) // uncomment this line to debug bad character issues.
 		if char == rune("_"[0]) {
 			inAnswer = !inAnswer
 		} else {
@@ -1021,7 +1021,16 @@ func calculateLnum(str string) float64 {
 			if char == rune("["[0]) {
 				l = 300
 			}
+			if char == rune("("[0]) {
+				l = 200
+			}
+			if char == rune(")"[0]) {
+				l = 200
+			}
 			if char == rune("]"[0]) {
+				l = 300
+			}
+			if char == rune("="[0]) {
 				l = 300
 			}
 			if char == rune("+"[0]) {
@@ -1032,6 +1041,12 @@ func calculateLnum(str string) float64 {
 			}
 			if char == rune("}"[0]) {
 				l = 300
+			}
+			if char == rune("$"[0]) {
+				l = 300
+			}
+			if char == rune("~"[0]) {
+				l = 600
 			}
 			if char == rune("1"[0]) {
 				l = 200
@@ -2121,7 +2136,7 @@ func initialize(db mysql.Conn, userid uint64, topicid uint64) {
 		}
 		// defer stmt.Close();
 		sequenceNum := seqNumMap[questionid]
-		askTime := 1 + sequenceNum // This is so the sequence of first introduction is the same as the sequence_num bers in the database
+		askTime := 1 + sequenceNum                               // This is so the sequence of first introduction is the same as the sequence_num bers in the database
 		stmt.Bind(userid, questionid, topicid, askTime, 60, 2.0) // INITIAL REPETITIVENESS is set here
 		_, _, err = stmt.Exec()
 	}
