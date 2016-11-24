@@ -232,7 +232,11 @@ globalAudioContext = umtGetAudioContext();
 <script>
 
 function umtSendLocalMsg(msg) {
-    umtlocalSocket.send(msg);
+    if (gUmt.localSocket.readyState === 1) {
+        gUmt.localSocket.send(msg);
+    } else {
+        console.log("Socket to local server is not connected.");
+    }
 }
 
 function umtGetRando(seedNum) {
@@ -1429,16 +1433,18 @@ function InstantiateDanLights() {
         return {
             percussion: true,
             fixed: [
-                { name: "bay", display: "Bay", type: "list", values: ["lobby=Lobby", "main=Main"], default: "main" },
-                { name: "unit", display: "Unit", type: "list", values: ["1=1", "2=2", "3=3"], default: "1" },
+                { name: "bank", display: "Bank", type: "list", values: ["lobbywall=Lobby Wall", "lobbylanterns=Lobby Lanterns", "bay=Bay"], default: "lobbywall" },
+                { name: "unit", display: "Unit", type: "list", values: ["1=1", "2=2", "3=3", "4=4", "5=5", "6=6"], default: "1" },
                 { name: "basecolor", display: "Base Color", type: "list", values: ["red=Red", "yellow=Yellow", "green=Green", "cyan=Cyan", "blue=Blue", "magenta=Magenta"], default: "red" }
             ],
             parameters: [
-                { name: "pastelness", display: "Pastel-ness" }
+                { name: "pastelness", display: "Pastel-ness" },
+                { name: "twist", display: "Twist" }
             ]
         };
     };
     this.queUpANote = function (startMoment, frequency, duration, amplitude, instSpecificParams) {
+        var currentTime, startHue, stopHue, saturation, bank, unit, twist;
         console.log("startMoment");
         console.log(startMoment);
         console.log("frequency");
@@ -1453,10 +1459,36 @@ function InstantiateDanLights() {
         // time now, start time, duration, instrument, instrument specific params...
         // our inst specific params: hue, saturation
         currentTime = gUmt.globalCtx.currentTime;
-        hue = 64;
+        switch (instSpecificParams["basecolor"]) {
+            case 'red':
+                startHue = 0;
+                break;
+            case 'yellow':
+                startHue = 47;
+                break;
+            case 'green':
+                startHue = 85;
+                break;
+            case 'cyan':
+                startHue = 128;
+                break;
+            case 'blue':
+                startHue = 171;
+                break;
+            case 'magenta':
+                startHue = 213;
+                break;
+	}
+        twist = Math.floor(instSpecificParams["twist"] * 128)
+        stopHue = startHue + twist;
+        if (stopHue > 255) {
+            stopHue = stopHue - 256;
+        }
         saturation = (1.0 - instSpecificParams["pastelness"]) * 254.0;
         saturation = Math.floor(saturation);
-        sendMsg(currentTime + "," + startMoment + "," + duration + ",lights," + hue + "," + saturation);
+        bank = instSpecificParams.bank;
+        unit = instSpecificParams.unit;
+        umtSendLocalMsg(currentTime + "," + startMoment + "," + duration + ",lights," + bank + "," + unit + "," + startHue + "," + saturation + "," + stopHue);
 // qz
     };
 }
@@ -5391,7 +5423,6 @@ jQuery(function () {
         }
     });
 
-    // qz
     gUmt.localSocket = new WebSocket("ws://127.0.0.1:46398/umtlocal");
     gUmt.localSocket.onmessage = function (event) {
         console.log(event.data);
