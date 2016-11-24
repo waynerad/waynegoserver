@@ -1310,7 +1310,7 @@ body {
 				fmt.Fprint(w, `<a href="`+targetUrl+`"><img width="196" src="`+imageUrl+`" alt="Thumbnail" /></a>`)
 			}
 			fmt.Fprint(w, ` </td><td valign="top"> `)
-			fmt.Fprint(w, html.EscapeString(description))
+			fmt.Fprint(w, strings.Replace(html.EscapeString(description), "\n", "<br />", 32768))
 			if userid == 1 {
 				fmt.Fprint(w, `<br />`)
 				fmt.Fprint(w, "<a href="+targetUrl+">"+html.EscapeString(targetUrl)+"</a>")
@@ -1334,6 +1334,9 @@ func Handler(w http.ResponseWriter, r *http.Request, host string, op string, use
 	fmt.Println("op in links Handler", op)
 	music := false
 	if host == "musicfortoday.tv" {
+		music = true
+	}
+	if host == "musicfortoday.tv:4000" {
 		music = true
 	}
 	switch {
