@@ -7,6 +7,7 @@ import (
 	"html"
 	"io"
 	"math"
+	"math/rand"
 	"net/http"
 	"static"
 	"strconv"
@@ -2437,6 +2438,9 @@ func showAskQuestionPage(w http.ResponseWriter, r *http.Request, op string, user
 			}
 			inBlank = !inBlank
 		}
+		seedTime := time.Now()
+		seedUnix := seedTime.UnixNano()
+		rand.Seed(seedUnix)
 		if allCorrect {
 			correctMessage = "You are correct! Next question:"
 			if alreadywrong == 0 {
@@ -2447,7 +2451,8 @@ func showAskQuestionPage(w http.ResponseWriter, r *http.Request, op string, user
 				if timeInterval < 1 {
 					timeInterval = 1
 				}
-				timeInterval = uint64(float64(timeInterval) * factor)
+				actualFactor := factor * (1.0 + ((rand.Float64() - 0.5) / 25.0)) // allows 2% variation
+				timeInterval = uint64(float64(timeInterval) * actualFactor)
 				newTime := currentTime + timeInterval
 				updateInterval(db, questionjctid, newTime, timeInterval, factor, userid)
 			}
@@ -2461,7 +2466,8 @@ func showAskQuestionPage(w http.ResponseWriter, r *http.Request, op string, user
 				correctMessage = correctMessage + entry
 			}
 			if alreadywrong == 0 {
-				timeInterval = uint64(float64(timeInterval) / factor)
+				actualFactor := factor * (1.0 + ((rand.Float64() - 0.5) / 25.0)) // allows 2% variation
+				timeInterval = uint64(float64(timeInterval) / actualFactor)
 				if timeInterval < 1 {
 					timeInterval = 1
 				}
