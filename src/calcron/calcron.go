@@ -223,10 +223,7 @@ func applyRule(currentValue int, rule string, fieldLimit int, fieldMin int, curr
 	currentValue = currentValue + currentCarry
 	for currentValue >= (fieldLimit + fieldMin) {
 		newCarry++
-		fmt.Println("229 newCarry", newCarry)
 		currentValue = currentValue - fieldLimit
-		fmt.Println("231 currentValue", currentValue)
-		fmt.Println("   fieldLimit + fieldMin", fieldLimit+fieldMin)
 	}
 	if currentValue <= int(value) {
 		return int(value), newCarry
@@ -307,24 +304,16 @@ func calculateNextCurrentTimeForEvent(currentTimeCode uint64, yearRule string, m
 
 	// forward clearing pass
 
-	fmt.Println("")
-	fmt.Println("timeNumbers at beginning", timeNumbers)
-
 	foundDiff := false
 	newval, _ := applyRule(timeNumbers.year, yearRule, 2147483647, 0, 0)
 	if newval > timeNumbers.year {
-		fmt.Println("325 !=")
 		timeNumbers.year = newval
-		fmt.Println("327 timeNumbers.year", timeNumbers.year)
 		foundDiff = true
-		fmt.Println("329 foundDiff", foundDiff)
 	}
 
 	newval, _ = applyRule(timeNumbers.month, monthRule, 12, 1, 0)
 	if foundDiff {
-		fmt.Println("336 in foundDiff")
 		timeNumbers.month = 1
-		fmt.Println("338 timeNumbers.month", timeNumbers.month)
 	} else {
 		if newval > timeNumbers.month {
 			timeNumbers.month = newval
@@ -339,11 +328,8 @@ func calculateNextCurrentTimeForEvent(currentTimeCode uint64, yearRule string, m
 		timeNumbers.day = 1
 	} else {
 		if newval > timeNumbers.day {
-			fmt.Println("365 newval", newval)
 			timeNumbers.day = newval
-			fmt.Println("367 timeNumbers.day", timeNumbers.day)
 			foundDiff = true
-			fmt.Println("369 foundDiff", foundDiff)
 		}
 	}
 
@@ -361,33 +347,21 @@ func calculateNextCurrentTimeForEvent(currentTimeCode uint64, yearRule string, m
 	if foundDiff {
 		timeNumbers.minute = 0
 	} else {
-		fmt.Println("401 else")
 		if newval > timeNumbers.minute {
-			fmt.Println("403 !=")
 			timeNumbers.minute = newval
-			fmt.Println("405 timeNumbers.minute", timeNumbers.minute)
 			foundDiff = true
-			fmt.Println("407 foundDiff", foundDiff)
 		}
-		fmt.Println("409")
 	}
 
 	newval, _ = applyRule(timeNumbers.second, secondRule, 60, 0, 0)
 	if foundDiff {
 		timeNumbers.second = 0
 	} else {
-		fmt.Println("420 else")
 		if newval > timeNumbers.second {
-			fmt.Println("422 !=")
 			timeNumbers.second = newval
-			fmt.Println("424 timeNumbers.second", timeNumbers.second)
 			foundDiff = true
-			fmt.Println("426 foundDiff", foundDiff)
 		}
-		fmt.Println("428")
 	}
-
-	fmt.Println("timeNumbers after forward clearing", timeNumbers)
 
 	// backwards add with carry
 
@@ -410,8 +384,6 @@ func calculateNextCurrentTimeForEvent(currentTimeCode uint64, yearRule string, m
 
 	newval, _ = applyRule(timeNumbers.year, yearRule, 2147483647, 0, yearCarry)
 	result.year = newval
-
-	fmt.Println("result after backwards add with carry", result)
 
 	// move forward to weekday if weekday specificed
 
@@ -558,7 +530,6 @@ func showEditPage(w http.ResponseWriter, r *http.Request, op string, userid uint
 		}
 	}
 	if method == "POST" {
-		fmt.Println("point 553")
 		// set from form post
 		err := r.ParseForm()
 		if err != nil {
@@ -631,7 +602,6 @@ func showEditPage(w http.ResponseWriter, r *http.Request, op string, userid uint
 		if errorOccurred {
 			showform = true
 		} else {
-			fmt.Println("point 623")
 			// dbConnect!!
 			db, err := getDbConnection()
 			if err != nil {
@@ -641,7 +611,6 @@ func showEditPage(w http.ResponseWriter, r *http.Request, op string, userid uint
 			defer db.Close()
 			var timeZoneOffset int64
 			timeZoneOffset = getTimeZoneOffset(db, userid)
-			fmt.Println("point 634")
 			var save struct {
 				idCalEnt    uint64
 				idUser      uint64
@@ -673,9 +642,7 @@ func showEditPage(w http.ResponseWriter, r *http.Request, op string, userid uint
 			save.second = ui.second
 			// save.currenttime = uint64(time.Now().Unix())
 			// save.currenttime = uint64(int64(calculateNextCurrentTimeForEvent(uint64(int64(save.starttime) + timeZoneOffset), save.year, save.month, save.dom, save.dow, save.nth, save.hour, save.minute, save.second)) - timeZoneOffset)
-			fmt.Println("point 669")
 			save.currenttime = calculateNextCurrentTimeForEvent(uint64(int64(save.starttime)+timeZoneOffset), save.year, save.month, save.dom, save.dow, save.nth, save.hour, save.minute, save.second)
-			fmt.Println("point 671")
 			save.currenttime = uint64(int64(save.currenttime) - timeZoneOffset)
 			// query, if there, update, if not, create new
 			alreadyExists := false
@@ -738,7 +705,7 @@ func showEditPage(w http.ResponseWriter, r *http.Request, op string, userid uint
 
 /*jslint browser: true, devel: true */
 
-// (C) 2013-2016 Wayne Radinsky
+// (C) 2013-2017 Wayne Radinsky
 
 // jsabort, cx, and ctstr are debugging functions that will be REMOVED from the final product
 
@@ -874,6 +841,15 @@ func showListPage(w http.ResponseWriter, r *http.Request, op string, userid uint
 		currenttime uint64
 	}
 	rightNow := uint64(time.Now().Unix())
+	db, err := getDbConnection()
+	if err != nil {
+		fmt.Fprintln(w, err)
+		panic("getDbConnection failed")
+	}
+	defer db.Close()
+	var timeZoneOffset int64
+	timeZoneOffset = getTimeZoneOffset(db, userid)
+	timeZoneClientSideAdjustNum := strconv.FormatInt((-timeZoneOffset)*1000, 10)
 	header := w.Header()
 	header.Set("Content-Type", "text/html; charset=utf-8")
 	fmt.Fprint(w, getDoctype())
@@ -900,7 +876,7 @@ function updateTimeRemainings() {
     i = 0;
     while (document.getElementById("timerem_code_" + i)) {
         timeCode = document.getElementById("timerem_code_" + i).value;
-        evttim = Date.parse(timeCode) + 25200000;
+        evttim = Date.parse(timeCode) + `+timeZoneClientSideAdjustNum+`;
         curdat = new Date();
         curtim = curdat.getTime();
         interval = evttim - curtim;
@@ -931,15 +907,6 @@ jQuery(function () {
 	fmt.Fprint(w, `
     <h1>List of Calcron Entries</h1>
 `)
-	db, err := getDbConnection()
-	if err != nil {
-		fmt.Fprintln(w, err)
-		return
-	}
-	defer db.Close()
-	var timeZoneOffset int64
-	timeZoneOffset = getTimeZoneOffset(db, userid)
-
 	err = r.ParseForm()
 	if err != nil {
 		fmt.Fprintln(w, err)
@@ -1030,6 +997,7 @@ jQuery(function () {
 		if entry.currenttime == lastTime {
 			backgroundColor = " style=\"background-color: #FF8000;\""
 		}
+		fmt.Println("    -")
 		fmt.Fprint(w, "<tr "+backgroundColor+"><td> "+timeCodeToString(entry.currenttime, timeZoneOffset)+" </td>")
 		// if crossedNow {
 		fmt.Fprint(w, `<td align="right"> <input type="hidden" id="timerem_code_`+strconv.FormatInt(int64(count), 10)+`" value="`)
@@ -1153,16 +1121,11 @@ func recalculateAllEvents(db mysql.Conn, userid uint64, recalcDefunct bool) {
 		save.currenttime = updateList[i].currenttime
 		save.isDefunct = 0
 		save.isDismissed = 1
-		fmt.Println("comparing ", save.currenttime, " to ", cutoff)
 		if save.currenttime < cutoff {
 			save.isDefunct = 1
-			fmt.Println("isDefunct set to true!!!")
 		}
-		fmt.Println("save.currenttime", save.currenttime)
-		fmt.Println("rightNow", rightNow)
 		if save.currenttime >= rightNow {
 			save.isDismissed = 0
-			fmt.Println("isDismissed set to true!!!")
 		}
 		stmt.Bind(save.currenttime, save.isDefunct, save.isDismissed, save.idCalEnt)
 		_, _, err = stmt.Exec()
@@ -1265,6 +1228,7 @@ func showChimesPage(w http.ResponseWriter, r *http.Request, op string, userid ui
 	header := w.Header()
 	header.Set("Content-Type", "text/html; charset=utf-8")
 	fmt.Fprint(w, getDoctype())
+	timeZoneClientSideAdjustNum := strconv.FormatInt((-timeZoneOffset)*1000, 10)
 	fmt.Fprint(w, `<title>Chimes: `+html.EscapeString(entry.title)+`</title>
 <link rel="stylesheet" type="text/css" href="/style.css">
 <link rel="stylesheet" href="jquery-ui.css" />
@@ -1273,7 +1237,7 @@ func showChimesPage(w http.ResponseWriter, r *http.Request, op string, userid ui
 
 <script>
 
-// (C) 2016 Wayne Radinsky
+// (C) 2017 Wayne Radinsky
 
 /*jslint browser: true, devel: true, passfail: true */
 
@@ -1493,8 +1457,8 @@ function chimesExecParseAndSet() {
     "use strict";
     var datestr, thetime, addMinutes;
     datestr = document.getElementById("as_text").value;
-    // thetime = Date.parse(datestr) + 25200000;
-    thetime = chimesConvertOurStringToTimeCode(datestr) + 25200000;
+    // thetime = Date.parse(datestr) + `+timeZoneClientSideAdjustNum+`;
+    thetime = chimesConvertOurStringToTimeCode(datestr) + `+timeZoneClientSideAdjustNum+`;
     addMinutes = document.getElementById("add_minutes").value;
     if (addMinutes !== "") {
         addMinutes = parseInt(addMinutes, 10);
@@ -1514,7 +1478,7 @@ function chimesExecUseTimeNow() {
     "use strict";
     var curtim;
     curtim = new Date(); // year, month [, day, hour, minute, second, millisecond]);
-    curtim.setTime(curtim.getTime() - 25200000);
+    curtim.setTime(curtim.getTime() - `+timeZoneClientSideAdjustNum+`);
     document.getElementById("next_event").value = curtim.getTime();
     // document.getElementById("as_text").value = curtim.toISOString();
     document.getElementById("as_text").value = chimesConvertTimeCodeToOurString(curtim);
@@ -1531,7 +1495,7 @@ jQuery(function () {
     "use strict";
     // var curtim;
     // curtim = new Date(); // year, month [, day, hour, minute, second, millisecond]);
-    // curtim.setTime(curtim.getTime() - 25200000);
+    // curtim.setTime(curtim.getTime() - `+timeZoneClientSideAdjustNum+`);
     // document.getElementById("next_event").value = curtim.getTime();
     // document.getElementById("as_text").value = curtim.toISOString();
     chimesExecParseAndSet();
@@ -1681,7 +1645,7 @@ func showViewPage(w http.ResponseWriter, r *http.Request, op string, userid uint
 		return
 	}
 	defer db.Close()
-	fmt.Fprint(w, `<title>CalCron Entry</title>
+	fmt.Fprint(w, `<title>CalCron Entry View</title>
 <link rel="stylesheet" type="text/css" href="/style.css">
 
 </head>
@@ -1690,7 +1654,7 @@ func showViewPage(w http.ResponseWriter, r *http.Request, op string, userid uint
 `)
 	showCalcronMenuBar(w)
 	fmt.Fprint(w, `
-    <h1>CalCron Entry</h1>
+    <h1>CalCron Entry View</h1>
 
 `)
 	fmt.Fprint(w, `
@@ -1784,7 +1748,6 @@ func doDismiss(w http.ResponseWriter, r *http.Request, op string, userid uint64)
 }
 
 func Handler(w http.ResponseWriter, r *http.Request, op string, userid uint64) {
-	fmt.Println("We are in the calcron handler, and op is", op)
 	testCheckTimeFieldSyntaxError()
 	testApplyRule()
 	switch {
@@ -1822,3 +1785,4 @@ func Handler(w http.ResponseWriter, r *http.Request, op string, userid uint64) {
 		static.OutputStaticFileWithContentType(w, filename)
 	}
 }
+
