@@ -819,7 +819,7 @@ func calculateLnum(str string) float64 {
 	inAnswer := false
 	var rv float64
 	for _, char := range str {
-		// fmt.Println("char", char) // uncomment this line to debug bad character issues.
+		fmt.Println("char", char) // uncomment this line to debug bad character issues.
 		if char == rune("_"[0]) {
 			inAnswer = !inAnswer
 		} else {
@@ -1081,6 +1081,9 @@ func calculateLnum(str string) float64 {
 			}
 			if char == rune("|"[0]) {
 				l = 200
+			}
+			if char == 181 { // greek character mu for "micro" for Metric (SI) prefix abbreviation
+				l = 999
 			}
 			if char == rune(" "[0]) {
 				l = 0.5 // works as long as the e add is more than 0.7
@@ -2432,8 +2435,15 @@ func showAskQuestionPage(w http.ResponseWriter, r *http.Request, op string, user
 			if inBlank {
 				answer := theform["response"+intToStr(idx)][0]
 				responseMap[idx] = answer
+				fmt.Println("answer", answer)
+				fmt.Println("entry", entry)
 				if trim(answer) != entry {
+					fmt.Println("does not equal")
+					fmt.Println("answer bytes", []byte(trim(answer)))
+					fmt.Println("entry bytes", []byte(entry))
 					allCorrect = false
+				} else {
+					fmt.Println("equals")
 				}
 			}
 			inBlank = !inBlank
@@ -2720,3 +2730,4 @@ func Handler(w http.ResponseWriter, r *http.Request, op string, userid uint64) {
 		static.OutputStaticFileWithContentType(w, filename)
 	}
 }
+
