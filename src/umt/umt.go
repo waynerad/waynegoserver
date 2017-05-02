@@ -749,7 +749,7 @@ function InstantiateTuningForkObj() {
             ]
         };
     };
-    this.queUpANote = function (startMoment, frequency, duration, amplitude, instSpecificParams) {
+    this.queUpANote = function (startMoment, frequency, duration, amplitude, instSpecificParams, originalNote) {
         var idxname, theBuffer, node, clipping, lean;
         clipping = instSpecificParams.clipping;
         lean = instSpecificParams.lean;
@@ -781,7 +781,7 @@ function InstantiateSineStartStopObj() {
             ]
         };
     };
-    this.queUpANote = function (startMoment, frequency, duration, amplitude, instSpecificParams) {
+    this.queUpANote = function (startMoment, frequency, duration, amplitude, instSpecificParams, originalNote) {
         var idxname, theBuffer, node, startclipping, startlean, stopclipping, stoplean;
         startclipping = instSpecificParams.startclipping;
         startlean = instSpecificParams.startlean;
@@ -806,7 +806,7 @@ function InstantiateSquareWaveObj() {
     this.getParams = function () {
         return { percussion: false, fixed: [], parameters: [] };
     };
-    this.queUpANote = function (startMoment, frequency, duration, amplitude, instSpecificParams) {
+    this.queUpANote = function (startMoment, frequency, duration, amplitude, instSpecificParams, originalNote) {
         var idxname, theBuffer, node;
         idxname = instSpecificParams; // delete me -- just to pass camelCaseJSLint
         idxname = "squarewave" + frequency + "x" + duration + "x" + amplitude;
@@ -828,7 +828,7 @@ function InstantiateSquareVarObj() {
     this.getParams = function () {
         return { percussion: false, fixed: [], parameters: [ { name: "unsquareness", display: "Un-square-ness" } ] };
     };
-    this.queUpANote = function (startMoment, frequency, duration, amplitude, instSpecificParams) {
+    this.queUpANote = function (startMoment, frequency, duration, amplitude, instSpecificParams, originalNote) {
         var idxname, theBuffer, node, threshold;
         threshold = instSpecificParams.unsquareness;
         idxname = "squarevar" + frequency + "x" + duration + "x" + amplitude + "x" + threshold;
@@ -857,7 +857,7 @@ function InstantiateSquareRisingPitchObj() {
             ]
         };
     };
-    this.queUpANote = function (startMoment, frequency, duration, amplitude, instSpecificParams) {
+    this.queUpANote = function (startMoment, frequency, duration, amplitude, instSpecificParams, originalNote) {
         var idxname, theBuffer, node, threshold, riserate;
         threshold = instSpecificParams.unsquareness;
         riserate = instSpecificParams.riserate;
@@ -888,7 +888,7 @@ function InstantiateSquareStartStopObj() {
             ]
         };
     };
-    this.queUpANote = function (startMoment, frequency, duration, amplitude, instSpecificParams) {
+    this.queUpANote = function (startMoment, frequency, duration, amplitude, instSpecificParams, originalNote) {
         var idxname, theBuffer, node, startThreshold, stopThreshold;
         startThreshold = instSpecificParams.startunsquareness;
         stopThreshold = instSpecificParams.stopunsquareness;
@@ -911,7 +911,7 @@ function InstantiateTriangleWaveObj() {
     this.getParams = function () {
         return { percussion: false, fixed: false, parameters: [] };
     };
-    this.queUpANote = function (startMoment, frequency, duration, amplitude, instSpecificParams) {
+    this.queUpANote = function (startMoment, frequency, duration, amplitude, instSpecificParams, originalNote) {
         var idxname, theBuffer, node;
         idxname = instSpecificParams; // delete me -- just to pass camelCaseJSLint
         idxname = "triangle" + frequency + "x" + duration + "x" + amplitude;
@@ -933,7 +933,7 @@ function InstantiateTriangleVarObj() {
     this.getParams = function () {
         return { percussion: false, fixed: [], parameters: [ { name: "untriangleness", display: "Un-Triangleness" } ] };
     };
-    this.queUpANote = function (startMoment, frequency, duration, amplitude, instSpecificParams) {
+    this.queUpANote = function (startMoment, frequency, duration, amplitude, instSpecificParams, originalNote) {
         var variance, idxname, theBuffer, node;
         variance = instSpecificParams.untriangleness;
         idxname = "triangle" + frequency + "x" + duration + "x" + amplitude + "x" + variance;
@@ -962,7 +962,7 @@ function InstantiateTriangleStartStopObj() {
             ]
         };
     };
-    this.queUpANote = function (startMoment, frequency, duration, amplitude, instSpecificParams) {
+    this.queUpANote = function (startMoment, frequency, duration, amplitude, instSpecificParams, originalNote) {
         var startvariance, stopvariance, idxname, theBuffer, node;
         startvariance = instSpecificParams.startuntriangleness;
         stopvariance = instSpecificParams.stopuntriangleness;
@@ -985,7 +985,7 @@ function InstantiateSawtoothWaveObj() {
     this.getParams = function () {
         return { percussion: false, fixed: [], parameters: [] };
     };
-    this.queUpANote = function (startMoment, frequency, duration, amplitude, instSpecificParams) {
+    this.queUpANote = function (startMoment, frequency, duration, amplitude, instSpecificParams, originalNote) {
         var idxname, theBuffer, node;
         idxname = instSpecificParams; // delete me -- just to pass camelCaseJSLint
         idxname = "sawtooth" + frequency + "x" + duration + "x" + amplitude;
@@ -1007,7 +1007,7 @@ function InstantiateSawtoothVarObj() {
     this.getParams = function () {
         return { percussion: false, fixed: [], parameters: [ { name: "unsawtoothness", display: "Un-Sawtoothness" } ] };
     };
-    this.queUpANote = function (startMoment, frequency, duration, amplitude, instSpecificParams) {
+    this.queUpANote = function (startMoment, frequency, duration, amplitude, instSpecificParams, originalNote) {
         var variance, idxname, theBuffer, node;
         variance = instSpecificParams.unsawtoothness;
         idxname = "sawtoothvar" + frequency + "x" + duration + "x" + amplitude + "x" + variance;
@@ -1037,7 +1037,7 @@ function InstantiateSawtoothStartStopObj() {
             ]
         };
     };
-    this.queUpANote = function (startMoment, frequency, duration, amplitude, instSpecificParams) {
+    this.queUpANote = function (startMoment, frequency, duration, amplitude, instSpecificParams, originalNote) {
         var startvariance, stopvariance, riserate, idxname, theBuffer, node;
         startvariance = instSpecificParams.startunsawtoothness;
         stopvariance = instSpecificParams.stopunsawtoothness;
@@ -1061,7 +1061,7 @@ function InstantiateNoiseObj() {
     this.getParams = function () {
         return { percussion: true, fixed: [], parameters: [] };
     };
-    this.queUpANote = function (startMoment, frequency, duration, amplitude, instSpecificParams) {
+    this.queUpANote = function (startMoment, frequency, duration, amplitude, instSpecificParams, originalNote) {
         var idxname, theBuffer, node;
         idxname = instSpecificParams; // delete me -- just to pass camelCaseJSLint
         idxname = "forwardsnoise" + frequency + "x" + duration + "x" + amplitude;
@@ -1083,7 +1083,7 @@ function InstantiateBackwardsNoiseObj() {
     this.getParams = function () {
         return { percussion: true, fixed: [], parameters: [] };
     };
-    this.queUpANote = function (startMoment, frequency, duration, amplitude, instSpecificParams) {
+    this.queUpANote = function (startMoment, frequency, duration, amplitude, instSpecificParams, originalNote) {
         var idxname, theBuffer, node;
         idxname = instSpecificParams; // delete me -- just to pass camelCaseJSLint
         idxname = "backwardsnoise" + frequency + "x" + duration + "x" + amplitude;
@@ -1105,7 +1105,7 @@ function InstantiateSteamPopObj() {
     this.getParams = function () {
         return { percussion: true, fixed: [], parameters: [] };
     };
-    this.queUpANote = function (startMoment, frequency, duration, amplitude, instSpecificParams) {
+    this.queUpANote = function (startMoment, frequency, duration, amplitude, instSpecificParams, originalNote) {
         var idxname, theBuffer, node;
         idxname = instSpecificParams; // delete me -- just to pass camelCaseJSLint
         idxname = "steampop" + frequency + "x" + duration + "x" + amplitude;
@@ -1127,7 +1127,7 @@ function InstantiateFMSynthOriginalObj() {
     this.getParams = function () {
         return { percussion: false, fixed: [], parameters: [] };
     };
-    this.queUpANote = function (startMoment, frequency, duration, amplitude, instSpecificParams) {
+    this.queUpANote = function (startMoment, frequency, duration, amplitude, instSpecificParams, originalNote) {
         var idxname, theBuffer, node;
         idxname = instSpecificParams; // delete me -- just to pass camelCaseJSLint
         idxname = "fmsynthoriginal" + frequency + "x" + duration + "x" + amplitude;
@@ -1152,7 +1152,7 @@ function InstantiateFMSynthVarObj() {
             { name: "beta", display: "Beta" }
         ] };
     };
-    this.queUpANote = function (startMoment, frequency, duration, amplitude, instSpecificParams) {
+    this.queUpANote = function (startMoment, frequency, duration, amplitude, instSpecificParams, originalNote) {
         var modulator, beta, idxname, theBuffer, node;
         modulator = instSpecificParams.modulator;
         beta = instSpecificParams.beta;
@@ -1180,7 +1180,7 @@ function InstantiateFMSynthStartStopObj() {
             { name: "stopbeta", display: "Stop beta" }
         ] };
     };
-    this.queUpANote = function (startMoment, frequency, duration, amplitude, instSpecificParams) {
+    this.queUpANote = function (startMoment, frequency, duration, amplitude, instSpecificParams, originalNote) {
         var startmodulator, startbeta, stopmodulator, stopbeta, idxname, theBuffer, node;
         startmodulator = instSpecificParams.startmodulator;
         startbeta = instSpecificParams.startbeta;
@@ -1216,7 +1216,7 @@ function InstantiateFMSynthSquareObj() {
             ]
         };
     };
-    this.queUpANote = function (startMoment, frequency, duration, amplitude, instSpecificParams) {
+    this.queUpANote = function (startMoment, frequency, duration, amplitude, instSpecificParams, originalNote) {
         var startThreshold, stopThreshold, startModulator, startBeta, stopModulator, stopBeta, idxname, theBuffer, node;
         startThreshold = instSpecificParams.startunsquareness;
         stopThreshold = instSpecificParams.stopunsquareness;
@@ -1250,7 +1250,7 @@ function InstantiateFMSynthCrossNoteObj() {
             ]
         };
     };
-    this.queUpANote = function (startMoment, frequency, duration, amplitude, instSpecificParams) {
+    this.queUpANote = function (startMoment, frequency, duration, amplitude, instSpecificParams, originalNote) {
         var modulator, beta, theBuffer, node;
         modulator = instSpecificParams.modulator;
         beta = instSpecificParams.beta;
@@ -1267,7 +1267,7 @@ function InstantiateWadSinObj() {
     this.getParams = function () {
         return { percussion: false, fixed: [], parameters: [] };
     };
-    this.queUpANote = function (startMoment, frequency, duration, amplitude, instSpecificParams) {
+    this.queUpANote = function (startMoment, frequency, duration, amplitude, instSpecificParams, originalNote) {
         var idxname, theWad;
         idxname = instSpecificParams; // delete me -- just to pass camelCaseJSLint
         idxname = "wadsin";
@@ -1286,7 +1286,7 @@ function InstantiateWadKickObj() {
     this.getParams = function () {
         return { percussion: true, fixed: [], parameters: [] };
     };
-    this.queUpANote = function (startMoment, frequency, duration, amplitude, instSpecificParams) {
+    this.queUpANote = function (startMoment, frequency, duration, amplitude, instSpecificParams, originalNote) {
         var idxname, theWad;
         idxname = duration; // delete me -- just to pass camelCaseJSLint
         idxname = amplitude; // delete me -- just to pass camelCaseJSLint
@@ -1307,7 +1307,7 @@ function InstantiateWadBassObj() {
     this.getParams = function () {
         return { percussion: false, fixed: [], parameters: [] };
     };
-    this.queUpANote = function (startMoment, frequency, duration, amplitude, instSpecificParams) {
+    this.queUpANote = function (startMoment, frequency, duration, amplitude, instSpecificParams, originalNote) {
         var idxname, theWad;
         idxname = instSpecificParams; // delete me -- just to pass camelCaseJSLint
         idxname = "wadbass";
@@ -1326,7 +1326,7 @@ function InstantiateWadSnareObj() {
     this.getParams = function () {
         return { percussion: true, fixed: [], parameters: [] };
     };
-    this.queUpANote = function (startMoment, frequency, duration, amplitude, instSpecificParams) {
+    this.queUpANote = function (startMoment, frequency, duration, amplitude, instSpecificParams, originalNote) {
         var idxname, theWad;
         idxname = instSpecificParams; // delete me -- just to pass camelCaseJSLint
         idxname = "wadsnare";
@@ -1346,7 +1346,7 @@ function InstantiateWadHihatOpenObj() {
     this.getParams = function () {
         return { percussion: false, fixed: [], parameters: [] };
     };
-    this.queUpANote = function (startMoment, frequency, duration, amplitude, instSpecificParams) {
+    this.queUpANote = function (startMoment, frequency, duration, amplitude, instSpecificParams, originalNote) {
         var idxname, theWad;
         idxname = duration; // delete me -- just to pass camelCaseJSLint
         idxname = instSpecificParams; // delete me -- just to pass camelCaseJSLint
@@ -1368,7 +1368,7 @@ function InstantiateWadHihatClosedObj() {
     this.getParams = function () {
         return { percussion: false, fixed: [], parameters: [] };
     };
-    this.queUpANote = function (startMoment, frequency, duration, amplitude, instSpecificParams) {
+    this.queUpANote = function (startMoment, frequency, duration, amplitude, instSpecificParams, originalNote) {
         var idxname, theWad;
         idxname = duration; // delete me -- just to pass camelCaseJSLint
         idxname = instSpecificParams; // delete me -- just to pass camelCaseJSLint
@@ -1390,7 +1390,7 @@ function InstantiateWadFluteObj() {
     this.getParams = function () {
         return { percussion: false, fixed: [], parameters: [] };
     };
-    this.queUpANote = function (startMoment, frequency, duration, amplitude, instSpecificParams) {
+    this.queUpANote = function (startMoment, frequency, duration, amplitude, instSpecificParams, originalNote) {
         var idxname, theWad;
         idxname = instSpecificParams; // delete me -- just to pass camelCaseJSLint
         // idxname = "wadflute" + frequency + "x" + duration + "x" + amplitude;
@@ -1411,7 +1411,7 @@ function InstantiateWadPianoObj() {
     this.getParams = function () {
         return { percussion: false, fixed: [], parameters: [] };
     };
-    this.queUpANote = function (startMoment, frequency, duration, amplitude, instSpecificParams) {
+    this.queUpANote = function (startMoment, frequency, duration, amplitude, instSpecificParams, originalNote) {
         var idxname, theWad;
         idxname = instSpecificParams; // delete me -- just to pass camelCaseJSLint
         // idxname = "wadpiano" + frequency + "x" + duration + "x" + amplitude;
@@ -1434,7 +1434,7 @@ function InstantiateDanLights() {
             percussion: true,
             fixed: [
                 { name: "bank", display: "Bank", type: "list", values: ["lobbywall=Lobby Wall", "lobbylanterns=Lobby Lanterns", "bay=Bay"], default: "lobbywall" },
-                { name: "unit", display: "Unit", type: "list", values: ["1=1", "2=2", "3=3", "4=4", "5=5", "6=6"], default: "1" },
+                { name: "unit", display: "Unit", type: "list", values: ["0=*", "1=1", "2=2", "3=3", "4=4", "5=5", "6=6"], default: "1" },
                 { name: "basecolor", display: "Base Color", type: "list", values: ["red=Red", "yellow=Yellow", "green=Green", "cyan=Cyan", "blue=Blue", "magenta=Magenta"], default: "red" }
             ],
             parameters: [
@@ -1443,7 +1443,7 @@ function InstantiateDanLights() {
             ]
         };
     };
-    this.queUpANote = function (startMoment, frequency, duration, amplitude, instSpecificParams) {
+    this.queUpANote = function (startMoment, frequency, duration, amplitude, instSpecificParams, originalNote) {
         var currentTime, startHue, stopHue, saturation, bank, unit, twist;
         console.log("startMoment");
         console.log(startMoment);
@@ -1479,6 +1479,11 @@ function InstantiateDanLights() {
                 startHue = 213;
                 break;
 	}
+        originalNote = originalNote - Math.floor(originalNote); // strip off octave, use only note
+        startHue = startHue + Math.floor(originalNote * 256);
+        if (startHue > 255) {
+            startHue = startHue - 256;
+        }
         twist = Math.floor(instSpecificParams["twist"] * 128)
         stopHue = startHue + twist;
         if (stopHue > 255) {
@@ -2628,7 +2633,7 @@ function umtAddSymmetryBaseToVoice(lpnum, tab, vcnum, minSize, maxSize, chunkSiz
 
 function umtSchedulePlayOfNote(lpnum, tab, voicenum, notenum, ampScalar, tempoScalar, center, adjustedStartTime) {
     "use strict";
-    var harmonizedOctave, harmonizedNum, harmonizedDnom, duration, amplitude, instSpecificParams, frequency, instrument;
+    var harmonizedOctave, harmonizedNum, harmonizedDnom, duration, amplitude, instSpecificParams, frequency, instrument, originalNote;
     if (gUmt.loop[lpnum].score.songTab[tab].voice[voicenum].notes[notenum].rest === false) {
         harmonizedOctave = gUmt.loop[lpnum].score.songTab[tab].voice[voicenum].notes[notenum].harmOctave;
         harmonizedNum = gUmt.loop[lpnum].score.songTab[tab].voice[voicenum].notes[notenum].harmNum;
@@ -2641,7 +2646,8 @@ function umtSchedulePlayOfNote(lpnum, tab, voicenum, notenum, ampScalar, tempoSc
         frequency = frequency * (harmonizedNum / harmonizedDnom);
         instrument = gUmt.loop[lpnum].score.songTab[tab].voice[voicenum].instrument;
         // umtTestDetectDuplicate(instrument, adjustedStartTime, frequency, duration, amplitude);
-        gUmt.instrumentBank[instrument].queUpANote(adjustedStartTime, frequency, duration, amplitude, instSpecificParams);
+        originalNote = gUmt.loop[lpnum].score.songTab[tab].voice[voicenum].notes[notenum].pitch;
+        gUmt.instrumentBank[instrument].queUpANote(adjustedStartTime, frequency, duration, amplitude, instSpecificParams, originalNote);
     }
 }
 
@@ -5151,6 +5157,16 @@ function umtExecSaveAs() {
     });
 }
 
+function umtConnectWebSocket() {
+    gUmt.localSocket = new WebSocket("ws://127.0.0.1:46398/umtlocal");
+    gUmt.localSocket.onmessage = function (event) {
+        console.log(event.data);
+    }
+}
+function umtExecTestReconnect() {
+    umtConnectWebSocket();
+}
+
 var tabContent, tabCounter, tabTemplate, tabs;
 
 // tabs
@@ -5423,10 +5439,7 @@ jQuery(function () {
         }
     });
 
-    gUmt.localSocket = new WebSocket("ws://127.0.0.1:46398/umtlocal");
-    gUmt.localSocket.onmessage = function (event) {
-        console.log(event.data);
-    }
+    umtConnectWebSocket();
 
     // start song
     umtCreateInstrumentBank();
@@ -5488,6 +5501,8 @@ jQuery(function () {
 		fmt.Fprintln(w, name)
 	}
 	fmt.Fprintln(w, `" /> <input type="button" id="save_as" value="Save As" />
+&nbsp;&nbsp;&nbsp;&nbsp;
+<input type="button" id="test_reconnect" value="Reconnect" />
 
 </p>
 
@@ -5891,6 +5906,9 @@ umtListenElement.addEventListener("click", umtExecSaveAs, true);
 // umtListenElement = document.getElementById("test_symmetry_system");
 // umtListenElement.addEventListener("click", umtTestSetupCopyTransTestSection, true);
 
+umtListenElement = document.getElementById("test_reconnect");
+umtListenElement.addEventListener("click", umtExecTestReconnect, true);
+
 </script>
 
 </body>
@@ -6112,3 +6130,5 @@ func Handler(w http.ResponseWriter, r *http.Request, op string, userid uint64) {
 		static.OutputStaticFileWithContentType(w, filename)
 	}
 }
+
+
