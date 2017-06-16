@@ -29,11 +29,16 @@ func getDbConnection() (mysql.Conn, error) {
 	return db, err
 }
 
-func showLinksMenuBar(w http.ResponseWriter) {
+func htm(str string) string {
+	return html.EscapeString(str)
+}
+
+func showLinksMenuBar(w http.ResponseWriter, userName string) {
 	fmt.Fprint(w, `
 <p><a href="add">Add</a>
-<a href="list">List</a></p>
-`)
+<a href="list">List</a> &middot;
+<font color="grey">`+htm(userName)+`</font>
+</p>`)
 }
 
 func showExposition(w http.ResponseWriter, targetUrl string, imageUrl string, description string) {
@@ -53,7 +58,7 @@ Google+ / <a href="https://www.facebook.com/">Facebook</a> / <a href="http://www
 	return
 }
 
-func add(w http.ResponseWriter, r *http.Request, op string) {
+func add(w http.ResponseWriter, r *http.Request, op string, userid uint64, userName string) {
 	var showform bool
 	var error_list map[string]string
 	var ui_grabbed_url string
@@ -130,7 +135,7 @@ func add(w http.ResponseWriter, r *http.Request, op string) {
 <body>
   <section>
 `)
-			showLinksMenuBar(w)
+			showLinksMenuBar(w, userName)
 			fmt.Fprint(w, `
     <h1>URL grabber</h1>
 	<a href="add">Next</a>
@@ -490,7 +495,7 @@ timeridUrl = window.setInterval(execUrlGrab, 100);
 <body>
   <section>
 `)
-		showLinksMenuBar(w)
+		showLinksMenuBar(w, userName)
 		fmt.Fprint(w, `
     <h1>URL grabber</h1>
 
@@ -579,7 +584,7 @@ startElement.addEventListener('click', execDoBothQuotesHyphensAndSingle, true);
 
 }
 
-func list(w http.ResponseWriter, r *http.Request, op string) {
+func list(w http.ResponseWriter, r *http.Request, op string, userid uint64, userName string) {
 	var sql string
 	header := w.Header()
 	header.Set("Content-Type", "text/html; charset=utf-8")
@@ -589,7 +594,7 @@ func list(w http.ResponseWriter, r *http.Request, op string) {
 <body>
   <section>
 `)
-	showLinksMenuBar(w)
+	showLinksMenuBar(w, userName)
 	fmt.Fprint(w, `
     <h1>List of URLs</h1>
 `)
@@ -677,7 +682,7 @@ func list(w http.ResponseWriter, r *http.Request, op string) {
 </html>`)
 }
 
-func exposit(w http.ResponseWriter, r *http.Request, op string) {
+func exposit(w http.ResponseWriter, r *http.Request, op string, userid uint64, userName string) {
 	err := r.ParseForm()
 	if err != nil {
 		fmt.Fprintln(w, err)
@@ -698,7 +703,7 @@ func exposit(w http.ResponseWriter, r *http.Request, op string) {
 <body>
   <section>
 `)
-	showLinksMenuBar(w)
+	showLinksMenuBar(w, userName)
 	fmt.Fprint(w, `
     <h1>Exposition</h1>
 `)
@@ -740,7 +745,7 @@ func checkedStr(is_set bool) string {
 	return ""
 }
 
-func edit(w http.ResponseWriter, r *http.Request, op string) {
+func edit(w http.ResponseWriter, r *http.Request, op string, userid uint64, userName string) {
 	var error_occurred bool
 	var error_list map[string]string
 	var linkid uint64
@@ -909,7 +914,7 @@ func edit(w http.ResponseWriter, r *http.Request, op string) {
 </head><body>
   <section>
 `)
-		showLinksMenuBar(w)
+		showLinksMenuBar(w, userName)
 		fmt.Fprint(w, `
     <h1>Edit URL</h1>
 
@@ -935,7 +940,7 @@ func edit(w http.ResponseWriter, r *http.Request, op string) {
 	return
 }
 
-func delete(w http.ResponseWriter, r *http.Request, op string) {
+func delete(w http.ResponseWriter, r *http.Request, op string, userid uint64, userName string) {
 	var linkid uint64
 	var ui_target_url string
 	var ui_description string
@@ -1031,7 +1036,7 @@ func delete(w http.ResponseWriter, r *http.Request, op string) {
 </head><body>
   <section>
 `)
-		showLinksMenuBar(w)
+		showLinksMenuBar(w, userName)
 		fmt.Fprint(w, `
     <h1>Delete URL</h1>
 
@@ -1052,7 +1057,7 @@ func delete(w http.ResponseWriter, r *http.Request, op string) {
 	return
 }
 
-func email(w http.ResponseWriter, r *http.Request, op string) {
+func email(w http.ResponseWriter, r *http.Request, op string, userid uint64, userName string) {
 	var cutoff uint64
 	double_linefeeds := true
 	method := r.Method
@@ -1085,7 +1090,7 @@ func email(w http.ResponseWriter, r *http.Request, op string) {
 <body>
   <section>
 `)
-	showLinksMenuBar(w)
+	showLinksMenuBar(w, userName)
 	fmt.Fprint(w, `
     <h1>For Emails</h1>
 <textarea rows="100" cols="80">
@@ -1197,7 +1202,7 @@ func urlToDomainOnly(url string) string {
 	return rv
 }
 
-func homepage(w http.ResponseWriter, r *http.Request, op string, userid uint64, showMusic bool) {
+func homepage(w http.ResponseWriter, r *http.Request, op string, userid uint64, userName string, showMusic bool) {
 	var sql string
 	header := w.Header()
 	header.Set("Content-Type", "text/html; charset=utf-8")
@@ -1330,8 +1335,10 @@ body {
 </html>`)
 }
 
-func Handler(w http.ResponseWriter, r *http.Request, host string, op string, userid uint64) {
+func Handler(w http.ResponseWriter, r *http.Request, host string, op string, userid uint64, userName string) {
 	fmt.Println("op in links Handler", op)
+	fmt.Println("userid", userid)
+	fmt.Println("userName", userName)
 	music := false
 	if host == "musicfortoday.tv" {
 		music = true
@@ -1342,26 +1349,28 @@ func Handler(w http.ResponseWriter, r *http.Request, host string, op string, use
 	switch {
 	case op == "add":
 		if userid == 1 {
-			add(w, r, op)
+			add(w, r, op, userid, userName)
 		}
 	case op == "list":
-		list(w, r, op)
+		list(w, r, op, userid, userName)
 	case op == "exposit":
-		exposit(w, r, op)
+		if userid == 1 {
+			exposit(w, r, op, userid, userName)
+		}
 	case op == "edit":
 		if userid == 1 {
-			edit(w, r, op)
+			edit(w, r, op, userid, userName)
 		}
 	case op == "delete":
 		if userid == 1 {
-			delete(w, r, op)
+			delete(w, r, op, userid, userName)
 		}
 	case op == "email":
-		email(w, r, op)
+		email(w, r, op, userid, userName)
 	case op == "":
-		homepage(w, r, op, userid, music)
+		homepage(w, r, op, userid, userName, music)
 	case op == "home":
-		homepage(w, r, op, userid, music)
+		homepage(w, r, op, userid, userName, music)
 	default:
 		// fmt.Fprintln(w, "Could not find page:", op)
 		filename := "/home/ec2-user/wayneserver/staticappcontent/links/" + op
