@@ -146,13 +146,13 @@ func recalculateLaplace(db mysql.Conn, userid uint64, setid uint64, popFactor fl
 
 }
 
-func showBlindMenuBar(w http.ResponseWriter) {
+func showBlindMenuBar(w http.ResponseWriter, userName string) {
 	fmt.Fprint(w, `
-<p><a href="scrape">Scrape</a></p>
+<p><a href="scrape">Scrape</a> &middot; `+htm(userName)+`</p>
 `)
 }
 
-func showListPage(w http.ResponseWriter, r *http.Request, op string, userid uint64) {
+func showListPage(w http.ResponseWriter, r *http.Request, op string, userid uint64, userName string) {
 	var sql string
 	var book struct {
 		idBook  uint64
@@ -180,7 +180,7 @@ func showListPage(w http.ResponseWriter, r *http.Request, op string, userid uint
 		writeaccess = true
 	}
 	if writeaccess {
-		showBlindMenuBar(w)
+		showBlindMenuBar(w, userName)
 	}
 	fmt.Fprint(w, `
     <h1>List of Books</h1>
@@ -346,7 +346,7 @@ func round(x float64) int {
 	return int(math.Floor(x + 0.5))
 }
 
-func showScrapePage(w http.ResponseWriter, r *http.Request, op string, userid uint64) {
+func showScrapePage(w http.ResponseWriter, r *http.Request, op string, userid uint64, userName string) {
 	showform := false
 	errorList := make(map[string]string)
 	errorOccurred := false
@@ -550,7 +550,7 @@ func showScrapePage(w http.ResponseWriter, r *http.Request, op string, userid ui
 			}
 			save.idBook = bookid
 			save.idUser = userid
-			save.idSet = 7 // hardcoded for now
+			save.idSet = 8 // hardcoded for now
 			save.title = title
 			save.authors = authors
 			save.stars5 = stars5
@@ -599,7 +599,7 @@ func showScrapePage(w http.ResponseWriter, r *http.Request, op string, userid ui
 				fmt.Println(err)
 				panic("Exec failed")
 			}
-			setid := 7 // BUGBUG this is hardcoded but shouldn't be
+			setid := 8 // BUGBUG this is hardcoded but shouldn't be
 			http.Redirect(w, r, "list?set="+inttostr(setid), 302)
 		}
 	}
@@ -653,7 +653,7 @@ func showScrapePage(w http.ResponseWriter, r *http.Request, op string, userid ui
 	}
 }
 
-func showDeletePage(w http.ResponseWriter, r *http.Request, op string, userid uint64) {
+func showDeletePage(w http.ResponseWriter, r *http.Request, op string, userid uint64, userName string) {
 	if userid != 1 {
 		panic("delete page reached without access")
 	}
@@ -738,7 +738,7 @@ func showDeletePage(w http.ResponseWriter, r *http.Request, op string, userid ui
 		}
 		stmt.Bind(bookid, userid)
 		_, _, err = stmt.Exec()
-		setid := 7 // BUGBUG this is hardcoded but shouldn't be
+		setid := 8 // BUGBUG this is hardcoded but shouldn't be
 		http.Redirect(w, r, "list?set="+inttostr(setid), 302)
 	}
 	if showform {
@@ -757,7 +757,7 @@ func showDeletePage(w http.ResponseWriter, r *http.Request, op string, userid ui
 <body>
   <section>
 `)
-		showBlindMenuBar(w)
+		showBlindMenuBar(w, userName)
 		fmt.Fprint(w, `
     <h1>Delete Blind Book</h1>
 `)
@@ -785,20 +785,20 @@ Do you want to delete `+html.EscapeString(title)+` by `+html.EscapeString(author
 	}
 }
 
-func Handler(w http.ResponseWriter, r *http.Request, op string, userid uint64) {
+func Handler(w http.ResponseWriter, r *http.Request, op string, userid uint64, userName string) {
 	fmt.Println("We are in the blind handler, and op is", op)
 	switch {
 	case op == "scrape":
 		if userid != 0 {
-			showScrapePage(w, r, op, userid)
+			showScrapePage(w, r, op, userid, userName)
 		}
 	case op == "list":
 		if userid != 0 {
-			showListPage(w, r, op, userid)
+			showListPage(w, r, op, userid, userName)
 		}
 	case op == "delete":
 		if userid != 0 {
-			showDeletePage(w, r, op, userid)
+			showDeletePage(w, r, op, userid, userName)
 		}
 	default:
 		// fmt.Fprintln(w, "Could not find page:", op)
@@ -806,4 +806,3 @@ func Handler(w http.ResponseWriter, r *http.Request, op string, userid uint64) {
 		static.OutputStaticFileWithContentType(w, filename)
 	}
 }
-
