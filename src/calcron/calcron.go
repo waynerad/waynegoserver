@@ -38,6 +38,23 @@ func getDbConnection() (mysql.Conn, error) {
 	return db, err
 }
 
+func htm(s string) string {
+	return html.EscapeString(s)
+}
+
+func strToInt(str string) int {
+	value, err := strconv.ParseInt(str, 10, 64)
+	if err != nil {
+		fmt.Println(err)
+		panic("ParseInt failed")
+	}
+	return int(value)
+}
+
+func intToStr(z int) string {
+	return strconv.FormatInt(int64(z), 10)
+}
+
 func checkIsNumeric(str string) bool {
 	for i := 0; i < len(str); i++ {
 		c := str[i]
@@ -51,7 +68,7 @@ func checkIsNumeric(str string) bool {
 	return true
 }
 
-func checkTimeFieldSyntaxError(contents string, allowSlash bool) bool {
+func checkTimeFieldSyntaxError(contents string) bool {
 	if contents == "" {
 		return true
 	}
@@ -61,8 +78,17 @@ func checkTimeFieldSyntaxError(contents string, allowSlash bool) bool {
 	if checkIsNumeric(contents) {
 		return false
 	}
-	if !allowSlash {
-		return true
+	hasComma := strings.Index(contents, ",")
+	if hasComma > 0 {
+		valStrs := strings.Split(contents, ",")
+		num := len(valStrs)
+		for i := 0; i < num; i++ {
+			_, err := strconv.ParseInt(valStrs[i], 10, 64)
+			if err != nil {
+				return true
+			}
+		}
+		return false
 	}
 	i := strings.Index(contents, "/")
 	if i == -1 {
@@ -80,74 +106,59 @@ func checkTimeFieldSyntaxError(contents string, allowSlash bool) bool {
 }
 
 func testCheckTimeFieldSyntaxError() {
-	if !checkTimeFieldSyntaxError("", true) {
+	if !checkTimeFieldSyntaxError("") {
 		fmt.Println("checkTimeFieldSyntaxError test failed on empty string.")
 	}
-	if !checkTimeFieldSyntaxError("A", true) {
+	if !checkTimeFieldSyntaxError("A") {
 		fmt.Println("checkTimeFieldSyntaxError test failed on single letter.")
 	}
-	if !checkTimeFieldSyntaxError("word", true) {
+	if !checkTimeFieldSyntaxError("word") {
 		fmt.Println("checkTimeFieldSyntaxError test failed on letters.")
 	}
-	if !checkTimeFieldSyntaxError("5A", true) {
+	if !checkTimeFieldSyntaxError("5A") {
 		fmt.Println("checkTimeFieldSyntaxError test failed on number and letter.")
 	}
-	if checkTimeFieldSyntaxError("5", true) {
+	if checkTimeFieldSyntaxError("5") {
 		fmt.Println("checkTimeFieldSyntaxError test failed on single-digit number.")
 	}
-	if checkTimeFieldSyntaxError("55", true) {
+	if checkTimeFieldSyntaxError("55") {
 		fmt.Println("checkTimeFieldSyntaxError test failed on double digit number.")
 	}
-	if checkTimeFieldSyntaxError("*", true) {
+	if checkTimeFieldSyntaxError("*") {
 		fmt.Println("checkTimeFieldSyntaxError test failed on asterisk.")
 	}
-	if !checkTimeFieldSyntaxError("**", true) {
+	if !checkTimeFieldSyntaxError("**") {
 		fmt.Println("checkTimeFieldSyntaxError test failed on double asterisk.")
 	}
-	if !checkTimeFieldSyntaxError("*5", true) {
+	if !checkTimeFieldSyntaxError("*5") {
 		fmt.Println("checkTimeFieldSyntaxError test failed on asterisk and number.")
 	}
-	if !checkTimeFieldSyntaxError("*A", true) {
+	if !checkTimeFieldSyntaxError("*A") {
 		fmt.Println("checkTimeFieldSyntaxError test failed on asterisk and letter.")
 	}
-	if !checkTimeFieldSyntaxError("*/", true) {
+	if !checkTimeFieldSyntaxError("*/") {
 		fmt.Println("checkTimeFieldSyntaxError test failed on asterisk slash.")
 	}
-	if !checkTimeFieldSyntaxError("*/A", true) {
+	if !checkTimeFieldSyntaxError("*/A") {
 		fmt.Println("checkTimeFieldSyntaxError test failed on asterisk slash letter.")
 	}
-	if checkTimeFieldSyntaxError("*/5", true) {
+	if checkTimeFieldSyntaxError("*/5") {
 		fmt.Println("checkTimeFieldSyntaxError test failed on asterisk slash digit.")
 	}
-	if checkTimeFieldSyntaxError("*/6", true) {
+	if checkTimeFieldSyntaxError("*/6") {
 		fmt.Println("checkTimeFieldSyntaxError test failed on asterisk slash double digit.")
 	}
-	if checkTimeFieldSyntaxError("*/888", true) {
+	if checkTimeFieldSyntaxError("*/888") {
 		fmt.Println("checkTimeFieldSyntaxError test failed on asterisk slash triple digit.")
 	}
-	if checkTimeFieldSyntaxError("*/1234569", true) {
+	if checkTimeFieldSyntaxError("*/1234569") {
 		fmt.Println("checkTimeFieldSyntaxError test failed on asterisk slash 8-digit.")
 	}
-	if !checkTimeFieldSyntaxError(" *", true) {
+	if !checkTimeFieldSyntaxError(" *") {
 		fmt.Println("checkTimeFieldSyntaxError test failed on leading space.")
 	}
-	if !checkTimeFieldSyntaxError("*/", false) {
-		fmt.Println("checkTimeFieldSyntaxError test failed on asterisk slash.")
-	}
-	if !checkTimeFieldSyntaxError("*/A", false) {
-		fmt.Println("checkTimeFieldSyntaxError test failed on asterisk slash letter.")
-	}
-	if !checkTimeFieldSyntaxError("*/3", false) {
-		fmt.Println("checkTimeFieldSyntaxError test failed on asterisk slash digit + disallow slash.")
-	}
-	if !checkTimeFieldSyntaxError("*/22", false) {
-		fmt.Println("checkTimeFieldSyntaxError test failed on asterisk slash double digit + disallow slash.")
-	}
-	if !checkTimeFieldSyntaxError("*/444", false) {
-		fmt.Println("checkTimeFieldSyntaxError test failed on asterisk slash triple digit + disallow slash.")
-	}
-	if !checkTimeFieldSyntaxError(" *", false) {
-		fmt.Println("checkTimeFieldSyntaxError test failed on leading space + disallow slash.")
+	if checkTimeFieldSyntaxError("1,2,3") {
+		fmt.Println("checkTimeFieldSyntaxError test failed on comma separated + allow slash.")
 	}
 }
 
@@ -215,6 +226,33 @@ func applyRule(currentValue int, rule string, fieldLimit int, fieldMin int, curr
 			return currentValue, newCarry
 		}
 	}
+
+	hasComma := strings.Index(rule, ",")
+	if hasComma > 0 {
+		valStrs := strings.Split(rule, ",")
+		num := len(valStrs)
+		valInts := make([]int, num)
+		for i := 0; i < num; i++ {
+			valInts[i] = strToInt(valStrs[i])
+		}
+		currentPos := 0
+		newCarry = 0
+		currentValue = currentValue + currentCarry
+		for valInts[currentPos] < currentValue {
+			currentPos++
+			if currentPos >= num {
+				newCarry++
+				currentValue = currentValue - fieldLimit
+				if currentValue < fieldMin {
+					currentValue = fieldMin
+				}
+				currentPos = 0
+			}
+		}
+		currentValue = valInts[currentPos]
+		return currentValue, newCarry
+	}
+
 	value, err := strconv.ParseInt(rule, 10, 64)
 	if err != nil {
 		fmt.Println(err)
@@ -282,6 +320,42 @@ func testApplyRule() {
 		fmt.Println("newval", newval)
 		fmt.Println("carry", carry)
 	}
+	newval, carry = applyRule(1, "2,3,5,7,11,13,17,19,23,29,31,37,41,43,47,53,59", 60, 0, 0)
+	if (newval != 2) || (carry != 0) {
+		fmt.Println("test 13 failed for applyRule")
+	}
+	newval, carry = applyRule(3, "2,3,5,7,11,13,17,19,23,29,31,37,41,43,47,53,59", 60, 0, 0)
+	if (newval != 3) || (carry != 0) {
+		fmt.Println("test 14 failed for applyRule")
+	}
+	newval, carry = applyRule(3, "2,3,5,7,11,13,17,19,23,29,31,37,41,43,47,53,59", 60, 0, 1)
+	if (newval != 5) || (carry != 0) {
+		fmt.Println("test 15 failed for applyRule")
+	}
+	newval, carry = applyRule(30, "2,3,5,7,11,13,17,19,23,29,31,37,41,43,47,53,59", 60, 0, 0)
+	if (newval != 31) || (carry != 0) {
+		fmt.Println("test 16 failed for applyRule")
+	}
+	newval, carry = applyRule(31, "2,3,5,7,11,13,17,19,23,29,31,37,41,43,47,53,59", 60, 0, 1)
+	if (newval != 37) || (carry != 0) {
+		fmt.Println("test 17 failed for applyRule")
+	}
+	newval, carry = applyRule(45, "2,3,5,7,11,13,17,19,23,29,31,37,41,43,47,53,59", 60, 0, 0)
+	if (newval != 47) || (carry != 0) {
+		fmt.Println("test 18 failed for applyRule")
+	}
+	newval, carry = applyRule(45, "2,3,5,7,11,13,17,19,23,29,31,37,41,43,47,53,59", 60, 0, 1)
+	if (newval != 47) || (carry != 0) {
+		fmt.Println("test 19 failed for applyRule")
+	}
+	newval, carry = applyRule(59, "2,3,5,7,11,13,17,19,23,29,31,37,41,43,47,53,59", 60, 0, 0)
+	if (newval != 59) || (carry != 0) {
+		fmt.Println("test 20 failed for applyRule")
+	}
+	newval, carry = applyRule(59, "2,3,5,7,11,13,17,19,23,29,31,37,41,43,47,53,59", 60, 0, 1)
+	if (newval != 2) || (carry != 1) {
+		fmt.Println("test 21 failed for applyRule")
+	}
 }
 
 func countOfDaysInThisMonth(timeCode time.Time) int {
@@ -295,6 +369,41 @@ func countOfDaysInThisMonth(timeCode time.Time) int {
 		check = tc.Month()
 	}
 	return count
+}
+
+func makeIntListFromRule(rule string, starLimit int) []int {
+	hasComma := strings.Index(rule, ",")
+	if hasComma > 0 {
+		valStrs := strings.Split(rule, ",")
+		num := len(valStrs)
+		resultList := make([]int, num)
+		for i := 0; i < num; i++ {
+			resultList[i] = strToInt(valStrs[i])
+		}
+		return resultList
+	}
+	if len(rule) >= 2 {
+		if rule[0:2] == "*/" {
+			denomStr := rule[2:]
+			denomVal := strToInt(denomStr)
+			num := starLimit / denomVal // integer division! Remainder is discarded
+			resultList := make([]int, num)
+			for i := 0; i < num; i++ {
+				resultList[i] = i * denomVal
+			}
+			return resultList
+		}
+	}
+	if rule == "*" {
+		resultList := make([]int, starLimit)
+		for i := 0; i < starLimit; i++ {
+			resultList[i] = i
+		}
+		return resultList
+	}
+	resultList := make([]int, 1)
+	resultList[0] = strToInt(rule)
+	return resultList
 }
 
 func calculateNextCurrentTimeForEvent(currentTimeCode uint64, yearRule string, monthRule string, domRule string, dowRule string, nthRule string, hourRule string, minuteRule string, secondRule string) uint64 {
@@ -322,6 +431,9 @@ func calculateNextCurrentTimeForEvent(currentTimeCode uint64, yearRule string, m
 	}
 
 	monthlengs := [...]int{31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31}
+	if (timeNumbers.year % 4) == 0 {
+		monthlengs[1] = 29
+	}
 	daysinmonth := monthlengs[timeNumbers.month-1]
 	newval, _ = applyRule(timeNumbers.day, domRule, daysinmonth, 1, 0)
 	if foundDiff {
@@ -386,40 +498,59 @@ func calculateNextCurrentTimeForEvent(currentTimeCode uint64, yearRule string, m
 	result.year = newval
 
 	// move forward to weekday if weekday specificed
-
 	if dowRule != "*" {
-		dowNum, err := strconv.ParseUint(dowRule, 10, 64)
-		if err != nil {
-			fmt.Println(err)
-			panic("ParseUint failed")
-		}
-		offsetDays := 0
+		// This section is kind of a hack -- doesn't use the neat applyRule() function that everything else gets to use
+		dowNums := makeIntListFromRule(dowRule, 7)
+		nthNums := makeIntListFromRule(nthRule, 6)
 		dayTime := time.Date(result.year, time.Month(result.month), result.day, 12, 0, 0, 0, time.UTC)
 		breakloop := 0
-		for dayTime.Weekday() != time.Weekday(dowNum) {
-			dayTime = dayTime.Add(86400000000000) // 1 day
-			offsetDays++
+		matchDow := false
+		for i := 0; i < len(dowNums); i++ {
+			if dayTime.Weekday() == time.Weekday(dowNums[i]) {
+				matchDow = true
+			}
+		}
+		matchNth := false
+		checkCount := countOfDaysInThisMonth(dayTime)
+		for i := 0; i < len(nthNums); i++ {
+			if checkCount == nthNums[i] {
+				matchNth = true
+			}
+		}
+		for (!matchDow) || (!matchNth) {
 			breakloop++
-			if breakloop == 12 {
+			if breakloop == 100 {
 				panic("Stuck in endless loop.")
 			}
-		}
-		// if nth weekday of month rule specified, move forward to the nth weekday
-		if nthRule != "*" {
-			nthNum, err := strconv.ParseUint(nthRule, 10, 64)
-			if err != nil {
-				fmt.Println(err)
-				panic("ParseUint failed")
+			beforeMonth := dayTime.Month()
+			dayTime = dayTime.Add(86400000000000) // 1 day
+			afterMonth := dayTime.Month()
+			if beforeMonth != afterMonth {
+				result.day = int(dayTime.Day())
+				result.month = int(dayTime.Month())
+				newval, yearCarry := applyRule(result.month, monthRule, 12, 1, monthCarry)
+				result.month = newval
+				newval, _ = applyRule(result.year, yearRule, 2147483647, 0, yearCarry)
+				result.year = newval
+				dayTime = time.Date(result.year, time.Month(result.month), result.day, 12, 0, 0, 0, time.UTC)
 			}
-			for countOfDaysInThisMonth(dayTime) != int(nthNum) {
-				dayTime = dayTime.Add(604800000000000) // 1 week
-				offsetDays = offsetDays + 7
+			matchDow = false
+			for i := 0; i < len(dowNums); i++ {
+				if dayTime.Weekday() == time.Weekday(dowNums[i]) {
+					matchDow = true
+				}
+			}
+			matchNth = false
+			checkCount := countOfDaysInThisMonth(dayTime)
+			for i := 0; i < len(nthNums); i++ {
+				if checkCount == nthNums[i] {
+					matchNth = true
+				}
 			}
 		}
-		return timeNumbersToTimeCode(result) + uint64(offsetDays*86400)
-		// if monthRule is fixed and not "*", then this can return the wrong month!!
+		result.day = int(dayTime.Day())
+		result.month = int(dayTime.Month())
 	}
-
 	return timeNumbersToTimeCode(result)
 }
 
@@ -439,20 +570,21 @@ func getTimeZoneOffset(db mysql.Conn, userid uint64) int64 {
 	}
 	for _, row := range rows {
 		timeZoneOffset = row.Int64(0)
-		fmt.Println("timeZoneOffset", timeZoneOffset)
 	}
 	return timeZoneOffset
 }
 
-func showCalcronMenuBar(w http.ResponseWriter) {
+func showCalcronMenuBar(w http.ResponseWriter, userName string) {
 	fmt.Fprint(w, `
 <p><a href="chimes">Chimes</a>
 <a href="add">Add</a>
-<a href="list">List</a></p>
+<a href="list">List</a>
+&middot;`+htm(userName)+`
+</p>
 `)
 }
 
-func showEditPage(w http.ResponseWriter, r *http.Request, op string, userid uint64) {
+func showEditPage(w http.ResponseWriter, r *http.Request, op string, userid uint64, userName string) {
 	showform := false
 	errorList := make(map[string]string)
 	errorOccurred := false
@@ -555,35 +687,35 @@ func showEditPage(w http.ResponseWriter, r *http.Request, op string, userid uint
 		if ui.title == "" {
 			errorList["title"] = "Please specify a title."
 		}
-		if checkTimeFieldSyntaxError(ui.year, true) {
+		if checkTimeFieldSyntaxError(ui.year) {
 			errorList["year"] = "Year is invalid"
 			errorOccurred = true
 		}
-		if checkTimeFieldSyntaxError(ui.month, true) {
+		if checkTimeFieldSyntaxError(ui.month) {
 			errorList["month"] = "Month is invalid"
 			errorOccurred = true
 		}
-		if checkTimeFieldSyntaxError(ui.dom, true) {
+		if checkTimeFieldSyntaxError(ui.dom) {
 			errorList["dom"] = "Day of month is invalid"
 			errorOccurred = true
 		}
-		if checkTimeFieldSyntaxError(ui.dow, false) {
+		if checkTimeFieldSyntaxError(ui.dow) {
 			errorList["dow"] = "Day of week is invalid"
 			errorOccurred = true
 		}
-		if checkTimeFieldSyntaxError(ui.nth, false) {
+		if checkTimeFieldSyntaxError(ui.nth) {
 			errorList["nth"] = "Nth day of week in month is invalid"
 			errorOccurred = true
 		}
-		if checkTimeFieldSyntaxError(ui.hour, true) {
+		if checkTimeFieldSyntaxError(ui.hour) {
 			errorList["hour"] = "Hour is invalid"
 			errorOccurred = true
 		}
-		if checkTimeFieldSyntaxError(ui.minute, true) {
+		if checkTimeFieldSyntaxError(ui.minute) {
 			errorList["minute"] = "Minute is invalid"
 			errorOccurred = true
 		}
-		if checkTimeFieldSyntaxError(ui.second, true) {
+		if checkTimeFieldSyntaxError(ui.second) {
 			errorList["second"] = "Second is invalid"
 			errorOccurred = true
 		}
@@ -782,7 +914,7 @@ function ctstr(anyparameter) {
 <body>
   <section>
 `)
-		showCalcronMenuBar(w)
+		showCalcronMenuBar(w, userName)
 		fmt.Fprint(w, `
     <h1>CalCron Entry</h1>
 
@@ -824,7 +956,54 @@ function ctstr(anyparameter) {
 	}
 }
 
-func showListPage(w http.ResponseWriter, r *http.Request, op string, userid uint64) {
+func determineLowestBitOf(num int) int {
+	bitvals := []int{1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768}
+	if num == 0 {
+		return 0 // have to treat 0 as a special case because otherwise it'll cause an endless loop
+	}
+	i := 0
+	for {
+		v := bitvals[i]
+		if (num & v) != 0 {
+			if (num & (v - 1)) == 0 {
+				return i
+			}
+		}
+		i = i + 1
+	}
+}
+
+func getPriorityTitleAndDescriptionForDate(db mysql.Conn, userid uint64, currenttime uint64) (string, string) {
+	to := time.Unix(int64(currenttime), 0)
+	secs := to.Unix()
+	days := (secs / 86400) - 17307 // integer division // constant determines starting day
+	bitNum := determineLowestBitOf(int(days))
+	bitNum++
+	sql := "SELECT title, description FROM calcron_priority WHERE (id_user = ?) AND (priority = ?);"
+	sel, err := db.Prepare(sql)
+	if err != nil {
+		fmt.Println(err)
+		panic("Prepare failed")
+	}
+	sel.Bind(userid, bitNum)
+	rows, _, err := sel.Exec()
+	if err != nil {
+		fmt.Println(err)
+		panic("Bind/Exec failed")
+	}
+	var priority struct {
+		title       string
+		description string
+	}
+	for _, row := range rows {
+		priority.title = row.Str(0)
+		priority.description = row.Str(1)
+	}
+	// return intToStr(int(days)) + " " + priority.title + " yeah bit " + intToStr(bitNum), priority.description
+	return priority.title, priority.description
+}
+
+func showListPage(w http.ResponseWriter, r *http.Request, op string, userid uint64, userName string) {
 	var sql string
 	var entry struct {
 		idCalEnt    uint64
@@ -903,7 +1082,7 @@ jQuery(function () {
 <body>
   <section>
 `)
-	showCalcronMenuBar(w)
+	showCalcronMenuBar(w, userName)
 	fmt.Fprint(w, `
     <h1>List of Calcron Entries</h1>
 `)
@@ -997,7 +1176,6 @@ jQuery(function () {
 		if entry.currenttime == lastTime {
 			backgroundColor = " style=\"background-color: #FF8000;\""
 		}
-		fmt.Println("    -")
 		fmt.Fprint(w, "<tr "+backgroundColor+"><td> "+timeCodeToString(entry.currenttime, timeZoneOffset)+" </td>")
 		// if crossedNow {
 		fmt.Fprint(w, `<td align="right"> <input type="hidden" id="timerem_code_`+strconv.FormatInt(int64(count), 10)+`" value="`)
@@ -1008,14 +1186,19 @@ jQuery(function () {
 		// } else {
 		// fmt.Fprint(w, "<td> &nbsp; </td>")
 		// }
-		fmt.Fprint(w, "<td> <a href=\"view?entry="+strconv.FormatUint(entry.idCalEnt, 10)+"\">"+html.EscapeString(entry.title)+"</a> </td>")
+		theTitle := entry.title
+		theDescription := entry.description
+		if entry.title == "PRIORITY" {
+			theTitle, theDescription = getPriorityTitleAndDescriptionForDate(db, userid, entry.currenttime)
+		}
+		fmt.Fprint(w, "<td> <a href=\"view?entry="+strconv.FormatUint(entry.idCalEnt, 10)+"\">"+html.EscapeString(theTitle)+"</a> </td>")
 		if showFull {
 			fmt.Fprint(w, "<td> "+html.EscapeString(entry.year)+" </td><td> "+html.EscapeString(entry.month)+" </td><td> "+html.EscapeString(entry.dom)+" </td><td> "+html.EscapeString(entry.dow)+" </td><td> "+html.EscapeString(entry.nth)+" </td><td> "+html.EscapeString(entry.hour)+" </td><td> "+html.EscapeString(entry.minute)+" </td><td> "+html.EscapeString(entry.second)+" </td>")
 		}
 		fmt.Fprint(w, `</tr>
 `)
 		if showFull {
-			fmt.Fprint(w, `<tr><td colspan="`+colSpan+`"> `+entry.description+`</td></tr>
+			fmt.Fprint(w, `<tr><td colspan="`+colSpan+`"> `+theDescription+`</td></tr>
 `)
 		}
 		lastTime = entry.currenttime
@@ -1189,7 +1372,7 @@ function humanInterval(seconds) {
 `)
 }
 
-func showChimesPage(w http.ResponseWriter, r *http.Request, op string, userid uint64) {
+func showChimesPage(w http.ResponseWriter, r *http.Request, op string, userid uint64, userName string) {
 	db, err := getDbConnection()
 	if err != nil {
 		fmt.Println(err)
@@ -1222,6 +1405,11 @@ func showChimesPage(w http.ResponseWriter, r *http.Request, op string, userid ui
 		entry.description = row.Str(2)
 		entry.currenttime = row.Uint64(3)
 	}
+	theTitle := entry.title
+	theDescription := entry.description
+	if entry.title == "PRIORITY" {
+		theTitle, theDescription = getPriorityTitleAndDescriptionForDate(db, userid, entry.currenttime)
+	}
 	timeZoneOffset := getTimeZoneOffset(db, userid)
 	timeNums := timeCodeToTimeNumbers(uint64(int64(entry.currenttime) + timeZoneOffset))
 	dateTimeString := timeCodeToString(entry.currenttime, timeZoneOffset)
@@ -1229,7 +1417,7 @@ func showChimesPage(w http.ResponseWriter, r *http.Request, op string, userid ui
 	header.Set("Content-Type", "text/html; charset=utf-8")
 	fmt.Fprint(w, getDoctype())
 	timeZoneClientSideAdjustNum := strconv.FormatInt((-timeZoneOffset)*1000, 10)
-	fmt.Fprint(w, `<title>Chimes: `+html.EscapeString(entry.title)+`</title>
+	fmt.Fprint(w, `<title>Chimes: `+html.EscapeString(theTitle)+`</title>
 <link rel="stylesheet" type="text/css" href="/style.css">
 <link rel="stylesheet" href="jquery-ui.css" />
 <script src="jquery-1.9.1.js"></script>
@@ -1363,7 +1551,6 @@ function chimesDoTimerPulse() {
         }
     }
     if (interval < 0) {
-        // window.alert("hello");
         // gChimesData.timerGoing = false;
         amplitude = 0.9;
         frequency = Math.exp((gChimesData.centernoteLog + 9) * gChimesData.LOG2);
@@ -1507,7 +1694,7 @@ jQuery(function () {
 <body>
   <section>
 `)
-	showCalcronMenuBar(w)
+	showCalcronMenuBar(w, userName)
 	fmt.Fprint(w, `
 <form action="dismiss" method="get">
 
@@ -1515,11 +1702,11 @@ jQuery(function () {
 	fmt.Fprint(w, html.EscapeString(dateTimeString))
 	fmt.Fprint(w, `</p>
     <h1 id="title"><b>`)
-	fmt.Fprint(w, html.EscapeString(entry.title))
+	fmt.Fprint(w, html.EscapeString(theTitle))
 	fmt.Fprint(w, `</b></h1>
 <p id="description">
 `)
-	fmt.Fprint(w, html.EscapeString(entry.description))
+	fmt.Fprint(w, html.EscapeString(theDescription))
 	fmt.Fprint(w, `
 </p>
 <p> Time code: 
@@ -1564,7 +1751,7 @@ chimesListenElement.addEventListener("click", chimesExecUseTimeNow, true);
 </html>`)
 }
 
-func showViewPage(w http.ResponseWriter, r *http.Request, op string, userid uint64) {
+func showViewPage(w http.ResponseWriter, r *http.Request, op string, userid uint64, userName string) {
 	var ui struct {
 		title       string
 		description string
@@ -1652,7 +1839,7 @@ func showViewPage(w http.ResponseWriter, r *http.Request, op string, userid uint
 <body>
   <section>
 `)
-	showCalcronMenuBar(w)
+	showCalcronMenuBar(w, userName)
 	fmt.Fprint(w, `
     <h1>CalCron Entry View</h1>
 
@@ -1684,7 +1871,7 @@ func showViewPage(w http.ResponseWriter, r *http.Request, op string, userid uint
 </html>`)
 }
 
-func showRecalcPage(w http.ResponseWriter, r *http.Request, op string, userid uint64) {
+func showRecalcPage(w http.ResponseWriter, r *http.Request, op string, userid uint64, userName string) {
 	db, err := getDbConnection()
 	if err != nil {
 		fmt.Println(err)
@@ -1701,7 +1888,7 @@ func showRecalcPage(w http.ResponseWriter, r *http.Request, op string, userid ui
 <body>
   <section>
 `)
-	showCalcronMenuBar(w)
+	showCalcronMenuBar(w, userName)
 	fmt.Fprint(w, `
 <form>
 
@@ -1714,7 +1901,7 @@ func showRecalcPage(w http.ResponseWriter, r *http.Request, op string, userid ui
 </html>`)
 }
 
-func doDismiss(w http.ResponseWriter, r *http.Request, op string, userid uint64) {
+func doDismiss(w http.ResponseWriter, r *http.Request, op string, userid uint64, userName string) {
 	db, err := getDbConnection()
 	if err != nil {
 		fmt.Println(err)
@@ -1747,37 +1934,37 @@ func doDismiss(w http.ResponseWriter, r *http.Request, op string, userid uint64)
 	http.Redirect(w, r, "chimes", 302)
 }
 
-func Handler(w http.ResponseWriter, r *http.Request, op string, userid uint64) {
+func Handler(w http.ResponseWriter, r *http.Request, op string, userid uint64, userName string) {
 	testCheckTimeFieldSyntaxError()
 	testApplyRule()
 	switch {
 	case op == "list":
 		if userid != 0 {
-			showListPage(w, r, op, userid)
+			showListPage(w, r, op, userid, userName)
 		}
 	case op == "edit":
 		if userid != 0 {
-			showEditPage(w, r, op, userid)
+			showEditPage(w, r, op, userid, userName)
 		}
 	case op == "add":
 		if userid != 0 {
-			showEditPage(w, r, op, userid)
+			showEditPage(w, r, op, userid, userName)
 		}
 	case op == "chimes":
 		if userid != 0 {
-			showChimesPage(w, r, op, userid)
+			showChimesPage(w, r, op, userid, userName)
 		}
 	case op == "view":
 		if userid != 0 {
-			showViewPage(w, r, op, userid)
+			showViewPage(w, r, op, userid, userName)
 		}
 	case op == "recalc":
 		if userid != 0 {
-			showRecalcPage(w, r, op, userid)
+			showRecalcPage(w, r, op, userid, userName)
 		}
 	case op == "dismiss":
 		if userid != 0 {
-			doDismiss(w, r, op, userid)
+			doDismiss(w, r, op, userid, userName)
 		}
 	default:
 		// fmt.Fprintln(w, "Could not find page:", op)
@@ -1785,4 +1972,3 @@ func Handler(w http.ResponseWriter, r *http.Request, op string, userid uint64) {
 		static.OutputStaticFileWithContentType(w, filename)
 	}
 }
-
