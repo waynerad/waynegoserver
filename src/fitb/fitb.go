@@ -98,7 +98,7 @@ func trim(z string) string {
 	return strings.Trim(z, " \r\n\t")
 }
 
-func showEditTopicPage(w http.ResponseWriter, r *http.Request, op string, userid uint64) {
+func showEditTopicPage(w http.ResponseWriter, r *http.Request, op string, userid uint64, userName string) {
 	showform := false
 	errorList := make(map[string]string)
 	errorOccurred := false
@@ -275,7 +275,7 @@ func showEditTopicPage(w http.ResponseWriter, r *http.Request, op string, userid
 	}
 }
 
-func showTopicListPage(w http.ResponseWriter, r *http.Request, op string, userid uint64) {
+func showTopicListPage(w http.ResponseWriter, r *http.Request, op string, userid uint64, userName string) {
 	var sql string
 	var topic struct {
 		idTopic uint64
@@ -343,7 +343,7 @@ func showTopicListPage(w http.ResponseWriter, r *http.Request, op string, userid
 </html>`)
 }
 
-func showTopicPickListPage(w http.ResponseWriter, r *http.Request, op string, userid uint64) {
+func showTopicPickListPage(w http.ResponseWriter, r *http.Request, op string, userid uint64, userName string) {
 	var sql string
 	// mysql> DESCRIBE fitb_topic;
 	// +----------+------------------+------+-----+---------+----------------+
@@ -413,7 +413,7 @@ func showTopicPickListPage(w http.ResponseWriter, r *http.Request, op string, us
 </html>`)
 }
 
-func showPracticePage(w http.ResponseWriter, r *http.Request, op string, userid uint64) {
+func showPracticePage(w http.ResponseWriter, r *http.Request, op string, userid uint64, userName string) {
 	var ui struct {
 		idTopic uint64
 		idUser  uint64
@@ -471,7 +471,7 @@ func showPracticePage(w http.ResponseWriter, r *http.Request, op string, userid 
 </html>`)
 }
 
-func showEditChapterPage(w http.ResponseWriter, r *http.Request, op string, userid uint64) {
+func showEditChapterPage(w http.ResponseWriter, r *http.Request, op string, userid uint64, userName string) {
 	showform := false
 	errorList := make(map[string]string)
 	errorOccurred := false
@@ -701,7 +701,7 @@ func showEditChapterPage(w http.ResponseWriter, r *http.Request, op string, user
 	}
 }
 
-func showChapterListPage(w http.ResponseWriter, r *http.Request, op string, userid uint64) {
+func showChapterListPage(w http.ResponseWriter, r *http.Request, op string, userid uint64, userName string) {
 	var sql string
 	var chapter struct {
 		idChapter uint64
@@ -1099,7 +1099,7 @@ func calculateLnum(str string) float64 {
 	return rv
 }
 
-func showBulkEditQuestionsPage(w http.ResponseWriter, r *http.Request, op string, userid uint64) {
+func showBulkEditQuestionsPage(w http.ResponseWriter, r *http.Request, op string, userid uint64, userName string) {
 	showform := false
 	errorList := make(map[string]string)
 	errorOccurred := false
@@ -1370,7 +1370,7 @@ func showBulkEditQuestionsPage(w http.ResponseWriter, r *http.Request, op string
 	}
 }
 
-func showListQuestionsPage(w http.ResponseWriter, r *http.Request, op string, userid uint64) {
+func showListQuestionsPage(w http.ResponseWriter, r *http.Request, op string, userid uint64, userName string) {
 	showform := false
 	errorList := make(map[string]string)
 	errorOccurred := false
@@ -1513,7 +1513,7 @@ func showListQuestionsPage(w http.ResponseWriter, r *http.Request, op string, us
 	}
 }
 
-func showAddBulkQuestionsPage(w http.ResponseWriter, r *http.Request, op string, userid uint64) {
+func showAddBulkQuestionsPage(w http.ResponseWriter, r *http.Request, op string, userid uint64, userName string) {
 	showform := false
 	errorList := make(map[string]string)
 	errorOccurred := false
@@ -1751,7 +1751,7 @@ func showAddBulkQuestionsPage(w http.ResponseWriter, r *http.Request, op string,
 	}
 }
 
-func showEditQuestionPage(w http.ResponseWriter, r *http.Request, op string, userid uint64) {
+func showEditQuestionPage(w http.ResponseWriter, r *http.Request, op string, userid uint64, userName string) {
 	showform := false
 	errorList := make(map[string]string)
 	errorOccurred := false
@@ -1976,7 +1976,7 @@ func showEditQuestionPage(w http.ResponseWriter, r *http.Request, op string, use
 	}
 }
 
-func showRenumberPage(w http.ResponseWriter, r *http.Request, op string, userid uint64) {
+func showRenumberPage(w http.ResponseWriter, r *http.Request, op string, userid uint64, userName string) {
 	method := r.Method
 	var topicid uint64
 	topicid = 0
@@ -2146,7 +2146,7 @@ func initialize(db mysql.Conn, userid uint64, topicid uint64) {
 	}
 }
 
-func showInitializePage(w http.ResponseWriter, r *http.Request, op string, userid uint64) {
+func showInitializePage(w http.ResponseWriter, r *http.Request, op string, userid uint64, userName string) {
 	method := r.Method
 	var topicid uint64
 	topicid = 0
@@ -2382,7 +2382,7 @@ func timeIntervalSecondsToEnglish(inv int) string {
 	return rv[1:]
 }
 
-func showAskQuestionPage(w http.ResponseWriter, r *http.Request, op string, userid uint64) {
+func showAskQuestionPage(w http.ResponseWriter, r *http.Request, op string, userid uint64, userName string) {
 	var questionjctid uint64
 	var questionid uint64
 	var topicid uint64
@@ -2675,59 +2675,58 @@ function advanceOnReturn(ev, num) {
 	}
 }
 
-func Handler(w http.ResponseWriter, r *http.Request, op string, userid uint64) {
+func Handler(w http.ResponseWriter, r *http.Request, op string, userid uint64, userName string) {
 	switch {
 	case op == "listtopics":
 		if userid != 0 {
-			showTopicListPage(w, r, op, userid)
+			showTopicListPage(w, r, op, userid, userName)
 		}
 	case op == "edittopic":
 		if userid != 0 {
-			showEditTopicPage(w, r, op, userid)
+			showEditTopicPage(w, r, op, userid, userName)
 		}
 	case op == "picktopic":
 		if userid != 0 {
-			showTopicPickListPage(w, r, op, userid)
+			showTopicPickListPage(w, r, op, userid, userName)
 		}
 	case op == "listchapters":
 		if userid != 0 {
-			showChapterListPage(w, r, op, userid)
+			showChapterListPage(w, r, op, userid, userName)
 		}
 	case op == "editchapter":
 		if userid != 0 {
-			showEditChapterPage(w, r, op, userid)
+			showEditChapterPage(w, r, op, userid, userName)
 		}
 	case op == "bulkeditquestions":
 		if userid != 0 {
-			showBulkEditQuestionsPage(w, r, op, userid)
+			showBulkEditQuestionsPage(w, r, op, userid, userName)
 		}
 	case op == "listquestions":
 		if userid != 0 {
-			showListQuestionsPage(w, r, op, userid)
+			showListQuestionsPage(w, r, op, userid, userName)
 		}
 	case op == "bulkaddquestions":
 		if userid != 0 {
-			showAddBulkQuestionsPage(w, r, op, userid)
+			showAddBulkQuestionsPage(w, r, op, userid, userName)
 		}
 	case op == "editquestion":
 		if userid != 0 {
-			showEditQuestionPage(w, r, op, userid)
+			showEditQuestionPage(w, r, op, userid, userName)
 		}
 	case op == "renumber":
 		if userid != 0 {
-			showRenumberPage(w, r, op, userid)
+			showRenumberPage(w, r, op, userid, userName)
 		}
 	case op == "initialize":
 		if userid != 0 {
-			showInitializePage(w, r, op, userid)
+			showInitializePage(w, r, op, userid, userName)
 		}
 	case op == "quiz":
 		if userid != 0 {
-			showAskQuestionPage(w, r, op, userid)
+			showAskQuestionPage(w, r, op, userid, userName)
 		}
 	default:
 		filename := "/home/ec2-user/wayneserver/staticappcontent/blind/" + op
 		static.OutputStaticFileWithContentType(w, filename)
 	}
 }
-
