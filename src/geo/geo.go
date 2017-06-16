@@ -1290,7 +1290,7 @@ func showList(w http.ResponseWriter) {
 
 }
 
-func Handler(w http.ResponseWriter, r *http.Request, op string, userid uint64) {
+func Handler(w http.ResponseWriter, r *http.Request, op string, userid uint64, userName string) {
 	switch {
 
 	case op == "planet":
