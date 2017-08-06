@@ -1160,7 +1160,7 @@ func dice(w http.ResponseWriter, r *http.Request, op string) {
 	fmt.Fprintln(w, "</body></html>")
 }
 
-func distance(w http.ResponseWriter, r *http.Request, op string) {
+func distance(w http.ResponseWriter, r *http.Request, op string, userid uint64) {
 	fmt.Fprint(w, getDoctype())
 	fmt.Fprint(w, `<title>Geo Rand Distance</title>
 </head>
@@ -1182,8 +1182,34 @@ func distance(w http.ResponseWriter, r *http.Request, op string) {
 		diststr := postform["distance"][0]
 		distval, err := strconv.ParseFloat(diststr, 64)
 		// now we have our input, let's calculate
-		centery := 39.690517 // the house is the centerpoint
-		centerx := -104.917979
+		// centery := 39.690517 // the house is the centerpoint
+		// centerx := -104.917979
+		var centery float64
+		var centerx float64
+
+		db, err := getDbConnection()
+		if err != nil {
+			fmt.Fprintln(w, err)
+			return
+		}
+		defer db.Close()
+		sql := "SELECT gps_lat, gps_long FROM login_user WHERE id_user = ?;"
+		sel, err := db.Prepare(sql)
+		if err != nil {
+			fmt.Println(err)
+			panic("Prepare failed")
+		}
+		sel.Bind(userid)
+		rows, _, err := sel.Exec()
+		if err != nil {
+			fmt.Println(err)
+			panic("Bind/Exec failed")
+		}
+		for _, row := range rows {
+			centery = row.Float(0)
+			centerx = row.Float(1)
+		}
+
 		// the grand junction house is at 39.08720277,-108.63616944
 		radius := distval / 100.0 // radius in GPS units (calibrated to latitudal/equatorial longitudal)
 		// circumference of Earth at the equator is 24,902 miles/40,075 km
@@ -1300,9 +1326,9 @@ func Handler(w http.ResponseWriter, r *http.Request, op string, userid uint64, u
 	case op == "dice":
 		dice(w, r, op)
 	case op == "dist":
-		distance(w, r, op)
+		distance(w, r, op, userid)
 	case op == "distp":
-		distance(w, r, op)
+		distance(w, r, op, userid)
 	case op == "8ball":
 		eightball(w, r, op)
 
