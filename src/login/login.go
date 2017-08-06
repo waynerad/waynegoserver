@@ -655,7 +655,8 @@ func doLogin(w http.ResponseWriter, r *http.Request, operation string) {
 						panic("point 655")
 					}
 					expiretime := time.Now()
-					duration, err := time.ParseDuration("86400s")
+					// duration, err := time.ParseDuration("86400s") // 1 day
+					duration, err := time.ParseDuration("604800s") // 1 week
 					if err != nil {
 						fmt.Fprintln(w, err)
 						panic("point 661")
@@ -681,13 +682,12 @@ func doLogin(w http.ResponseWriter, r *http.Request, operation string) {
 					// excookie := http.Cookie{Name: "username", Value: "astaxie", Expires: expiration}
 					// http.SetCookie(w, &excookie)
 					// fmt.Fprintln(w, excookie)
-					http.Redirect(w, r, "apps", 302)
+					http.Redirect(w, r, "programs", 302)
 					return
 				}
 			}
 		}
 	}
-
 	if showform {
 		header := w.Header()
 		header.Set("Content-Type", "text/html; charset=utf-8")
@@ -724,20 +724,42 @@ func doLogin(w http.ResponseWriter, r *http.Request, operation string) {
 func deleteAccount(w http.ResponseWriter, r *http.Request, operation string) {
 }
 
-func showApps(w http.ResponseWriter) {
+func showPrograms(w http.ResponseWriter) {
 	fmt.Fprint(w, getDoctype())
-	fmt.Fprint(w, `<title> Apps on this server</title>
+	fmt.Fprint(w, `<title> Programs on this server</title>
 </head><body>
   <section>
-    <h1>Apps on this server</h1>
+    <h1>Programs on this server</h1>
     <ul>
         <li><a href="../bookmark/list">Bookmarks</a></li>
         <li><a href="../links/add">Links</a></li>
         <li><a href="../calcron/list">Calcron Chimes</a></li>
-        <li><a href="../fitb/listtopics">Fitb</a></li>
-        <li><a href="../rand/list">Rand</a></li>
+        <li><a href="../fitb/listtopics">FITB</a></li>
+        <li><a href="../georand/list">Georand</a></li>
         <li><a href="../umt/umt">UMT</a></li>
+        <li><a href="../nback/nback.html">NBACK</a></li>
+        <li><a href="../stopwatch/index.html">Stopwatch</a></li>
+        <li><a href="../nato/nato.html">NATO Alphabet</a></li>
     </ul>
+  </section>
+ </body></html`)
+}
+
+func showLogoutAll(w http.ResponseWriter) {
+	fmt.Fprint(w, getDoctype())
+	db, err := getDbConnection()
+	stmt, err := db.Prepare("TRUNCATE FROM login_session;")
+	if err != nil {
+		fmt.Println(err)
+	}
+	_, err = stmt.Run()
+	if err != nil {
+		fmt.Fprintln(w, err)
+	}
+	fmt.Fprint(w, `<title> Logout All </title>
+</head><body>
+  <section>
+    <h1>Logout All</h1>
   </section>
  </body></html`)
 }
@@ -762,8 +784,10 @@ func Handler(w http.ResponseWriter, r *http.Request, operation string, userid ui
 		}
 	case operation == "register":
 		editAccount(w, r, operation, true)
-	case operation == "apps":
-		showApps(w)
+	case operation == "programs":
+		showPrograms(w)
+	case operation == "logoutall":
+		showLogoutAll(w)
 	default:
 		fmt.Fprintln(w, "Could not find operation:", operation)
 	}
