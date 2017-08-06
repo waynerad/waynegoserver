@@ -2678,51 +2678,51 @@ function advanceOnReturn(ev, num) {
 func Handler(w http.ResponseWriter, r *http.Request, op string, userid uint64, userName string) {
 	switch {
 	case op == "listtopics":
-		if userid != 0 {
+		if userid == 1 {
 			showTopicListPage(w, r, op, userid, userName)
 		}
 	case op == "edittopic":
-		if userid != 0 {
+		if userid == 1 {
 			showEditTopicPage(w, r, op, userid, userName)
 		}
 	case op == "picktopic":
-		if userid != 0 {
+		if userid == 1 {
 			showTopicPickListPage(w, r, op, userid, userName)
 		}
 	case op == "listchapters":
-		if userid != 0 {
+		if userid == 1 {
 			showChapterListPage(w, r, op, userid, userName)
 		}
 	case op == "editchapter":
-		if userid != 0 {
+		if userid == 1 {
 			showEditChapterPage(w, r, op, userid, userName)
 		}
 	case op == "bulkeditquestions":
-		if userid != 0 {
+		if userid == 1 {
 			showBulkEditQuestionsPage(w, r, op, userid, userName)
 		}
 	case op == "listquestions":
-		if userid != 0 {
+		if userid == 1 {
 			showListQuestionsPage(w, r, op, userid, userName)
 		}
 	case op == "bulkaddquestions":
-		if userid != 0 {
+		if userid == 1 {
 			showAddBulkQuestionsPage(w, r, op, userid, userName)
 		}
 	case op == "editquestion":
-		if userid != 0 {
+		if userid == 1 {
 			showEditQuestionPage(w, r, op, userid, userName)
 		}
 	case op == "renumber":
-		if userid != 0 {
+		if userid == 1 {
 			showRenumberPage(w, r, op, userid, userName)
 		}
 	case op == "initialize":
-		if userid != 0 {
+		if userid == 1 {
 			showInitializePage(w, r, op, userid, userName)
 		}
 	case op == "quiz":
-		if userid != 0 {
+		if userid == 1 {
 			showAskQuestionPage(w, r, op, userid, userName)
 		}
 	default:
