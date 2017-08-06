@@ -522,27 +522,41 @@ func showDeletePage(w http.ResponseWriter, r *http.Request, op string, userid ui
 	}
 }
 
+func redirectToLoginPage(w http.ResponseWriter, r *http.Request) {
+        http.Redirect(w, r, "../login/login", 302)
+}
+
 func Handler(w http.ResponseWriter, r *http.Request, op string, userid uint64, userName string) {
 	switch {
 	case op == "list":
 		if userid != 0 {
 			showListPage(w, r, op, userid, userName)
+		} else {
+			redirectToLoginPage(w, r)
 		}
 	case op == "evoke":
 		if userid != 0 {
 			evoke(w, r, op, userid, userName)
+		} else {
+			redirectToLoginPage(w, r)
 		}
 	case op == "edit":
 		if userid != 0 {
 			showEditPage(w, r, op, userid, userName)
+		} else {
+			redirectToLoginPage(w, r)
 		}
 	case op == "add":
 		if userid != 0 {
 			showEditPage(w, r, op, userid, userName)
+		} else {
+			redirectToLoginPage(w, r)
 		}
 	case op == "delete":
 		if userid != 0 {
 			showDeletePage(w, r, op, userid, userName)
+		} else {
+			redirectToLoginPage(w, r)
 		}
 	default:
 		// fmt.Fprintln(w, "Could not find page:", op)
