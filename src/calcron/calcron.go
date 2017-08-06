@@ -102,6 +102,9 @@ func checkTimeFieldSyntaxError(contents string) bool {
 			return false
 		}
 	}
+	if checkIsNumeric(contents[0:i]) {
+		return false
+	}
 	return true
 }
 
@@ -193,6 +196,20 @@ func timeCodeToString(dbtime uint64, timeZoneOffset int64) string {
 	return strconv.FormatInt(int64(tc.year), 10) + "-" + twodigits(tc.month) + "-" + twodigits(tc.day) + " " + twodigits(tc.hour) + ":" + twodigits(tc.minute) + ":" + twodigits(tc.second)
 }
 
+func breakSlashRuleIntoNumAndDnom(rule string) (num int, dnom int) {
+	i := strings.Index(rule, "/")
+	if i == -1 {
+		panic("slash rule without slash")
+	}
+	if rule[0:i] == "*" {
+		num = 0
+	} else {
+		num = strToInt(rule[0:i])
+	}
+	dnom = strToInt(rule[i+1:])
+	return num, dnom
+}
+
 func applyRule(currentValue int, rule string, fieldLimit int, fieldMin int, currentCarry int) (int, int) {
 	if fieldLimit == 0 {
 		panic("fieldLimit is zero.")
@@ -206,27 +223,20 @@ func applyRule(currentValue int, rule string, fieldLimit int, fieldMin int, curr
 		}
 		return currentValue, newCarry
 	}
-	if len(rule) >= 2 {
-		if rule[0:2] == "*/" {
-			denomStr := rule[2:]
-			denomVal, err := strconv.ParseInt(denomStr, 10, 64)
-			if err != nil {
-				fmt.Println(err)
-				panic("ParseInt failed")
+	hasSlash := strings.Index(rule, "/")
+	if hasSlash > 0 {
+		num, dnom := breakSlashRuleIntoNumAndDnom(rule)
+		newCarry = 0
+		currentValue = currentValue + currentCarry
+		for (currentValue % dnom) != num {
+			currentValue++
+			for currentValue >= (fieldLimit + fieldMin) {
+				newCarry++
+				currentValue = currentValue - fieldLimit
 			}
-			newCarry = 0
-			currentValue = currentValue + currentCarry
-			for (currentValue % int(denomVal)) != 0 {
-				currentValue++
-				for currentValue >= (fieldLimit + fieldMin) {
-					newCarry++
-					currentValue = currentValue - fieldLimit
-				}
-			}
-			return currentValue, newCarry
 		}
+		return currentValue, newCarry
 	}
-
 	hasComma := strings.Index(rule, ",")
 	if hasComma > 0 {
 		valStrs := strings.Split(rule, ",")
@@ -356,6 +366,30 @@ func testApplyRule() {
 	if (newval != 2) || (carry != 1) {
 		fmt.Println("test 21 failed for applyRule")
 	}
+	newval, carry = applyRule(45, "1/8", 60, 0, 0)
+	if (newval != 49) || (carry != 0) {
+		fmt.Println("test 22 failed for applyRule")
+	}
+	newval, carry = applyRule(45, "1/17", 60, 0, 0)
+	if (newval != 52) || (carry != 0) {
+		fmt.Println("test 23 failed for applyRule")
+	}
+	newval, carry = applyRule(45, "7/17", 60, 0, 0)
+	if (newval != 58) || (carry != 0) {
+		fmt.Println("test 24 failed for applyRule")
+	}
+	newval, carry = applyRule(53, "5/17", 60, 0, 0)
+	if (newval != 56) || (carry != 0) {
+		fmt.Println("test 25 failed for applyRule")
+	}
+	newval, carry = applyRule(59, "3/7", 60, 0, 1)
+	if (newval != 3) || (carry != 1) {
+		fmt.Println("test 26 failed for applyRule")
+	}
+	newval, carry = applyRule(59, "3/8", 60, 0, 1)
+	if (newval != 3) || (carry != 1) {
+		fmt.Println("test 27 failed for applyRule")
+	}
 }
 
 func countOfDaysInThisMonth(timeCode time.Time) int {
@@ -383,15 +417,14 @@ func makeIntListFromRule(rule string, starLimit int) []int {
 		return resultList
 	}
 	if len(rule) >= 2 {
-		if rule[0:2] == "*/" {
-			denomStr := rule[2:]
-			denomVal := strToInt(denomStr)
-			num := starLimit / denomVal // integer division! Remainder is discarded
-			resultList := make([]int, num)
-			for i := 0; i < num; i++ {
-				resultList[i] = i * denomVal
+		hasSlash := strings.Index(rule, "/")
+		if hasSlash > 0 {
+			num, dnom := breakSlashRuleIntoNumAndDnom(rule)
+			howMany := starLimit / dnom // integer division! Remainder is discarded
+			resultList := make([]int, howMany)
+			for i := 0; i < howMany; i++ {
+				resultList[i] = (i * dnom) + num
 			}
-			return resultList
 		}
 	}
 	if rule == "*" {
@@ -406,7 +439,8 @@ func makeIntListFromRule(rule string, starLimit int) []int {
 	return resultList
 }
 
-func calculateNextCurrentTimeForEvent(currentTimeCode uint64, yearRule string, monthRule string, domRule string, dowRule string, nthRule string, hourRule string, minuteRule string, secondRule string) uint64 {
+func calculateNextCurrentTimeForEvent(currentTimeCode uint64, yearRule string, monthRule string, domRule string, dowRule string, nthRule string, doeRule string, hourRule string, minuteRule string, secondRule string) uint64 {
+	// currentTimeCode has the time zone offset added before calling this function. This convention is different from other functions. I forget why. Maybe I should change it
 	timeNumbers := timeCodeToTimeNumbers(currentTimeCode)
 
 	var result timenumbers
@@ -551,6 +585,20 @@ func calculateNextCurrentTimeForEvent(currentTimeCode uint64, yearRule string, m
 		result.day = int(dayTime.Day())
 		result.month = int(dayTime.Month())
 	}
+	// move forward to day of eternity if specified
+	hasSlash := strings.Index(doeRule, "/")
+	if hasSlash > 0 {
+		TOETimeCode := timeNumbersToTimeCode(result)
+		currentDayOfE := TOETimeCode / 86400
+		num, dnom := breakSlashRuleIntoNumAndDnom(doeRule)
+		addDays := 0
+		for (currentDayOfE % uint64(dnom)) != uint64(num) {
+			currentDayOfE++
+			addDays++
+		}
+		TOETimeCode += uint64(addDays) * 86400
+		result = timeCodeToTimeNumbers(TOETimeCode)
+	}
 	return timeNumbersToTimeCode(result)
 }
 
@@ -597,6 +645,7 @@ func showEditPage(w http.ResponseWriter, r *http.Request, op string, userid uint
 		dom         string
 		dow         string
 		nth         string
+		doe         string
 		hour        string
 		minute      string
 		second      string
@@ -612,6 +661,7 @@ func showEditPage(w http.ResponseWriter, r *http.Request, op string, userid uint
 		ui.dom = "*"
 		ui.dow = "*"
 		ui.nth = "*"
+		ui.doe = "*"
 		ui.hour = "*"
 		ui.minute = "0"
 		ui.second = "0"
@@ -635,7 +685,7 @@ func showEditPage(w http.ResponseWriter, r *http.Request, op string, userid uint
 				panic("getDbConnection failed")
 			}
 			defer db.Close()
-			sql := "SELECT title, description, year, month, dom, dow, nth, hour, minute, second FROM calcron_entry WHERE (id_cal_ent = ?) AND (id_user = ?);"
+			sql := "SELECT title, description, year, month, dom, dow, nth, doe, hour, minute, second FROM calcron_entry WHERE (id_cal_ent = ?) AND (id_user = ?);"
 			sel, err := db.Prepare(sql)
 			if err != nil {
 				fmt.Println(err)
@@ -655,9 +705,10 @@ func showEditPage(w http.ResponseWriter, r *http.Request, op string, userid uint
 				ui.dom = row.Str(4)
 				ui.dow = row.Str(5)
 				ui.nth = row.Str(6)
-				ui.hour = row.Str(7)
-				ui.minute = row.Str(8)
-				ui.second = row.Str(9)
+				ui.doe = row.Str(7)
+				ui.hour = row.Str(8)
+				ui.minute = row.Str(9)
+				ui.second = row.Str(10)
 			}
 		}
 	}
@@ -681,6 +732,7 @@ func showEditPage(w http.ResponseWriter, r *http.Request, op string, userid uint
 		ui.dom = strings.Trim(postform["dom"][0], " \r\n\t")
 		ui.dow = strings.Trim(postform["dow"][0], " \r\n\t")
 		ui.nth = strings.Trim(postform["nth"][0], " \r\n\t")
+		ui.doe = strings.Trim(postform["doe"][0], " \r\n\t")
 		ui.hour = strings.Trim(postform["hour"][0], " \r\n\t")
 		ui.minute = strings.Trim(postform["minute"][0], " \r\n\t")
 		ui.second = strings.Trim(postform["second"][0], " \r\n\t")
@@ -707,6 +759,17 @@ func showEditPage(w http.ResponseWriter, r *http.Request, op string, userid uint
 			errorList["nth"] = "Nth day of week in month is invalid"
 			errorOccurred = true
 		}
+		if checkTimeFieldSyntaxError(ui.doe) {
+			errorList["doe"] = "Day of eternity is invalid"
+			errorOccurred = true
+		}
+		if ui.doe != "*" {
+			hasSlash := strings.Index(ui.doe, "/")
+			if hasSlash <= 0 {
+				errorList["doe"] = "Day of eternity must be a slash rule"
+				errorOccurred = true
+			}
+		}
 		if checkTimeFieldSyntaxError(ui.hour) {
 			errorList["hour"] = "Hour is invalid"
 			errorOccurred = true
@@ -728,6 +791,20 @@ func showEditPage(w http.ResponseWriter, r *http.Request, op string, userid uint
 		if ui.dow != "*" {
 			if ui.dom != "*" {
 				errorList["dow"] = "If you specify a day of week, you cannot specify a day of month."
+				errorOccurred = true
+			}
+		}
+		if ui.doe != "*" {
+			if ui.dom != "*" {
+				errorList["dom"] = "If you specify a day of eternity, you cannot specify a day of month."
+				errorOccurred = true
+			}
+			if ui.dow != "*" {
+				errorList["dow"] = "If you specify a day of eternity, you cannot specify a day of week."
+				errorOccurred = true
+			}
+			if ui.nth != "*" {
+				errorList["nth"] = "If you specify a day of eternity, you cannot specify an nth day of week in month."
 				errorOccurred = true
 			}
 		}
@@ -754,6 +831,7 @@ func showEditPage(w http.ResponseWriter, r *http.Request, op string, userid uint
 				dom         string
 				dow         string
 				nth         string
+				doe         string
 				hour        string
 				minute      string
 				second      string
@@ -769,12 +847,13 @@ func showEditPage(w http.ResponseWriter, r *http.Request, op string, userid uint
 			save.dom = ui.dom
 			save.dow = ui.dow
 			save.nth = ui.nth
+			save.doe = ui.doe
 			save.hour = ui.hour
 			save.minute = ui.minute
 			save.second = ui.second
 			// save.currenttime = uint64(time.Now().Unix())
-			// save.currenttime = uint64(int64(calculateNextCurrentTimeForEvent(uint64(int64(save.starttime) + timeZoneOffset), save.year, save.month, save.dom, save.dow, save.nth, save.hour, save.minute, save.second)) - timeZoneOffset)
-			save.currenttime = calculateNextCurrentTimeForEvent(uint64(int64(save.starttime)+timeZoneOffset), save.year, save.month, save.dom, save.dow, save.nth, save.hour, save.minute, save.second)
+			// save.currenttime = uint64(int64(calculateNextCurrentTimeForEvent(uint64(int64(save.starttime) + timeZoneOffset), save.year, save.month, save.dom, save.dow, save.nth, save.doe, save.hour, save.minute, save.second)) - timeZoneOffset)
+			save.currenttime = calculateNextCurrentTimeForEvent(uint64(int64(save.starttime)+timeZoneOffset), save.year, save.month, save.dom, save.dow, save.nth, save.doe, save.hour, save.minute, save.second)
 			save.currenttime = uint64(int64(save.currenttime) - timeZoneOffset)
 			// query, if there, update, if not, create new
 			alreadyExists := false
@@ -796,21 +875,21 @@ func showEditPage(w http.ResponseWriter, r *http.Request, op string, userid uint
 				}
 			}
 			if alreadyExists {
-				stmt, err := db.Prepare("UPDATE calcron_entry SET title = ?, description = ?, year = ?, month = ?, dom = ?, dow = ?, nth = ?, hour = ?, minute = ?, second = ?, currenttime = ?, is_defunct = 0 WHERE (id_cal_ent = ?) AND (id_user = ?);")
+				stmt, err := db.Prepare("UPDATE calcron_entry SET title = ?, description = ?, year = ?, month = ?, dom = ?, dow = ?, nth = ?, doe = ?, hour = ?, minute = ?, second = ?, currenttime = ?, is_defunct = 0 WHERE (id_cal_ent = ?) AND (id_user = ?);")
 				if err != nil {
 					fmt.Println(err)
 					panic("Prepare failed")
 				}
-				stmt.Bind(save.title, save.description, save.year, save.month, save.dom, save.dow, save.nth, save.hour, save.minute, save.second, save.currenttime, entryid, userid)
+				stmt.Bind(save.title, save.description, save.year, save.month, save.dom, save.dow, save.nth, save.doe, save.hour, save.minute, save.second, save.currenttime, entryid, userid)
 				_, _, err = stmt.Exec()
 			} else {
-				stmt, err := db.Prepare("INSERT INTO calcron_entry (id_user, title, description, starttime, year, month, dom, dow, nth, hour, minute, second, currenttime, is_defunct) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0);")
+				stmt, err := db.Prepare("INSERT INTO calcron_entry (id_user, title, description, starttime, year, month, dom, dow, nth, doe, hour, minute, second, currenttime, is_defunct) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0);")
 				if err != nil {
 					fmt.Println(err)
 					panic("Prepare failed")
 				}
 				// defer stmt.Close();
-				stmt.Bind(save.idUser, save.title, save.description, save.starttime, save.year, save.month, save.dom, save.dow, save.nth, save.hour, save.minute, save.second, save.currenttime)
+				stmt.Bind(save.idUser, save.title, save.description, save.starttime, save.year, save.month, save.dom, save.dow, save.nth, save.doe, save.hour, save.minute, save.second, save.currenttime)
 				_, _, err = stmt.Exec()
 			}
 			if err != nil {
@@ -940,6 +1019,8 @@ function ctstr(anyparameter) {
 <tr><td align="right"> Day of week: </td><td> <input class="biginput" name="dow" id="dow" type="text" value="`+html.EscapeString(ui.dow)+`" /> </td></tr>
 <tr><td align="right"> Nth day of day of week this month: </td><td> <input class="biginput" name="nth" id="nth" type="text" value="`+html.EscapeString(ui.nth)+`" /> </td></tr>
 <tr><td colspan="2" align="center" style="border-bottom: 1px solid #000000;"> </td></tr>
+<tr><td align="right"> Day of eternity </td><td> <input class="biginput" name="doe" id="doe" type="text" value="`+html.EscapeString(ui.doe)+`" /> </td></tr>
+<tr><td colspan="2" align="center" style="border-bottom: 1px solid #000000;"> </td></tr>
 <tr><td align="right"> Hour: </td><td> <input class="biginput" name="hour" id="hour" type="text" value="`+html.EscapeString(ui.hour)+`" /> </td></tr>
 <tr><td align="right"> Minute: </td><td> <input class="biginput" name="minute" id="minute" type="text" value="`+html.EscapeString(ui.minute)+`" /> </td></tr>
 <tr><td align="right"> Second: </td><td> <input class="biginput" name="second" id="second" type="text" value="`+html.EscapeString(ui.second)+`" /> </td></tr>
@@ -1014,6 +1095,7 @@ func showListPage(w http.ResponseWriter, r *http.Request, op string, userid uint
 		dom         string
 		dow         string
 		nth         string
+		doe         string
 		hour        string
 		minute      string
 		second      string
@@ -1095,15 +1177,19 @@ jQuery(function () {
 	_, showLatest := getform["showlatest"]
 	_, showFull := getform["full"]
 	_, showDefunct := getform["defunct"]
+	_, showAll := getform["all"]
 	recalculateAllEvents(db, userid, showDefunct)
 	isDefunct := 0 // MySQL needs a numerical 0 or 1
 	if showDefunct {
 		isDefunct = 1
 	}
 	if showLatest {
-		sql = "SELECT id_cal_ent, title, description, year, month, dom, dow, nth, hour, minute, second, currenttime FROM calcron_entry WHERE (id_user = ?) AND (is_defunct = ?) ORDER BY id_cal_ent DESC;"
+		sql = "SELECT id_cal_ent, title, description, year, month, dom, dow, nth, doe, hour, minute, second, currenttime FROM calcron_entry WHERE (id_user = ?) AND (is_defunct = ?) ORDER BY id_cal_ent DESC"
 	} else {
-		sql = "SELECT id_cal_ent, title, description, year, month, dom, dow, nth, hour, minute, second, currenttime FROM calcron_entry WHERE (id_user = ?) AND (is_defunct = ?) ORDER BY currenttime;"
+		sql = "SELECT id_cal_ent, title, description, year, month, dom, dow, nth, doe, hour, minute, second, currenttime FROM calcron_entry WHERE (id_user = ?) AND (is_defunct = ?) ORDER BY currenttime"
+	}
+	if !showAll {
+		sql = sql + " LIMIT 32;"
 	}
 	sel, err := db.Prepare(sql)
 	if err != nil {
@@ -1136,10 +1222,11 @@ jQuery(function () {
 		entry.dom = row.Str(5)
 		entry.dow = row.Str(6)
 		entry.nth = row.Str(7)
-		entry.hour = row.Str(8)
-		entry.minute = row.Str(9)
-		entry.second = row.Str(10)
-		entry.currenttime = row.Uint64(11)
+		entry.doe = row.Str(8)
+		entry.hour = row.Str(9)
+		entry.minute = row.Str(10)
+		entry.second = row.Str(11)
+		entry.currenttime = row.Uint64(12)
 
 		if !started {
 			fmt.Fprint(w, `<form><table border="0" cellpadding="6">
@@ -1147,7 +1234,7 @@ jQuery(function () {
 <th> Next occurrence </th><th> Time Remaining </th><th> Title </th>
 `)
 			if showFull {
-				fmt.Fprint(w, `<th> Year </th><th> Month </th><th> Day of Month </th><th> Day of Week </th><th> Nth Day of Week/Month </th><th> Hour </th><th> Minute </th><th> Second </th>`)
+				fmt.Fprint(w, `<th> Year </th><th> Month </th><th> Day of Month </th><th> Day of Week </th><th> Nth Day of Week/Month </th><th> Day of eternity </th><th> Hour </th><th> Minute </th><th> Second </th>`)
 			}
 			fmt.Fprint(w, `</tr>
 `)
@@ -1193,7 +1280,7 @@ jQuery(function () {
 		}
 		fmt.Fprint(w, "<td> <a href=\"view?entry="+strconv.FormatUint(entry.idCalEnt, 10)+"\">"+html.EscapeString(theTitle)+"</a> </td>")
 		if showFull {
-			fmt.Fprint(w, "<td> "+html.EscapeString(entry.year)+" </td><td> "+html.EscapeString(entry.month)+" </td><td> "+html.EscapeString(entry.dom)+" </td><td> "+html.EscapeString(entry.dow)+" </td><td> "+html.EscapeString(entry.nth)+" </td><td> "+html.EscapeString(entry.hour)+" </td><td> "+html.EscapeString(entry.minute)+" </td><td> "+html.EscapeString(entry.second)+" </td>")
+			fmt.Fprint(w, "<td> "+html.EscapeString(entry.year)+" </td><td> "+html.EscapeString(entry.month)+" </td><td> "+html.EscapeString(entry.dom)+" </td><td> "+html.EscapeString(entry.dow)+" </td><td> "+html.EscapeString(entry.nth)+" </td><td> "+html.EscapeString(entry.doe)+" </td><td> "+html.EscapeString(entry.hour)+" </td><td> "+html.EscapeString(entry.minute)+" </td><td> "+html.EscapeString(entry.second)+" </td>")
 		}
 		fmt.Fprint(w, `</tr>
 `)
@@ -1221,6 +1308,7 @@ func recalculateAllEvents(db mysql.Conn, userid uint64, recalcDefunct bool) {
 		dom      string
 		dow      string
 		nth      string
+		doe      string
 		hour     string
 		minute   string
 		second   string
@@ -1258,7 +1346,7 @@ func recalculateAllEvents(db mysql.Conn, userid uint64, recalcDefunct bool) {
 	timeZoneOffset = getTimeZoneOffset(db, userid)
 	rightNowWithTimeZone := uint64(time.Now().Unix() + timeZoneOffset)
 
-	sql = "SELECT id_cal_ent, year, month, dom, dow, nth, hour, minute, second FROM calcron_entry WHERE (id_user = ?) AND (is_defunct = ?) AND (is_dismissed = 1) ORDER BY id_cal_ent;"
+	sql = "SELECT id_cal_ent, year, month, dom, dow, nth, doe, hour, minute, second FROM calcron_entry WHERE (id_user = ?) AND (is_defunct = ?) AND (is_dismissed = 1) ORDER BY id_cal_ent;"
 	sel, err = db.Prepare(sql)
 	if err != nil {
 		fmt.Println(err)
@@ -1277,10 +1365,11 @@ func recalculateAllEvents(db mysql.Conn, userid uint64, recalcDefunct bool) {
 		entry.dom = row.Str(3)
 		entry.dow = row.Str(4)
 		entry.nth = row.Str(5)
-		entry.hour = row.Str(6)
-		entry.minute = row.Str(7)
-		entry.second = row.Str(8)
-		currenttime = calculateNextCurrentTimeForEvent(rightNowWithTimeZone, entry.year, entry.month, entry.dom, entry.dow, entry.nth, entry.hour, entry.minute, entry.second)
+		entry.doe = row.Str(6)
+		entry.hour = row.Str(7)
+		entry.minute = row.Str(8)
+		entry.second = row.Str(9)
+		currenttime = calculateNextCurrentTimeForEvent(rightNowWithTimeZone, entry.year, entry.month, entry.dom, entry.dow, entry.nth, entry.doe, entry.hour, entry.minute, entry.second)
 		currenttime = uint64(int64(currenttime) - timeZoneOffset)
 		updateList[count] = updateItem{entryid: entry.idCalEnt, currenttime: currenttime}
 		count++
@@ -1387,13 +1476,14 @@ func showChimesPage(w http.ResponseWriter, r *http.Request, op string, userid ui
 	}
 	// rightNow := uint64(time.Now().Unix())
 	// sql := "SELECT id_cal_ent, title, description, currenttime FROM calcron_entry WHERE currenttime >= ? ORDER BY currenttime LIMIT 1;"
-	sql := "SELECT id_cal_ent, title, description, currenttime FROM calcron_entry WHERE is_dismissed = 0 ORDER BY currenttime LIMIT 1;"
+	// sql := "SELECT id_cal_ent, title, description, currenttime FROM calcron_entry WHERE is_dismissed = 0 ORDER BY currenttime LIMIT 1;"
+	sql := "SELECT id_cal_ent, title, description, currenttime FROM calcron_entry WHERE (id_user = ?) AND (is_dismissed = 0) ORDER BY currenttime LIMIT 1;"
 	sel, err := db.Prepare(sql)
 	if err != nil {
 		fmt.Println(err)
 		panic("Prepare failed")
 	}
-	// sel.Bind(rightNow) // nothing to bind for this one
+	sel.Bind(userid) // rightNow not used any more
 	rows, _, err := sel.Exec()
 	if err != nil {
 		fmt.Println(err)
@@ -1760,6 +1850,7 @@ func showViewPage(w http.ResponseWriter, r *http.Request, op string, userid uint
 		dom         string
 		dow         string
 		nth         string
+		doe         string
 		hour        string
 		minute      string
 		second      string
@@ -1775,6 +1866,7 @@ func showViewPage(w http.ResponseWriter, r *http.Request, op string, userid uint
 	ui.dom = "*"
 	ui.dow = "*"
 	ui.nth = "*"
+	ui.doe = "*"
 	ui.hour = "*"
 	ui.minute = "0"
 	ui.second = "0"
@@ -1797,7 +1889,7 @@ func showViewPage(w http.ResponseWriter, r *http.Request, op string, userid uint
 			panic("getDbConnection failed")
 		}
 		defer db.Close()
-		sql := "SELECT title, description, year, month, dom, dow, nth, hour, minute, second FROM calcron_entry WHERE (id_cal_ent = ?) AND (id_user = ?);"
+		sql := "SELECT title, description, year, month, dom, dow, nth, doe, hour, minute, second FROM calcron_entry WHERE (id_cal_ent = ?) AND (id_user = ?);"
 		sel, err := db.Prepare(sql)
 		if err != nil {
 			fmt.Println(err)
@@ -1817,9 +1909,10 @@ func showViewPage(w http.ResponseWriter, r *http.Request, op string, userid uint
 			ui.dom = row.Str(4)
 			ui.dow = row.Str(5)
 			ui.nth = row.Str(6)
-			ui.hour = row.Str(7)
-			ui.minute = row.Str(8)
-			ui.second = row.Str(9)
+			ui.doe = row.Str(7)
+			ui.hour = row.Str(8)
+			ui.minute = row.Str(9)
+			ui.second = row.Str(10)
 		}
 	}
 
@@ -1856,10 +1949,11 @@ func showViewPage(w http.ResponseWriter, r *http.Request, op string, userid uint
 <tr><td align="right"> Day of week: </td><td> `+html.EscapeString(ui.dow)+` </td></tr>
 <tr><td align="right"> Nth day of day of week this month: </td><td> `+html.EscapeString(ui.nth)+` </td></tr>
 <tr><td colspan="2" align="center" style="border-bottom: 1px solid #000000;"> </td></tr>
+<tr><td align="right"> Day of eternity: </td><td> `+html.EscapeString(ui.doe)+` </td></tr>
+<tr><td colspan="2" align="center" style="border-bottom: 1px solid #000000;"> </td></tr>
 <tr><td align="right"> Hour: </td><td> `+html.EscapeString(ui.hour)+` </td></tr>
 <tr><td align="right"> Minute: </td><td> `+html.EscapeString(ui.minute)+` </td></tr>
 <tr><td align="right"> Second: </td><td> `+html.EscapeString(ui.second)+` </td></tr>
-
 <tr><td colspan="2" align="center"> <a href="edit?entry=`+strconv.FormatUint(entryid, 10)+`">Edit</a> </td></tr>
 
 </table>
