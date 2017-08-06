@@ -550,7 +550,7 @@ func showScrapePage(w http.ResponseWriter, r *http.Request, op string, userid ui
 			}
 			save.idBook = bookid
 			save.idUser = userid
-			save.idSet = 8 // hardcoded for now
+			save.idSet = 9 // hardcoded for now
 			save.title = title
 			save.authors = authors
 			save.stars5 = stars5
@@ -599,7 +599,7 @@ func showScrapePage(w http.ResponseWriter, r *http.Request, op string, userid ui
 				fmt.Println(err)
 				panic("Exec failed")
 			}
-			setid := 8 // BUGBUG this is hardcoded but shouldn't be
+			setid := 9 // BUGBUG this is hardcoded but shouldn't be
 			http.Redirect(w, r, "list?set="+inttostr(setid), 302)
 		}
 	}
@@ -738,7 +738,7 @@ func showDeletePage(w http.ResponseWriter, r *http.Request, op string, userid ui
 		}
 		stmt.Bind(bookid, userid)
 		_, _, err = stmt.Exec()
-		setid := 8 // BUGBUG this is hardcoded but shouldn't be
+		setid := 9 // BUGBUG this is hardcoded but shouldn't be
 		http.Redirect(w, r, "list?set="+inttostr(setid), 302)
 	}
 	if showform {
@@ -785,20 +785,30 @@ Do you want to delete `+html.EscapeString(title)+` by `+html.EscapeString(author
 	}
 }
 
+func redirectToLoginPage(w http.ResponseWriter, r *http.Request) {
+	http.Redirect(w, r, "../login/login", 302)
+}
+
 func Handler(w http.ResponseWriter, r *http.Request, op string, userid uint64, userName string) {
 	fmt.Println("We are in the blind handler, and op is", op)
 	switch {
 	case op == "scrape":
 		if userid != 0 {
 			showScrapePage(w, r, op, userid, userName)
+		} else {
+			redirectToLoginPage(w, r)
 		}
 	case op == "list":
 		if userid != 0 {
 			showListPage(w, r, op, userid, userName)
+		} else {
+			redirectToLoginPage(w, r)
 		}
 	case op == "delete":
 		if userid != 0 {
 			showDeletePage(w, r, op, userid, userName)
+		} else {
+			redirectToLoginPage(w, r)
 		}
 	default:
 		// fmt.Fprintln(w, "Could not find page:", op)
