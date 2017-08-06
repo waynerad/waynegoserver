@@ -137,7 +137,7 @@ func add(w http.ResponseWriter, r *http.Request, op string, userid uint64, userN
 `)
 			showLinksMenuBar(w, userName)
 			fmt.Fprint(w, `
-    <h1>URL grabber</h1>
+    <h1>URL Saver</h1>
 	<a href="add">Next</a>
 	<a href="list">List</a>
 `)
@@ -497,7 +497,7 @@ timeridUrl = window.setInterval(execUrlGrab, 100);
 `)
 		showLinksMenuBar(w, userName)
 		fmt.Fprint(w, `
-    <h1>URL grabber</h1>
+    <h1>URL Saver</h1>
 
 <p>Email count: `+html.EscapeString(strconv.FormatUint(email_count, 10))+`
 
