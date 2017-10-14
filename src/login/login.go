@@ -1,6 +1,7 @@
 package login
 
 import (
+	"accessdb"
 	"bytes"
 	"crypto/rand"
 	"crypto/sha512"
@@ -24,15 +25,6 @@ func getDoctype() string {
 <head>
 <meta charset=utf-8 />
 `
-}
-
-func getDbConnection() (mysql.Conn, error) {
-	user := "webdata_user"
-	pass := "97abcmt3teteej"
-	dbname := "webdata"
-	db := mysql.New("tcp", "", "127.0.0.1:3306", user, pass, dbname)
-	err := db.Connect()
-	return db, err
 }
 
 func floatToString(x float64) string {
@@ -132,11 +124,7 @@ func editAccount(w http.ResponseWriter, r *http.Request, operation string, newAc
 			fmt.Fprintln(w, err)
 			panic("point 133")
 		}
-		db, err := getDbConnection()
-		if err != nil {
-			fmt.Fprintln(w, err)
-			panic("point 138")
-		}
+		db := accessdb.GetDbConnection()
 		if userid == 0 {
 			uiFrm.created = ""
 			uiFrm.email = ""
@@ -270,11 +258,7 @@ func editAccount(w http.ResponseWriter, r *http.Request, operation string, newAc
 		}
 		if errorOccurred == false {
 			if userid == 0 {
-				db, err := getDbConnection()
-				if err != nil {
-					fmt.Fprintln(w, err)
-					panic("point 276")
-				}
+				db := accessdb.GetDbConnection()
 				defer db.Close()
 				stmt, err := db.Prepare("INSERT INTO login_user (created_gmt, email, password, salt, fname, lname, gps_lat, gps_long, time_zone_offset) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);")
 				if err != nil {
@@ -319,11 +303,7 @@ func editAccount(w http.ResponseWriter, r *http.Request, operation string, newAc
 				}
 				fmt.Println("THE Exec() CALL WAS SUCCESSFUL")
 			} else {
-				db, err := getDbConnection()
-				if err != nil {
-					fmt.Fprintln(w, err)
-					panic("point 325")
-				}
+				db := accessdb.GetDbConnection()
 				defer db.Close()
 				// check for password change
 				var userData struct {
@@ -473,13 +453,9 @@ func listAccounts(w http.ResponseWriter, r *http.Request, operation string) {
     <table border="1">
       <tr><th> User ID </th><th> Created </th><th> Email </th><th> Password </th><th> Salt </th><th> First Name </th><th> Last Name </th><th> Actions </th></tr>
 `)
-	db, err := getDbConnection()
-	if err != nil {
-		fmt.Fprintln(w, err)
-		panic("point 479")
-	}
+	db := accessdb.GetDbConnection()
 	defer db.Close()
-	err = r.ParseForm()
+	err := r.ParseForm()
 	if err != nil {
 		fmt.Fprintln(w, err)
 		panic("point 485")
@@ -596,11 +572,7 @@ func doLogin(w http.ResponseWriter, r *http.Request, operation string) {
 			errorList["password"] = "Password is empty"
 		}
 		if errorOccurred == false {
-			db, err := getDbConnection()
-			if err != nil {
-				fmt.Fprintln(w, err)
-				panic("point 602")
-			}
+			db := accessdb.GetDbConnection()
 			defer db.Close()
 
 			stmt, err := db.Prepare("SELECT id_user, password, salt FROM login_user WHERE (email=?);")
@@ -740,6 +712,7 @@ func showPrograms(w http.ResponseWriter) {
         <li><a href="../nback/nback.html">NBACK</a></li>
         <li><a href="../stopwatch/index.html">Stopwatch</a></li>
         <li><a href="../nato/nato.html">NATO Alphabet</a></li>
+        <li><a href="../bpm/bpm.html">BPM</a></li>
     </ul>
   </section>
  </body></html`)
@@ -747,7 +720,7 @@ func showPrograms(w http.ResponseWriter) {
 
 func showLogoutAll(w http.ResponseWriter) {
 	fmt.Fprint(w, getDoctype())
-	db, err := getDbConnection()
+	db := accessdb.GetDbConnection()
 	stmt, err := db.Prepare("TRUNCATE FROM login_session;")
 	if err != nil {
 		fmt.Println(err)
@@ -810,11 +783,7 @@ func IdentifyLoggedInUser(w http.ResponseWriter, r *http.Request) (uint64, strin
 			xcheckC = cookie.Value
 		}
 	}
-	db, err := getDbConnection()
-	if err != nil {
-		fmt.Fprintln(w, err)
-		panic("login can't access database point 675")
-	}
+	db := accessdb.GetDbConnection()
 	// res, err := db.Start("SELECT id_user FROM login_session WHERE (id_user = ?) AND (xcheck = '?');", userid, xcheckC)
 	res, err := db.Start("SELECT id_user FROM login_session WHERE (id_user = " + strconv.FormatUint(userid, 10) + ") AND (xcheck = '" + mysql.Escape(db, xcheckC) + "');") // , userid, xcheckC
 	if err != nil {
