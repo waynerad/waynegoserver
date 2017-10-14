@@ -1,9 +1,8 @@
 package bookmark
 
 import (
+	"accessdb"
 	"fmt"
-	"github.com/ziutek/mymysql/mysql"
-	_ "github.com/ziutek/mymysql/native" // Native engine
 	"html"
 	"net/http"
 	"static"
@@ -18,15 +17,6 @@ func getDoctype() string {
 <head>
 <meta charset=utf-8 />
 `
-}
-
-func getDbConnection() (mysql.Conn, error) {
-	user := "webdata_user"
-	pass := "97abcmt3teteej"
-	dbname := "webdata"
-	db := mysql.New("tcp", "", "127.0.0.1:3306", user, pass, dbname)
-	err := db.Connect()
-	return db, err
 }
 
 func uintToStr(n uint64) string {
@@ -94,11 +84,7 @@ func showEditPage(w http.ResponseWriter, r *http.Request, op string, userid uint
 		_, ok := getform["bookmark"]
 		if ok {
 			bookmarkid = strToUint(getform["bookmark"][0])
-			db, err := getDbConnection()
-			if err != nil {
-				fmt.Println(err)
-				panic("getDbConnection failed")
-			}
+			db := accessdb.GetDbConnection()
 			defer db.Close()
 			sql := "SELECT name, target FROM bookmark_link WHERE (id_bookmark = ?) AND (id_user = ?);"
 			sel, err := db.Prepare(sql)
@@ -142,11 +128,7 @@ func showEditPage(w http.ResponseWriter, r *http.Request, op string, userid uint
 			showform = true
 		} else {
 			// dbConnect!!
-			db, err := getDbConnection()
-			if err != nil {
-				fmt.Fprintln(w, err)
-				return
-			}
+			db := accessdb.GetDbConnection()
 			defer db.Close()
 			var save struct {
 				idBookmark   uint64
@@ -208,11 +190,7 @@ func showEditPage(w http.ResponseWriter, r *http.Request, op string, userid uint
 		header := w.Header()
 		header.Set("Content-Type", "text/html; charset=utf-8")
 		fmt.Fprint(w, getDoctype())
-		db, err := getDbConnection()
-		if err != nil {
-			fmt.Fprintln(w, err)
-			return
-		}
+		db := accessdb.GetDbConnection()
 		defer db.Close()
 		fmt.Fprint(w, `<title>Bookmark Entry</title>
 <link rel="stylesheet" type="text/css" href="/bookmark/style.css">
@@ -266,13 +244,9 @@ func showListPage(w http.ResponseWriter, r *http.Request, op string, userid uint
 	fmt.Fprint(w, `
     <h1>List of Bookmarks</h1>
 `)
-	db, err := getDbConnection()
-	if err != nil {
-		fmt.Fprintln(w, err)
-		return
-	}
+	db := accessdb.GetDbConnection()
 	defer db.Close()
-	err = r.ParseForm()
+	err := r.ParseForm()
 	if err != nil {
 		fmt.Fprintln(w, err)
 		return
@@ -357,11 +331,7 @@ func evoke(w http.ResponseWriter, r *http.Request, op string, userid uint64, use
 		_, ok := getform["bookmark"]
 		if ok {
 			bookmarkid = strToUint(getform["bookmark"][0])
-			db, err := getDbConnection()
-			if err != nil {
-				fmt.Println(err)
-				panic("getDbConnection failed")
-			}
+			db := accessdb.GetDbConnection()
 			defer db.Close()
 			sql := "SELECT target FROM bookmark_link WHERE (id_bookmark = ?) AND (id_user = ?);"
 			sel, err := db.Prepare(sql)
@@ -422,11 +392,7 @@ func showDeletePage(w http.ResponseWriter, r *http.Request, op string, userid ui
 		_, ok := getform["bookmark"]
 		if ok {
 			bookmarkid = strToUint(getform["bookmark"][0])
-			db, err := getDbConnection()
-			if err != nil {
-				fmt.Println(err)
-				panic("getDbConnection failed")
-			}
+			db := accessdb.GetDbConnection()
 			defer db.Close()
 			sql := "SELECT name, target FROM bookmark_link WHERE (id_bookmark = ?) AND (id_user = ?);"
 			sel, err := db.Prepare(sql)
@@ -458,11 +424,7 @@ func showDeletePage(w http.ResponseWriter, r *http.Request, op string, userid ui
 		bookmarkid = strToUint(postform["bookmark"][0])
 
 		// dbConnect!!
-		db, err := getDbConnection()
-		if err != nil {
-			fmt.Fprintln(w, err)
-			return
-		}
+		db := accessdb.GetDbConnection()
 		defer db.Close()
 		// query, if there, update, if not, create new
 		stmt, err := db.Prepare("DELETE FROM bookmark_link WHERE (id_bookmark = ?) AND (id_user = ?);")
@@ -484,11 +446,7 @@ func showDeletePage(w http.ResponseWriter, r *http.Request, op string, userid ui
 		header := w.Header()
 		header.Set("Content-Type", "text/html; charset=utf-8")
 		fmt.Fprint(w, getDoctype())
-		db, err := getDbConnection()
-		if err != nil {
-			fmt.Fprintln(w, err)
-			return
-		}
+		db := accessdb.GetDbConnection()
 		defer db.Close()
 		fmt.Fprint(w, `<title>Delete Bookmark</title>
 <link rel="stylesheet" type="text/css" href="/bookmark/style.css">
@@ -523,7 +481,7 @@ func showDeletePage(w http.ResponseWriter, r *http.Request, op string, userid ui
 }
 
 func redirectToLoginPage(w http.ResponseWriter, r *http.Request) {
-        http.Redirect(w, r, "../login/login", 302)
+	http.Redirect(w, r, "../login/login", 302)
 }
 
 func Handler(w http.ResponseWriter, r *http.Request, op string, userid uint64, userName string) {
