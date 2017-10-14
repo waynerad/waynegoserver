@@ -1,9 +1,8 @@
 package geo
 
 import (
+	"accessdb"
 	"fmt"
-	"github.com/ziutek/mymysql/mysql"
-	_ "github.com/ziutek/mymysql/native" // Native engine
 	"html"
 	"math"
 	"math/rand"
@@ -13,21 +12,15 @@ import (
 	"time"
 )
 
+// "github.com/ziutek/mymysql/mysql"
+// _ "github.com/ziutek/mymysql/native" // Native engine
+
 func getDoctype() string {
 	return `<!DOCTYPE html>
 <html>
 <head>
 <meta charset=utf-8 />
 `
-}
-
-func getDbConnection() (mysql.Conn, error) {
-	user := "webdata_user"
-	pass := "97abcmt3teteej"
-	dbname := "webdata"
-	db := mysql.New("tcp", "", "127.0.0.1:3306", user, pass, dbname)
-	err := db.Connect()
-	return db, err
 }
 
 func showExposition(w http.ResponseWriter, target_url string, description string) {
@@ -74,11 +67,7 @@ func candeleteadd(w http.ResponseWriter, r *http.Request, op string) {
 			}
 		}
 		if error_occurred == false {
-			db, err := getDbConnection()
-			if err != nil {
-				fmt.Fprintln(w, err)
-				return
-			}
+			db := accessdb.GetDbConnection()
 			defer db.Close()
 			stmt, err := db.Prepare("INSERT INTO link_link (created_gmt, target_url, image_url, description, is_email, is_public, is_video) VALUES (?, ?, ?, ?, ?, ?, ?);")
 			if err != nil {
@@ -136,11 +125,7 @@ func candeleteadd(w http.ResponseWriter, r *http.Request, op string) {
 		header := w.Header()
 		header.Set("Content-Type", "text/html; charset=utf-8")
 		fmt.Fprint(w, getDoctype())
-		db, err := getDbConnection()
-		if err != nil {
-			fmt.Fprintln(w, err)
-			return
-		}
+		db := accessdb.GetDbConnection()
 		defer db.Close()
 		sql := "SELECT COUNT(*) FROM link_link WHERE is_email=1;"
 		res, err := db.Start(sql)
@@ -517,13 +502,9 @@ func candeletelist(w http.ResponseWriter, r *http.Request, op string) {
   <section>
     <h1>List of URLs</h1>
 `)
-	db, err := getDbConnection()
-	if err != nil {
-		fmt.Fprintln(w, err)
-		return
-	}
+	db := accessdb.GetDbConnection()
 	defer db.Close()
-	err = r.ParseForm()
+	err := r.ParseForm()
 	if err != nil {
 		fmt.Fprintln(w, err)
 		return
@@ -617,11 +598,7 @@ func candeleteexposit(w http.ResponseWriter, r *http.Request, op string) {
   <section>
     <h1>Exposition</h1>
 `)
-	db, err := getDbConnection()
-	if err != nil {
-		fmt.Fprintln(w, err)
-		return
-	}
+	db := accessdb.GetDbConnection()
 	defer db.Close()
 	res, err := db.Start("SELECT id_lnk, created_gmt, target_url, image_url, description FROM link_link WHERE id_lnk=" + strconv.FormatUint(linkid, 10) + " ORDER BY id_lnk DESC;")
 	if err != nil {
@@ -688,11 +665,7 @@ func candeleteedit(w http.ResponseWriter, r *http.Request, op string) {
 			fmt.Fprintln(w, err)
 			return
 		}
-		db, err := getDbConnection()
-		if err != nil {
-			fmt.Fprintln(w, err)
-			return
-		}
+		db := accessdb.GetDbConnection()
 		res, err := db.Start("SELECT id_lnk, created_gmt, target_url, image_url, description, is_email, is_public, is_video FROM link_link WHERE id_lnk=" + strconv.FormatUint(linkid, 10) + " ORDER BY id_lnk DESC;")
 		if err != nil {
 			fmt.Fprintln(w, err)
@@ -751,11 +724,7 @@ func candeleteedit(w http.ResponseWriter, r *http.Request, op string) {
 			}
 		}
 		if error_occurred == false {
-			db, err := getDbConnection()
-			if err != nil {
-				fmt.Fprintln(w, err)
-				return
-			}
+			db := accessdb.GetDbConnection()
 			defer db.Close()
 			stmt, err := db.Prepare("UPDATE link_link SET target_url=?, image_url=?, description=?, is_email=?, is_public=?, is_video=? WHERE id_lnk=?;")
 			if err != nil {
@@ -857,11 +826,7 @@ func candeletedelete(w http.ResponseWriter, r *http.Request, op string) {
 			fmt.Fprintln(w, err)
 			return
 		}
-		db, err := getDbConnection()
-		if err != nil {
-			fmt.Fprintln(w, err)
-			return
-		}
+		db := accessdb.GetDbConnection()
 		res, err := db.Start("SELECT id_lnk, created_gmt, target_url, image_url, description FROM link_link WHERE id_lnk=" + strconv.FormatUint(linkid, 10) + " ORDER BY id_lnk DESC;")
 		if err != nil {
 			fmt.Fprintln(w, err)
@@ -899,11 +864,7 @@ func candeletedelete(w http.ResponseWriter, r *http.Request, op string) {
 			return
 		}
 		postform := r.Form
-		db, err := getDbConnection()
-		if err != nil {
-			fmt.Fprintln(w, err)
-			return
-		}
+		db := accessdb.GetDbConnection()
 		defer db.Close()
 		stmt, err := db.Prepare("DELETE FROM link_link WHERE id_lnk=?;")
 		if err != nil {
@@ -992,11 +953,7 @@ func candeleteemail(w http.ResponseWriter, r *http.Request, op string) {
 
 
 `)
-	db, err := getDbConnection()
-	if err != nil {
-		fmt.Fprintln(w, err)
-		return
-	}
+	db := accessdb.GetDbConnection()
 	defer db.Close()
 
 	count := 0
@@ -1187,11 +1144,7 @@ func distance(w http.ResponseWriter, r *http.Request, op string, userid uint64) 
 		var centery float64
 		var centerx float64
 
-		db, err := getDbConnection()
-		if err != nil {
-			fmt.Fprintln(w, err)
-			return
-		}
+		db := accessdb.GetDbConnection()
 		defer db.Close()
 		sql := "SELECT gps_lat, gps_long FROM login_user WHERE id_user = ?;"
 		sel, err := db.Prepare(sql)
