@@ -1,6 +1,7 @@
 package fitb
 
 import (
+	"accessdb"
 	"fmt"
 	"github.com/ziutek/mymysql/mysql"
 	_ "github.com/ziutek/mymysql/native" // Native engine
@@ -32,19 +33,6 @@ body {
 }
 </style>
 `
-}
-
-func getDbConnection() mysql.Conn {
-	user := "webdata_user"
-	pass := "97abcmt3teteej"
-	dbname := "webdata"
-	db := mysql.New("tcp", "", "127.0.0.1:3306", user, pass, dbname)
-	err := db.Connect()
-	if err != nil {
-		fmt.Println(err)
-		panic("dbConnect Failed")
-	}
-	return db
 }
 
 func uint64ToStr(z uint64) string {
@@ -129,7 +117,7 @@ func showEditTopicPage(w http.ResponseWriter, r *http.Request, op string, userid
 				fmt.Println(err)
 				panic("ParseUint failed")
 			}
-			db := getDbConnection()
+			db := accessdb.GetDbConnection()
 			defer db.Close()
 			sql := "SELECT id_topic, name, description, introduction FROM fitb_topic WHERE (id_topic = ?) AND (id_user = ?);"
 			sel, err := db.Prepare(sql)
@@ -182,7 +170,7 @@ func showEditTopicPage(w http.ResponseWriter, r *http.Request, op string, userid
 		if errorOccurred {
 			showform = true
 		} else {
-			db := getDbConnection()
+			db := accessdb.GetDbConnection()
 			defer db.Close()
 			var save struct {
 				idTopic      uint64
@@ -243,7 +231,7 @@ func showEditTopicPage(w http.ResponseWriter, r *http.Request, op string, userid
 		header := w.Header()
 		header.Set("Content-Type", "text/html; charset=utf-8")
 		fmt.Fprint(w, getDoctype())
-		db := getDbConnection()
+		db := accessdb.GetDbConnection()
 		defer db.Close()
 		fmt.Fprint(w, `<title>Topic Entry</title>
 `+getStyle()+`
@@ -294,7 +282,7 @@ func showTopicListPage(w http.ResponseWriter, r *http.Request, op string, userid
   <section>
     <h1>List of Topics</h1>
 `)
-	db := getDbConnection()
+	db := accessdb.GetDbConnection()
 	defer db.Close()
 	err := r.ParseForm()
 	if err != nil {
@@ -367,7 +355,7 @@ func showTopicPickListPage(w http.ResponseWriter, r *http.Request, op string, us
   <section>
     <h1>Pick Topic</h1>
 `)
-	db := getDbConnection()
+	db := accessdb.GetDbConnection()
 	defer db.Close()
 	err := r.ParseForm()
 	if err != nil {
@@ -436,7 +424,7 @@ func showPracticePage(w http.ResponseWriter, r *http.Request, op string, userid 
 			fmt.Println(err)
 			panic("ParseUint failed")
 		}
-		db := getDbConnection()
+		db := accessdb.GetDbConnection()
 		defer db.Close()
 		sql := "SELECT id_topic, name FROM fitb_topic WHERE (id_topic = ?) AND (id_user = ?);"
 		sel, err := db.Prepare(sql)
@@ -458,7 +446,7 @@ func showPracticePage(w http.ResponseWriter, r *http.Request, op string, userid 
 	header := w.Header()
 	header.Set("Content-Type", "text/html; charset=utf-8")
 	fmt.Fprint(w, getDoctype())
-	db := getDbConnection()
+	db := accessdb.GetDbConnection()
 	defer db.Close()
 	fmt.Fprint(w, `<title>Practice</title>
 `+getStyle()+`
@@ -505,7 +493,7 @@ func showEditChapterPage(w http.ResponseWriter, r *http.Request, op string, user
 				fmt.Println(err)
 				panic("ParseUint failed")
 			}
-			db := getDbConnection()
+			db := accessdb.GetDbConnection()
 			defer db.Close()
 			sql := "SELECT id_chapter, id_topic, name FROM fitb_chapter WHERE (id_chapter = ?);"
 			sel, err := db.Prepare(sql)
@@ -550,7 +538,7 @@ func showEditChapterPage(w http.ResponseWriter, r *http.Request, op string, user
 		}
 		userOwnsTopic := false
 		if ui.idTopic > 0 {
-			db := getDbConnection()
+			db := accessdb.GetDbConnection()
 			defer db.Close()
 			topicid := ui.idTopic
 			sql := "SELECT id_topic FROM fitb_topic WHERE (id_topic = ?) AND (id_user = ?);"
@@ -613,7 +601,7 @@ func showEditChapterPage(w http.ResponseWriter, r *http.Request, op string, user
 		if errorOccurred {
 			showform = true
 		} else {
-			db := getDbConnection()
+			db := accessdb.GetDbConnection()
 			defer db.Close()
 			var save struct {
 				idChapter uint64
@@ -670,7 +658,7 @@ func showEditChapterPage(w http.ResponseWriter, r *http.Request, op string, user
 		header := w.Header()
 		header.Set("Content-Type", "text/html; charset=utf-8")
 		fmt.Fprint(w, getDoctype())
-		db := getDbConnection()
+		db := accessdb.GetDbConnection()
 		defer db.Close()
 		fmt.Fprint(w, `<title>Chapter Entry</title>
 `+getStyle()+`
@@ -719,7 +707,7 @@ func showChapterListPage(w http.ResponseWriter, r *http.Request, op string, user
 		fmt.Fprintln(w, err)
 		return
 	}
-	db := getDbConnection()
+	db := accessdb.GetDbConnection()
 	defer db.Close()
 	sql = "SELECT name FROM fitb_topic WHERE (id_topic = ?);"
 	sel, err := db.Prepare(sql)
@@ -1132,7 +1120,7 @@ func showBulkEditQuestionsPage(w http.ResponseWriter, r *http.Request, op string
 				fmt.Println(err)
 				panic("ParseUint failed")
 			}
-			db := getDbConnection()
+			db := accessdb.GetDbConnection()
 			defer db.Close()
 			sql := "SELECT id_question, id_chapter, sequence_num, the_fitb_str, lnum FROM fitb_question WHERE (id_topic = ?);"
 			sel, err := db.Prepare(sql)
@@ -1189,7 +1177,7 @@ func showBulkEditQuestionsPage(w http.ResponseWriter, r *http.Request, op string
 			fmt.Println(err)
 			panic("parseform failed")
 		}
-		db := getDbConnection()
+		db := accessdb.GetDbConnection()
 		userOwnsTopic := false
 		if topicid > 0 {
 			defer db.Close()
@@ -1273,7 +1261,7 @@ func showBulkEditQuestionsPage(w http.ResponseWriter, r *http.Request, op string
 		header := w.Header()
 		header.Set("Content-Type", "text/html; charset=utf-8")
 		fmt.Fprint(w, getDoctype())
-		db := getDbConnection()
+		db := accessdb.GetDbConnection()
 		defer db.Close()
 		type chapterType struct {
 			idChapter uint64
@@ -1404,7 +1392,7 @@ func showListQuestionsPage(w http.ResponseWriter, r *http.Request, op string, us
 				fmt.Println(err)
 				panic("ParseUint failed")
 			}
-			db := getDbConnection()
+			db := accessdb.GetDbConnection()
 			defer db.Close()
 			sql := "SELECT name FROM fitb_topic WHERE (id_topic = ?) AND (id_user = ?);"
 			sel, err := db.Prepare(sql)
@@ -1451,7 +1439,7 @@ func showListQuestionsPage(w http.ResponseWriter, r *http.Request, op string, us
 		header := w.Header()
 		header.Set("Content-Type", "text/html; charset=utf-8")
 		fmt.Fprint(w, getDoctype())
-		db := getDbConnection()
+		db := accessdb.GetDbConnection()
 		defer db.Close()
 		type chapterType struct {
 			idChapter uint64
@@ -1544,7 +1532,7 @@ func showAddBulkQuestionsPage(w http.ResponseWriter, r *http.Request, op string,
 				fmt.Println(err)
 				panic("ParseUint failed")
 			}
-			db := getDbConnection()
+			db := accessdb.GetDbConnection()
 			defer db.Close()
 			sql := "SELECT name FROM fitb_topic WHERE (id_topic = ?) AND (id_user = ?);"
 			sel, err := db.Prepare(sql)
@@ -1583,7 +1571,7 @@ func showAddBulkQuestionsPage(w http.ResponseWriter, r *http.Request, op string,
 			fmt.Println(err)
 			panic("parseform failed")
 		}
-		db := getDbConnection()
+		db := accessdb.GetDbConnection()
 		userOwnsTopic := false
 		if topicid > 0 {
 			defer db.Close()
@@ -1666,7 +1654,7 @@ func showAddBulkQuestionsPage(w http.ResponseWriter, r *http.Request, op string,
 		if errorOccurred {
 			showform = true
 		} else {
-			db := getDbConnection()
+			db := accessdb.GetDbConnection()
 			defer db.Close()
 			// var save struct {
 			//	idChapter uint64
@@ -1683,7 +1671,7 @@ func showAddBulkQuestionsPage(w http.ResponseWriter, r *http.Request, op string,
 		header := w.Header()
 		header.Set("Content-Type", "text/html; charset=utf-8")
 		fmt.Fprint(w, getDoctype())
-		db := getDbConnection()
+		db := accessdb.GetDbConnection()
 		defer db.Close()
 		type chapterType struct {
 			idChapter uint64
@@ -1788,7 +1776,7 @@ func showEditQuestionPage(w http.ResponseWriter, r *http.Request, op string, use
 				fmt.Println(err)
 				panic("ParseUint failed")
 			}
-			db := getDbConnection()
+			db := accessdb.GetDbConnection()
 			defer db.Close()
 			sql := "SELECT id_topic, id_chapter, the_fitb_str FROM fitb_question WHERE (id_question = ?);"
 			sel, err := db.Prepare(sql)
@@ -1838,7 +1826,7 @@ func showEditQuestionPage(w http.ResponseWriter, r *http.Request, op string, use
 		ui.idChapter = chapterid
 		fitbStr := postform["fitb"][0]
 		ui.theFitbStr = fitbStr
-		db := getDbConnection()
+		db := accessdb.GetDbConnection()
 		userOwnsTopic := false
 		if topicid > 0 {
 			defer db.Close()
@@ -1891,7 +1879,7 @@ func showEditQuestionPage(w http.ResponseWriter, r *http.Request, op string, use
 		if errorOccurred {
 			showform = true
 		} else {
-			db := getDbConnection()
+			db := accessdb.GetDbConnection()
 			defer db.Close()
 			// var save struct {
 			//	idChapter uint64
@@ -1908,7 +1896,7 @@ func showEditQuestionPage(w http.ResponseWriter, r *http.Request, op string, use
 		header := w.Header()
 		header.Set("Content-Type", "text/html; charset=utf-8")
 		fmt.Fprint(w, getDoctype())
-		db := getDbConnection()
+		db := accessdb.GetDbConnection()
 		defer db.Close()
 		type chapterType struct {
 			idChapter uint64
@@ -1991,7 +1979,7 @@ func showRenumberPage(w http.ResponseWriter, r *http.Request, op string, userid 
 		_, topicExists := getform["topic"]
 		if topicExists {
 			topicid = strToUint64(getform["topic"][0])
-			db := getDbConnection()
+			db := accessdb.GetDbConnection()
 			defer db.Close()
 			type updateTyp struct {
 				questionid uint64
@@ -2066,7 +2054,7 @@ func showRenumberPage(w http.ResponseWriter, r *http.Request, op string, userid 
 	header := w.Header()
 	header.Set("Content-Type", "text/html; charset=utf-8")
 	fmt.Fprint(w, getDoctype())
-	db := getDbConnection()
+	db := accessdb.GetDbConnection()
 	defer db.Close()
 	fmt.Fprint(w, `<title>Renumber Topic</title>
 `+getStyle()+`
@@ -2081,6 +2069,7 @@ func showRenumberPage(w http.ResponseWriter, r *http.Request, op string, userid 
 <table border="0" cellpadding="4">
 </table>
 </form>
+<p>Done</p>
   </section>
 </body>
 </html>`)
@@ -2132,7 +2121,7 @@ func initialize(db mysql.Conn, userid uint64, topicid uint64) {
 		}
 	}
 	for _, questionid := range questionList {
-		sql = "INSERT INTO fitb_user_question_jct (id_user, id_question, id_topic, ask_time_gmt, time_interval, factor) VALUES (?, ?, ?, ?, ?, ?);"
+		sql = "INSERT INTO fitb_user_question_jct (id_user, id_question, id_topic, ask_time_gmt, time_interval, factorup, factordown) VALUES (?, ?, ?, ?, ?, ?, ?);"
 		stmt, err := db.Prepare(sql)
 		if err != nil {
 			fmt.Println(err)
@@ -2141,7 +2130,7 @@ func initialize(db mysql.Conn, userid uint64, topicid uint64) {
 		// defer stmt.Close();
 		sequenceNum := seqNumMap[questionid]
 		askTime := 1 + sequenceNum                               // This is so the sequence of first introduction is the same as the sequence_num bers in the database
-		stmt.Bind(userid, questionid, topicid, askTime, 60, 2.0) // INITIAL REPETITIVENESS is set here
+		stmt.Bind(userid, questionid, topicid, askTime, 60, 1.0, 1.0) // INITIAL REPETITIVENESS is set here
 		_, _, err = stmt.Exec()
 	}
 }
@@ -2164,7 +2153,7 @@ func showInitializePage(w http.ResponseWriter, r *http.Request, op string, useri
 		_, topicExists := getform["topic"]
 		if topicExists {
 			topicid = strToUint64(getform["topic"][0])
-			db := getDbConnection()
+			db := accessdb.GetDbConnection()
 			defer db.Close()
 			// get the name & introduction text
 			sql := "SELECT name, introduction FROM fitb_topic WHERE id_topic = ?;"
@@ -2207,7 +2196,7 @@ func showInitializePage(w http.ResponseWriter, r *http.Request, op string, useri
 	header := w.Header()
 	header.Set("Content-Type", "text/html; charset=utf-8")
 	fmt.Fprint(w, getDoctype())
-	db := getDbConnection()
+	db := accessdb.GetDbConnection()
 	defer db.Close()
 	var title string
 	var buttonFace string
@@ -2236,12 +2225,13 @@ func showInitializePage(w http.ResponseWriter, r *http.Request, op string, useri
 </html>`)
 }
 
-func followJctToQuestionInfo(db mysql.Conn, questionjctid uint64, userid uint64) (uint64, uint64, uint64, uint64, float64, string, string) {
+func followJctToQuestionInfo(db mysql.Conn, questionjctid uint64, userid uint64) (uint64, uint64, uint64, uint64, float64, float64, string, string) {
 	var questionid uint64
 	var topicid uint64
 	var askTimeGmt uint64
 	var timeInterval uint64
-	var factor float64
+	var factorup float64
+	var factordown float64
 	var theFitbStr string
 	var topicName string
 	// mysql> DESCRIBE fitb_user_question_jct;
@@ -2254,10 +2244,11 @@ func followJctToQuestionInfo(db mysql.Conn, questionjctid uint64, userid uint64)
 	// | id_topic      | int(10) unsigned | NO   |     | 0       |                |
 	// | ask_time_gmt  | int(10) unsigned | NO   |     | 0       |                |
 	// | time_interval | int(10) unsigned | NO   |     | 0       |                |
-	// | factor        | double           | NO   |     | 0       |                |
+	// | factorup      | double           | NO   |     | 0       |                |
+	// | factordown    | double           | NO   |     | 0       |                |
 	// +---------------+------------------+------+-----+---------+----------------+
 	// 7 rows in set (0.00 sec)
-	sql := "SELECT id_question, id_topic, ask_time_gmt, time_interval, factor FROM fitb_user_question_jct WHERE (id_uq_jct = ?) AND (id_user = ?);"
+	sql := "SELECT id_question, id_topic, ask_time_gmt, time_interval, factorup, factordown FROM fitb_user_question_jct WHERE (id_uq_jct = ?) AND (id_user = ?);"
 	sel, err := db.Prepare(sql)
 	if err != nil {
 		fmt.Println(err)
@@ -2274,13 +2265,15 @@ func followJctToQuestionInfo(db mysql.Conn, questionjctid uint64, userid uint64)
 		topicid = row.Uint64(1)
 		askTimeGmt = row.Uint64(2)
 		timeInterval = row.Uint64(3)
-		factor = row.Float(4)
+		factorup = row.Float(4)
+		factordown = row.Float(5)
 	}
 	fmt.Println("questionid", questionid)
 	fmt.Println("topicid", topicid)
 	fmt.Println("askTimeGmt", askTimeGmt)
 	fmt.Println("timeInterval", timeInterval)
-	fmt.Println("factor", factor)
+	fmt.Println("factorup", factorup)
+	fmt.Println("factordown", factordown)
 	// mysql> DESCRIBE fitb_question;
 	// +--------------+------------------+------+-----+---------+----------------+
 	// | Field        | Type             | Null | Key | Default | Extra          |
@@ -2323,21 +2316,18 @@ func followJctToQuestionInfo(db mysql.Conn, questionjctid uint64, userid uint64)
 	for _, row := range rows {
 		topicName = row.Str(0)
 	}
-	return questionid, topicid, askTimeGmt, timeInterval, factor, theFitbStr, topicName
+	return questionid, topicid, askTimeGmt, timeInterval, factorup, factordown, theFitbStr, topicName
 }
 
-func updateInterval(db mysql.Conn, questionjctid uint64, askTime uint64, timeInterval uint64, factor float64, userid uint64) {
-	sql := "UPDATE fitb_user_question_jct SET ask_time_gmt = ?, time_interval = ?, factor = ? WHERE (id_uq_jct = ?) AND (id_user = ?);"
+func updateInterval(db mysql.Conn, questionjctid uint64, askTime uint64, timeInterval uint64, factorup float64, factordown float64, userid uint64) {
+	sql := "UPDATE fitb_user_question_jct SET ask_time_gmt = ?, time_interval = ?, factorup = ?, factordown = ? WHERE (id_uq_jct = ?) AND (id_user = ?);"
 	stmt, err := db.Prepare(sql)
 	if err != nil {
 		fmt.Println(err)
 		panic("Prepare failed")
 	}
-	stmt.Bind(askTime, timeInterval, factor, questionjctid, userid)
+	stmt.Bind(askTime, timeInterval, factorup, factordown, questionjctid, userid)
 	_, _, err = stmt.Exec()
-}
-
-func intdiv(x int) {
 }
 
 // show time interval, e.g. "5 sec", "14 min", etc
@@ -2388,7 +2378,8 @@ func showAskQuestionPage(w http.ResponseWriter, r *http.Request, op string, user
 	var topicid uint64
 	var askTimeGmt uint64
 	var timeInterval uint64
-	var factor float64
+	var factorup float64
+	var factordown float64
 	var theFitbStr string
 	var topicName string
 	var alreadywrong int
@@ -2408,30 +2399,35 @@ func showAskQuestionPage(w http.ResponseWriter, r *http.Request, op string, user
 		questionjctid = strToUint64(theform["questionjct"][0])
 		fmt.Println("questionjctid", questionjctid)
 	}
-	db := getDbConnection()
+	db := accessdb.GetDbConnection()
 	defer db.Close()
 	// initialization
 	responseMap := make(map[int]string)
 	correctMessage := ""
+	fullAnswer := ""
 	alreadywrong = 0
 	takeABreakMode := false
 	gotRight := false
 	doBreakRedirect := false
+	increment := 0.6931471805599453 // log of 2
+	decrement := 2.0 // divide by this instead of subtract
 	currentTime := uint64(time.Now().Unix())
 	fmt.Println("currentTime", currentTime)
 	_, responseExists := theform["response1"]
 	if responseExists {
 		alreadywrong = strToInt(theform["alreadywrong"][0])
 		allCorrect := true
-		questionid, topicid, askTimeGmt, timeInterval, factor, theFitbStr, topicName = followJctToQuestionInfo(db, questionjctid, userid)
+		questionid, topicid, askTimeGmt, timeInterval, factorup, factordown, theFitbStr, topicName = followJctToQuestionInfo(db, questionjctid, userid)
 		fmt.Println("questionid", questionid)
 		fmt.Println("topicid", topicid)
 		fmt.Println("askTimeGmt", askTimeGmt)
 		fmt.Println("timeInterval", timeInterval)
-		fmt.Println("factor", factor)
+		fmt.Println("factorup", factorup)
+		fmt.Println("factordown", factordown)
 		fitbList := strings.Split(theFitbStr, "_")
 		inBlank := false
 		for idx, entry := range fitbList {
+			fullAnswer = fullAnswer + entry
 			if inBlank {
 				answer := theform["response"+intToStr(idx)][0]
 				responseMap[idx] = answer
@@ -2452,41 +2448,65 @@ func showAskQuestionPage(w http.ResponseWriter, r *http.Request, op string, user
 		seedUnix := seedTime.UnixNano()
 		rand.Seed(seedUnix)
 		if allCorrect {
-			correctMessage = "You are correct! Next question:"
+			correctMessage = `<p>You are correct!</p><font color="green"><b>` + fullAnswer + `</b></font></p><p> Next question:`
 			if alreadywrong == 0 {
-				if factor < 2.0 {
-					factor = 2.0
+				// if they got it correct, we use the UP factor
+				// and increase it and set the DOWN factor to
+				// the new UP factor so it will be used if they
+				// go down next time
+				if factorup < 1.0 {
+					factorup = 1.0
 				}
-				factor = factor + 1
+				factorup = factorup + increment
 				if timeInterval < 1 {
 					timeInterval = 1
 				}
-				actualFactor := factor * (1.0 + ((rand.Float64() - 0.5) / 25.0)) // allows 2% variation
-				timeInterval = uint64(float64(timeInterval) * actualFactor)
+				factorup = factorup * (1.0 + ((rand.Float64() - 0.5) / 25.0)) // allows 2% variation
+				factordown = factorup
+				timeInterval = uint64(float64(timeInterval) * factorup)
 				newTime := currentTime + timeInterval
-				updateInterval(db, questionjctid, newTime, timeInterval, factor, userid)
+				updateInterval(db, questionjctid, newTime, timeInterval, factorup, factordown, userid)
 			}
 			questionjctid = 0                  // will prompt code below to retrieve a new question
 			alreadywrong = 0                   // clear this flag for the next question
 			responseMap = make(map[int]string) // throw away repeat of answers
 			gotRight = true
 		} else {
-			correctMessage = "Wrong! The answer is: "
-			for _, entry := range fitbList {
-				correctMessage = correctMessage + entry
-			}
+			correctMessage = `<font color="red">Wrong!</font> The answer is: ` + fullAnswer
 			if alreadywrong == 0 {
-				actualFactor := factor * (1.0 + ((rand.Float64() - 0.5) / 25.0)) // allows 2% variation
-				timeInterval = uint64(float64(timeInterval) / actualFactor)
+				// If they got it wrong, we 1) chop the time
+				// interval by the current DOWN factor first,
+				// before changing it, 2) change the DOWN
+				// factor (making sure it doesn't go too low),
+				// and divide the UP factor by 2 making it
+				// (normally) go down much faster, but we're
+				// going to continue using the DOWN factor as
+				// long as we're going down and only switch
+				// back to the UP factor (and set the DOWN
+				// factor equal to the UP factor) when we start
+				// going back up.
+				timeInterval = uint64(float64(timeInterval) / factordown)
+				d1 := factordown - increment
+				d2 := factordown / decrement
+				if d2 > d1 {
+					factordown = d2
+				} else {
+					factordown = d1
+				}
+				if factordown < 1.0 {
+					factordown = 1.0
+				}
+				factordown = factordown * (1.0 + ((rand.Float64() - 0.5) / 25.0)) // allows 2% variation
+//////
 				if timeInterval < 1 {
 					timeInterval = 1
 				}
-				factor = factor / 2.0
-				if factor < 2.0 {
-					factor = 2.0
+				factorup = factorup / decrement
+				if factorup < 1.0 {
+					factorup = 1.0
 				}
 				newTime := currentTime + timeInterval
-				updateInterval(db, questionjctid, newTime, timeInterval, factor, userid)
+				updateInterval(db, questionjctid, newTime, timeInterval, factorup, factordown, userid)
 			}
 			alreadywrong = 1
 		}
@@ -2572,18 +2592,19 @@ func showAskQuestionPage(w http.ResponseWriter, r *http.Request, op string, user
 			fmt.Println("wouldBeQuestionjctid", wouldBeQuestionjctid)
 		}
 		fmt.Println("wouldBeQuestionjctid", wouldBeQuestionjctid)
-		questionid, topicid, askTimeGmt, timeInterval, factor, theFitbStr, topicName = followJctToQuestionInfo(db, wouldBeQuestionjctid, userid)
+		questionid, topicid, askTimeGmt, timeInterval, factorup, factordown, theFitbStr, topicName = followJctToQuestionInfo(db, wouldBeQuestionjctid, userid)
 		takeABreakMode = true
 		if gotRight {
 			doBreakRedirect = true
 		}
 	} else {
-		questionid, topicid, askTimeGmt, timeInterval, factor, theFitbStr, topicName = followJctToQuestionInfo(db, questionjctid, userid)
+		questionid, topicid, askTimeGmt, timeInterval, factorup, factordown, theFitbStr, topicName = followJctToQuestionInfo(db, questionjctid, userid)
 		fmt.Println("questionid", questionid)
 		fmt.Println("topicid", topicid)
 		fmt.Println("askTimeGmt", askTimeGmt)
 		fmt.Println("timeInterval", timeInterval)
-		fmt.Println("factor", factor)
+		fmt.Println("factorup", factorup)
+		fmt.Println("factordown", factordown)
 	}
 	if doBreakRedirect {
 		http.Redirect(w, r, "quiz?topic="+uint64ToStr(topicid), 302)
@@ -2726,7 +2747,7 @@ func Handler(w http.ResponseWriter, r *http.Request, op string, userid uint64, u
 			showAskQuestionPage(w, r, op, userid, userName)
 		}
 	default:
-		filename := "/home/ec2-user/wayneserver/staticappcontent/blind/" + op
+		filename := "/home/ec2-user/wayneserver/staticappcontent/fitb/" + op
 		static.OutputStaticFileWithContentType(w, filename)
 	}
 }
