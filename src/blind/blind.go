@@ -1,6 +1,8 @@
 package blind
+// set ID is hardcoded -- need to fix
 
 import (
+	"accessdb"
 	"errors"
 	"fmt"
 	"github.com/ziutek/mymysql/mysql"
@@ -19,15 +21,6 @@ func getDoctype() string {
 <head>
 <meta charset=utf-8 />
 `
-}
-
-func getDbConnection() (mysql.Conn, error) {
-	user := "webdata_user"
-	pass := "97abcmt3teteej"
-	dbname := "webdata"
-	db := mysql.New("tcp", "", "127.0.0.1:3306", user, pass, dbname)
-	err := db.Connect()
-	return db, err
 }
 
 // mysql> DESCRIBE blind_set;
@@ -185,13 +178,9 @@ func showListPage(w http.ResponseWriter, r *http.Request, op string, userid uint
 	fmt.Fprint(w, `
     <h1>List of Books</h1>
 `)
-	db, err := getDbConnection()
-	if err != nil {
-		fmt.Fprintln(w, err)
-		return
-	}
+	db := accessdb.GetDbConnection()
 	defer db.Close()
-	err = r.ParseForm()
+	err := r.ParseForm()
 	if err != nil {
 		fmt.Fprintln(w, err)
 		return
@@ -377,11 +366,7 @@ func showScrapePage(w http.ResponseWriter, r *http.Request, op string, userid ui
 				fmt.Println(err)
 				panic("ParseUint failed")
 			}
-			db, err := getDbConnection()
-			if err != nil {
-				fmt.Println(err)
-				panic("getDbConnection failed")
-			}
+			db := accessdb.GetDbConnection()
 			defer db.Close()
 			sql := "SELECT title, authors FROM blind_book WHERE (id_book = ?) AND (id_user = ?);"
 			sel, err := db.Prepare(sql)
@@ -530,11 +515,7 @@ func showScrapePage(w http.ResponseWriter, r *http.Request, op string, userid ui
 			showform = true
 		} else {
 			// dbConnect!!
-			db, err := getDbConnection()
-			if err != nil {
-				fmt.Fprintln(w, err)
-				return
-			}
+			db := accessdb.GetDbConnection()
 			defer db.Close()
 			var save struct {
 				idBook  uint64
@@ -550,7 +531,7 @@ func showScrapePage(w http.ResponseWriter, r *http.Request, op string, userid ui
 			}
 			save.idBook = bookid
 			save.idUser = userid
-			save.idSet = 9 // hardcoded for now
+			save.idSet = 12 // hardcoded for now
 			save.title = title
 			save.authors = authors
 			save.stars5 = stars5
@@ -599,7 +580,7 @@ func showScrapePage(w http.ResponseWriter, r *http.Request, op string, userid ui
 				fmt.Println(err)
 				panic("Exec failed")
 			}
-			setid := 9 // BUGBUG this is hardcoded but shouldn't be
+			setid := 12 // BUGBUG this is hardcoded but shouldn't be
 			http.Redirect(w, r, "list?set="+inttostr(setid), 302)
 		}
 	}
@@ -607,11 +588,7 @@ func showScrapePage(w http.ResponseWriter, r *http.Request, op string, userid ui
 		header := w.Header()
 		header.Set("Content-Type", "text/html; charset=utf-8")
 		fmt.Fprint(w, getDoctype())
-		db, err := getDbConnection()
-		if err != nil {
-			fmt.Fprintln(w, err)
-			return
-		}
+		db := accessdb.GetDbConnection()
 		defer db.Close()
 		fmt.Fprint(w, `<title>Blind Book Scrape</title>
 <link rel="stylesheet" type="text/css" href="/style.css">
@@ -684,11 +661,7 @@ func showDeletePage(w http.ResponseWriter, r *http.Request, op string, userid ui
 			fmt.Println(err)
 			panic("ParseUint failed")
 		}
-		db, err := getDbConnection()
-		if err != nil {
-			fmt.Println(err)
-			panic("getDbConnection failed")
-		}
+		db := accessdb.GetDbConnection()
 		defer db.Close()
 		sql := "SELECT title, authors FROM blind_book WHERE (id_book = ?) AND (id_user = ?);"
 		sel, err := db.Prepare(sql)
@@ -722,11 +695,7 @@ func showDeletePage(w http.ResponseWriter, r *http.Request, op string, userid ui
 			fmt.Println(err)
 			panic("bookid parse failed")
 		}
-		db, err := getDbConnection()
-		if err != nil {
-			fmt.Fprintln(w, err)
-			return
-		}
+		db := accessdb.GetDbConnection()
 		defer db.Close()
 		// query, if there, update, if not, create new
 		fmt.Println("id_book", bookid)
@@ -738,18 +707,14 @@ func showDeletePage(w http.ResponseWriter, r *http.Request, op string, userid ui
 		}
 		stmt.Bind(bookid, userid)
 		_, _, err = stmt.Exec()
-		setid := 9 // BUGBUG this is hardcoded but shouldn't be
+		setid := 12 // BUGBUG this is hardcoded but shouldn't be
 		http.Redirect(w, r, "list?set="+inttostr(setid), 302)
 	}
 	if showform {
 		header := w.Header()
 		header.Set("Content-Type", "text/html; charset=utf-8")
 		fmt.Fprint(w, getDoctype())
-		db, err := getDbConnection()
-		if err != nil {
-			fmt.Fprintln(w, err)
-			return
-		}
+		db := accessdb.GetDbConnection()
 		defer db.Close()
 		fmt.Fprint(w, `<title>Delete Blind Book</title>
 <link rel="stylesheet" type="text/css" href="/style.css">
