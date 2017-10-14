@@ -1,25 +1,25 @@
-package main
+package sciencexml
 
 // "crypto/tls"
 // "hash"
 // "mime/multipart"
 // "net/url"
+// "bytes"
+// "crypto/rand"
+// "crypto/sha512"
+// "encoding/base64"
+// "github.com/ziutek/mymysql/mysql"
+// _ "github.com/ziutek/mymysql/native" // Native engine
+// "html"
+// "io"
+// "strconv"
+// "strings"
+// "time"
 import (
-	"bytes"
-	"crypto/rand"
-	"crypto/sha512"
-	"encoding/base64"
 	"encoding/xml"
 	"fmt"
-	"github.com/ziutek/mymysql/mysql"
-	_ "github.com/ziutek/mymysql/native" // Native engine
-	"html"
-	"io"
 	"net/http"
 	"os"
-	"strconv"
-	"strings"
-	"time"
 )
 
 func fetchXML(webAddress, destinationFile string) {
