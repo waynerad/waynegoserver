@@ -1,6 +1,7 @@
 package calcron
 
 import (
+	"accessdb"
 	"fmt"
 	"github.com/ziutek/mymysql/mysql"
 	_ "github.com/ziutek/mymysql/native" // Native engine
@@ -27,15 +28,6 @@ func getDoctype() string {
 <head>
 <meta charset=utf-8 />
 `
-}
-
-func getDbConnection() (mysql.Conn, error) {
-	user := "webdata_user"
-	pass := "97abcmt3teteej"
-	dbname := "webdata"
-	db := mysql.New("tcp", "", "127.0.0.1:3306", user, pass, dbname)
-	err := db.Connect()
-	return db, err
 }
 
 func htm(s string) string {
@@ -679,11 +671,7 @@ func showEditPage(w http.ResponseWriter, r *http.Request, op string, userid uint
 				fmt.Println(err)
 				panic("ParseUint failed")
 			}
-			db, err := getDbConnection()
-			if err != nil {
-				fmt.Println(err)
-				panic("getDbConnection failed")
-			}
+			db := accessdb.GetDbConnection()
 			defer db.Close()
 			sql := "SELECT title, description, year, month, dom, dow, nth, doe, hour, minute, second FROM calcron_entry WHERE (id_cal_ent = ?) AND (id_user = ?);"
 			sel, err := db.Prepare(sql)
@@ -812,11 +800,7 @@ func showEditPage(w http.ResponseWriter, r *http.Request, op string, userid uint
 			showform = true
 		} else {
 			// dbConnect!!
-			db, err := getDbConnection()
-			if err != nil {
-				fmt.Fprintln(w, err)
-				return
-			}
+			db := accessdb.GetDbConnection()
 			defer db.Close()
 			var timeZoneOffset int64
 			timeZoneOffset = getTimeZoneOffset(db, userid)
@@ -903,11 +887,7 @@ func showEditPage(w http.ResponseWriter, r *http.Request, op string, userid uint
 		header := w.Header()
 		header.Set("Content-Type", "text/html; charset=utf-8")
 		fmt.Fprint(w, getDoctype())
-		db, err := getDbConnection()
-		if err != nil {
-			fmt.Fprintln(w, err)
-			return
-		}
+		db := accessdb.GetDbConnection()
 		defer db.Close()
 		fmt.Fprint(w, `<title>CalCron Entry</title>
 <link rel="stylesheet" type="text/css" href="/style.css">
@@ -1102,11 +1082,7 @@ func showListPage(w http.ResponseWriter, r *http.Request, op string, userid uint
 		currenttime uint64
 	}
 	rightNow := uint64(time.Now().Unix())
-	db, err := getDbConnection()
-	if err != nil {
-		fmt.Fprintln(w, err)
-		panic("getDbConnection failed")
-	}
+	db := accessdb.GetDbConnection()
 	defer db.Close()
 	var timeZoneOffset int64
 	timeZoneOffset = getTimeZoneOffset(db, userid)
@@ -1168,7 +1144,7 @@ jQuery(function () {
 	fmt.Fprint(w, `
     <h1>List of Calcron Entries</h1>
 `)
-	err = r.ParseForm()
+	err := r.ParseForm()
 	if err != nil {
 		fmt.Fprintln(w, err)
 		return
@@ -1295,6 +1271,7 @@ jQuery(function () {
 	}
 
 	fmt.Fprint(w, `
+        <p><hr /></p>
   </section>
 </body>
 </html>`)
@@ -1462,11 +1439,7 @@ function humanInterval(seconds) {
 }
 
 func showChimesPage(w http.ResponseWriter, r *http.Request, op string, userid uint64, userName string) {
-	db, err := getDbConnection()
-	if err != nil {
-		fmt.Println(err)
-		panic("getDbConnection failed")
-	}
+	db := accessdb.GetDbConnection()
 	recalculateAllEvents(db, userid, false)
 	var entry struct {
 		id          uint64
@@ -1883,11 +1856,7 @@ func showViewPage(w http.ResponseWriter, r *http.Request, op string, userid uint
 			fmt.Println(err)
 			panic("ParseUint failed")
 		}
-		db, err := getDbConnection()
-		if err != nil {
-			fmt.Println(err)
-			panic("getDbConnection failed")
-		}
+		db := accessdb.GetDbConnection()
 		defer db.Close()
 		sql := "SELECT title, description, year, month, dom, dow, nth, doe, hour, minute, second FROM calcron_entry WHERE (id_cal_ent = ?) AND (id_user = ?);"
 		sel, err := db.Prepare(sql)
@@ -1919,11 +1888,7 @@ func showViewPage(w http.ResponseWriter, r *http.Request, op string, userid uint
 	header := w.Header()
 	header.Set("Content-Type", "text/html; charset=utf-8")
 	fmt.Fprint(w, getDoctype())
-	db, err := getDbConnection()
-	if err != nil {
-		fmt.Fprintln(w, err)
-		return
-	}
+	db := accessdb.GetDbConnection()
 	defer db.Close()
 	fmt.Fprint(w, `<title>CalCron Entry View</title>
 <link rel="stylesheet" type="text/css" href="/style.css">
@@ -1966,11 +1931,7 @@ func showViewPage(w http.ResponseWriter, r *http.Request, op string, userid uint
 }
 
 func showRecalcPage(w http.ResponseWriter, r *http.Request, op string, userid uint64, userName string) {
-	db, err := getDbConnection()
-	if err != nil {
-		fmt.Println(err)
-		panic("getDbConnection failed")
-	}
+	db := accessdb.GetDbConnection()
 	recalculateAllEvents(db, userid, false)
 	header := w.Header()
 	header.Set("Content-Type", "text/html; charset=utf-8")
@@ -1996,12 +1957,8 @@ func showRecalcPage(w http.ResponseWriter, r *http.Request, op string, userid ui
 }
 
 func doDismiss(w http.ResponseWriter, r *http.Request, op string, userid uint64, userName string) {
-	db, err := getDbConnection()
-	if err != nil {
-		fmt.Println(err)
-		panic("getDbConnection failed")
-	}
-	err = r.ParseForm()
+	db := accessdb.GetDbConnection()
+	err := r.ParseForm()
 	if err != nil {
 		fmt.Println(err)
 		panic("parseform failed")
