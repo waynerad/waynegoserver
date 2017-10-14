@@ -1,6 +1,7 @@
 package umt
 
 import (
+	"accessdb"
 	"fmt"
 	"github.com/ziutek/mymysql/mysql"
 	_ "github.com/ziutek/mymysql/native" // Native engine
@@ -20,15 +21,6 @@ func getDoctype() string {
 <head>
 <meta charset=utf-8 />
 `
-}
-
-func getDbConnection() (mysql.Conn, error) {
-	user := "webdata_user"
-	pass := "97abcmt3teteej"
-	dbname := "webdata"
-	db := mysql.New("tcp", "", "127.0.0.1:3306", user, pass, dbname)
-	err := db.Connect()
-	return db, err
 }
 
 func outputStaticFile(w http.ResponseWriter, filename string) {
@@ -66,11 +58,7 @@ func mainPage(w http.ResponseWriter, r *http.Request, op string, userid uint64) 
 		}
 		// get the name
 		sql := "SELECT name FROM umt_paramset WHERE (id_paramset = ?);"
-		db, err := getDbConnection()
-		if err != nil {
-			fmt.Fprintln(w, `{ "success": false, "error": "Point 5196 `+dequote(err.Error())+`" }`)
-			return
-		}
+		db := accessdb.GetDbConnection()
 		defer db.Close()
 		sel, err := db.Prepare(sql)
 		if err != nil {
@@ -1557,7 +1545,7 @@ function InstantiateFadeCandy() {
             percussion: true,
             fixed: [
                 { name: "basecolor", display: "Base Color", type: "list", values: ["red=Red", "yellow=Yellow", "green=Green", "cyan=Cyan", "blue=Blue", "magenta=Magenta"], default: "red" },
-                { name: "skip", display: "Skip", type: "list", values: ["2=2", "3=3", "4=4", "5=5", "6=6", "7=7"], default: "2" },
+                { name: "skip", display: "Skip", type: "list", values: ["1=1", "2=2", "3=3", "4=4", "5=5", "6=6", "7=7"], default: "2" },
                 { name: "direction", display: "Direction", type: "list", values: ["-1=Up", "1=Down" ], default: "1" }
             ],
             parameters: [
@@ -6084,11 +6072,7 @@ func saveAsAjax(w http.ResponseWriter, r *http.Request, op string, userid uint64
 		postform := r.Form
 		name := postform["name"][0]
 		uiparams := postform["uiparams"][0]
-		db, err := getDbConnection()
-		if err != nil {
-			fmt.Fprintln(w, `{ "success": false, "error": "Point 5196 `+dequote(err.Error())+`" }`)
-			return
-		}
+		db := accessdb.GetDbConnection()
 		defer db.Close()
 		sql := "SELECT id_paramset FROM umt_paramset WHERE (id_user = " + strconv.FormatUint(userid, 10) + ") AND (name = '" + mysql.Escape(db, name) + "');"
 		res, err := db.Start(sql)
@@ -6171,11 +6155,7 @@ func list(w http.ResponseWriter, r *http.Request, op string, userid uint64) {
 </head>
 <body>
 `)
-	db, err := getDbConnection()
-	if err != nil {
-		fmt.Fprintln(w, err)
-		return
-	}
+	db := accessdb.GetDbConnection()
 	defer db.Close()
 	sql := "SELECT id_paramset, name FROM umt_paramset WHERE (id_user = " + strconv.FormatUint(userid, 10) + ") ORDER BY id_user, name;"
 	res, err := db.Start(sql)
@@ -6220,11 +6200,7 @@ func loadAjax(w http.ResponseWriter, r *http.Request, op string, userid uint64) 
 	getform := r.Form
 	paramsetstr := getform["paramset"][0]
 	paramsetid, err := strconv.ParseUint(paramsetstr, 10, 64)
-	db, err := getDbConnection()
-	if err != nil {
-		fmt.Fprintln(w, `{ "success": false, "error": "Point 5390 `+dequote(err.Error())+`" }`)
-		return
-	}
+	db := accessdb.GetDbConnection()
 	defer db.Close()
 	// sql := "SELECT uiparams FROM umt_paramset WHERE (id_paramset = " + strconv.FormatUint(paramsetid, 10) + ");"
 	sql := "SELECT uiparams FROM umt_paramset WHERE (id_paramset = ?);"
