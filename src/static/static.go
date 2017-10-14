@@ -1,7 +1,6 @@
 package static
 
 import (
-	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -50,15 +49,16 @@ func StaticHandler(w http.ResponseWriter, r *http.Request, operation string) {
 		operation = "/index.html"
 	}
 	filename := "/home/ec2-user/wayneserver/staticdoc/" + operation[1:]
+	// fmt.Println("filename", filename)
 	OutputStaticFileWithContentType(w, filename)
 }
 
 func StaticDirHandler(w http.ResponseWriter, r *http.Request, dir string, operation string) {
-	fmt.Println("dir",dir)
+	// fmt.Println("dir", dir)
 	if operation == "/" {
 		operation = "/index.html"
 	}
 	filename := "/home/ec2-user/wayneserver/staticdoc/" + dir + "/" + operation[1:]
-	fmt.Println("filename", filename)
+	// fmt.Println("filename", filename)
 	OutputStaticFileWithContentType(w, filename)
 }
