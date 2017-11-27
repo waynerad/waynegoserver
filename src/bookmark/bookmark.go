@@ -195,7 +195,7 @@ func showEditPage(w http.ResponseWriter, r *http.Request, op string, userid uint
 		fmt.Fprint(w, `<title>Bookmark Entry</title>
 <link rel="stylesheet" type="text/css" href="/bookmark/style.css">
 </head>
-<body onload="document.getElementById('name').focus();">
+<body onload="document.getElementById('target').focus();">
   <section>
 `)
 		showBookmrkMenuBar(w, userName)
@@ -212,8 +212,8 @@ func showEditPage(w http.ResponseWriter, r *http.Request, op string, userid uint
 		}
 		fmt.Fprint(w, `
 <table border="0" cellpadding="4">
-<tr><td align="right"> Name: </td><td> <input type="hidden" name="bookmark" value="`+uintToStr(bookmarkid)+`"/><input size="40" name="name" id="name" type="text" value="`+html.EscapeString(ui.name)+`" /> </td></tr>
-<tr><td align="right"> Target: </td><td> <input size="40" name="target" id="target" type="text" value="`+html.EscapeString(ui.target)+`" /> </td></tr>
+<tr><td align="right"> Target: </td><td> <input type="hidden" name="bookmark" value="`+uintToStr(bookmarkid)+`"/><input size="40" name="target" id="target" type="text" value="`+html.EscapeString(ui.target)+`" /> </td></tr>
+<tr><td align="right"> Name: </td><td> <input size="40" name="name" id="name" type="text" value="`+html.EscapeString(ui.name)+`" /> </td></tr>
 <tr><td colspan="2" align="center"> <input type="submit"> </td></tr>
 </table>
 </form>
