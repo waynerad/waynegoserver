@@ -859,7 +859,7 @@ func showEditPage(w http.ResponseWriter, r *http.Request, op string, userid uint
 				}
 			}
 			if alreadyExists {
-				stmt, err := db.Prepare("UPDATE calcron_entry SET title = ?, description = ?, year = ?, month = ?, dom = ?, dow = ?, nth = ?, doe = ?, hour = ?, minute = ?, second = ?, currenttime = ?, is_defunct = 0 WHERE (id_cal_ent = ?) AND (id_user = ?);")
+				stmt, err := db.Prepare("UPDATE calcron_entry SET title = ?, description = ?, year = ?, month = ?, dom = ?, dow = ?, nth = ?, doe = ?, hour = ?, minute = ?, second = ?, currenttime = ?, is_defunct = 0, is_suspended = 0 WHERE (id_cal_ent = ?) AND (id_user = ?);")
 				if err != nil {
 					fmt.Println(err)
 					panic("Prepare failed")
@@ -867,7 +867,7 @@ func showEditPage(w http.ResponseWriter, r *http.Request, op string, userid uint
 				stmt.Bind(save.title, save.description, save.year, save.month, save.dom, save.dow, save.nth, save.doe, save.hour, save.minute, save.second, save.currenttime, entryid, userid)
 				_, _, err = stmt.Exec()
 			} else {
-				stmt, err := db.Prepare("INSERT INTO calcron_entry (id_user, title, description, starttime, year, month, dom, dow, nth, doe, hour, minute, second, currenttime, is_defunct) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0);")
+				stmt, err := db.Prepare("INSERT INTO calcron_entry (id_user, title, description, starttime, year, month, dom, dow, nth, doe, hour, minute, second, currenttime, is_defunct, is_suspended) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0);")
 				if err != nil {
 					fmt.Println(err)
 					panic("Prepare failed")
@@ -1154,15 +1154,20 @@ jQuery(function () {
 	_, showFull := getform["full"]
 	_, showDefunct := getform["defunct"]
 	_, showAll := getform["all"]
+	_, showSuspended := getform["suspended"]
 	recalculateAllEvents(db, userid, showDefunct)
 	isDefunct := 0 // MySQL needs a numerical 0 or 1
 	if showDefunct {
 		isDefunct = 1
 	}
+	isSuspended := 0 // MySQL needs a numerical 0 or 1
+	if showSuspended {
+		isSuspended = 1
+	}
 	if showLatest {
-		sql = "SELECT id_cal_ent, title, description, year, month, dom, dow, nth, doe, hour, minute, second, currenttime FROM calcron_entry WHERE (id_user = ?) AND (is_defunct = ?) ORDER BY id_cal_ent DESC"
+		sql = "SELECT id_cal_ent, title, description, year, month, dom, dow, nth, doe, hour, minute, second, currenttime FROM calcron_entry WHERE (id_user = ?) AND (is_defunct = ?) AND (is_suspended = ?) ORDER BY id_cal_ent DESC"
 	} else {
-		sql = "SELECT id_cal_ent, title, description, year, month, dom, dow, nth, doe, hour, minute, second, currenttime FROM calcron_entry WHERE (id_user = ?) AND (is_defunct = ?) ORDER BY currenttime"
+		sql = "SELECT id_cal_ent, title, description, year, month, dom, dow, nth, doe, hour, minute, second, currenttime FROM calcron_entry WHERE (id_user = ?) AND (is_defunct = ?) AND (is_suspended = ?) ORDER BY currenttime"
 	}
 	if !showAll {
 		sql = sql + " LIMIT 32;"
@@ -1172,7 +1177,7 @@ jQuery(function () {
 		fmt.Println(err)
 		panic("Prepare failed")
 	}
-	sel.Bind(userid, isDefunct)
+	sel.Bind(userid, isDefunct, isSuspended)
 	rows, _, err := sel.Exec()
 	if err != nil {
 		fmt.Println(err)
@@ -1604,8 +1609,6 @@ function chimesDoTimerPulse() {
     // interval = Math.abs(interval);
     seconds = Math.floor(interval / 1000);
     if (seconds !== gChimesData.lastSecs) {
-        // intText = years + " years " + weeks + " weeks " + days + " days " + hours + " hours " + minutes + " min " + seconds + " sec";
-        // document.getElementById("interval").value = intText;
         intText = humanInterval(seconds);
         if (intText.substring(0, 1) === "-") {
             document.getElementById("interv_txt").innerHTML = '<font color="red">' + intText + '</font>';
@@ -1627,9 +1630,9 @@ function chimesDoTimerPulse() {
         xl = Math.floor(xl);
     } else {
         xl = Math.log(interval) / gChimesData.LOG2;
-        pitch = 9.0 - (xl / 4.7);
+        pitch = 9.0 - (xl / 4.5); // magic pitch constant
         xl = xl * 5;
-        // document.getElementById("xl").value = xl;
+        document.getElementById("xl").value = xl;
         xl = Math.floor(xl);
         if (xl !== gChimesData.lastXl) {
             fromMoment = gChimesData.globalCtx.currentTime;
@@ -1663,10 +1666,10 @@ function chimesDoTimerPulse() {
             window.setTimeout(chimesDoTimerPulse, 20);
         } else {
             if (xl < 70) {
-                window.setTimeout(chimesDoTimerPulse, 100);
+                window.setTimeout(chimesDoTimerPulse, 50);
             } else {
                 if (xl < 80) {
-                    window.setTimeout(chimesDoTimerPulse, 250);
+                    window.setTimeout(chimesDoTimerPulse, 100);
                 } else {
                     if (xl < 100) {
                         window.setTimeout(chimesDoTimerPulse, 1000);
@@ -1711,11 +1714,12 @@ function chimesExecParseAndSet() {
     thetime = chimesConvertOurStringToTimeCode(datestr) + `+timeZoneClientSideAdjustNum+`;
     addMinutes = document.getElementById("add_minutes").value;
     if (addMinutes !== "") {
-        addMinutes = parseInt(addMinutes, 10);
+        addMinutes = parseFloat(addMinutes);
         addMinutes = addMinutes * 60 * 1000;
+        addMinutes = Math.floor(addMinutes);
         thetime = thetime + addMinutes;
     }
-    // document.getElementById("next_event").value = thetime;
+    document.getElementById("next_event").value = thetime;
     gChimesData.nextThing = thetime;
     if (!gChimesData.timerGoing) {
         window.setTimeout(chimesDoTimerPulse, 1000);
@@ -1735,6 +1739,7 @@ function chimesExecUseTimeNow() {
     document.getElementById("title").innerHTML = "";
     document.getElementById("description").innerHTML = "";
     document.getElementById("do_dis").style.display = "none";
+    document.getElementById("do_suspend").style.display = "none";
 }
 
 // main
@@ -1772,28 +1777,29 @@ jQuery(function () {
 	fmt.Fprint(w, html.EscapeString(theDescription))
 	fmt.Fprint(w, `
 </p>
-<p> Time code: 
+<table border="0" cellpadding="5"><tr><td>
+<a id="do_suspend" href="suspend?entry=`+strconv.FormatUint(entry.id, 10)+`"><font color="grey">Suspend</font></a>
+</td></tr>
+<tr><td>
+Time code: 
     <input type="textbox" id="as_text" name="as_text" value="`)
 	// format example 2016-04-25T16:32:34.995Z
 	// fmt.Fprintf(w, "%d-%s-%sT%s:%s:%s.000Z", timeNums.year, twodigits(timeNums.month), twodigits(timeNums.day), twodigits(timeNums.hour), twodigits(timeNums.minute), twodigits(timeNums.second))
 	fmt.Fprintf(w, "%d-%s-%s %s:%s:%s", timeNums.year, twodigits(timeNums.month), twodigits(timeNums.day), twodigits(timeNums.hour), twodigits(timeNums.minute), twodigits(timeNums.second))
 	fmt.Fprint(w, `" />
     <input type="button" id="use_time_now" name="use_time_now" value="Use time now" />
-</p><p style="display:none;">
+</td></tr><tr><td>
     <input type="textbox" id="next_event" name="next_event" value="" />
-</p><p> Add minutes:
-    <input type="textbox" id="add_minutes" name="add_minutes" value="" />
-</p><p>
+Add minutes: <input type="textbox" id="add_minutes" name="add_minutes" value="" />
+</td></tr><tr><td>
     <input type="button" id="parse_and_set" name="parse_and_set" value="Parse And Set Time" />
-</p><p><table style="width:300px;"><tr><td align="right"> <span id="interv_txt"></span> </td></tr></table>
-</p><p style="display:none;">
-    <input type="textbox" id="interval" name="interval" value="" style="width:400px;" />
-</p><p style="display:none;">
+<tr><td align="right"> <span id="interv_txt"></span>
+</td></tr><tr><td>
     <input type="textbox" id="xl" name="xl" value="" />
-</p><p>
+</td></tr><tr><td>
     <input type="hidden" id="dismiss" name="dismiss" value="`+strconv.FormatUint(entry.id, 10)+`" />
     <input type="submit" id="do_dis" name="do_dis" value="Dismiss" />
-</p>
+</td></tr></table>
 
 </form>
 
@@ -1985,6 +1991,181 @@ func doDismiss(w http.ResponseWriter, r *http.Request, op string, userid uint64,
 	http.Redirect(w, r, "chimes", 302)
 }
 
+func showSuspendPage(w http.ResponseWriter, r *http.Request, op string, userid uint64, userName string) {
+	showform := false
+	errorList := make(map[string]string)
+	errorOccurred := false
+	method := r.Method
+	var ui struct {
+		title       string
+		description string
+		year        string
+		month       string
+		dom         string
+		dow         string
+		nth         string
+		doe         string
+		hour        string
+		minute      string
+		second      string
+	}
+	var entryid uint64
+	entryid = 0
+	if method == "GET" {
+		// set defaults
+		ui.title = ""
+		ui.description = ""
+		ui.year = "*"
+		ui.month = "*"
+		ui.dom = "*"
+		ui.dow = "*"
+		ui.nth = "*"
+		ui.doe = "*"
+		ui.hour = "*"
+		ui.minute = "0"
+		ui.second = "0"
+		showform = true
+		err := r.ParseForm()
+		if err != nil {
+			fmt.Println(err)
+			panic("parseform failed")
+		}
+		getform := r.Form
+		_, entry := getform["entry"]
+		if entry {
+			entryid, err = strconv.ParseUint(getform["entry"][0], 10, 64)
+			if err != nil {
+				fmt.Println(err)
+				panic("ParseUint failed")
+			}
+			db := accessdb.GetDbConnection()
+			defer db.Close()
+			sql := "SELECT title, description, year, month, dom, dow, nth, doe, hour, minute, second FROM calcron_entry WHERE (id_cal_ent = ?) AND (id_user = ?);"
+			sel, err := db.Prepare(sql)
+			if err != nil {
+				fmt.Println(err)
+				panic("Prepare failed")
+			}
+			sel.Bind(entryid, userid)
+			rows, _, err := sel.Exec()
+			if err != nil {
+				fmt.Println(err)
+				panic("Bind/Exec failed")
+			}
+			for _, row := range rows {
+				ui.title = row.Str(0)
+				ui.description = row.Str(1)
+				ui.year = row.Str(2)
+				ui.month = row.Str(3)
+				ui.dom = row.Str(4)
+				ui.dow = row.Str(5)
+				ui.nth = row.Str(6)
+				ui.doe = row.Str(7)
+				ui.hour = row.Str(8)
+				ui.minute = row.Str(9)
+				ui.second = row.Str(10)
+			}
+		}
+	}
+	if method == "POST" {
+		// set from form post
+		err := r.ParseForm()
+		if err != nil {
+			fmt.Println(err)
+			panic("parseform failed")
+		}
+		postform := r.Form
+		// error checking
+		entryid, err = strconv.ParseUint(postform["entry"][0], 10, 64)
+		if err != nil {
+			entryid = 0
+		}
+		_, ok := postform["do_suspend"]
+		if !ok {
+			errorList["do_suspend"] = "Suspension flag missing"
+			errorOccurred = true
+		}
+		if errorOccurred {
+			showform = true
+		} else {
+			// dbConnect!!
+			db := accessdb.GetDbConnection()
+			defer db.Close()
+			alreadyExists := false
+			if entryid > 0 {
+				sql := "SELECT id_cal_ent FROM calcron_entry WHERE (id_cal_ent = ?) AND (id_user = ?);"
+				sel, err := db.Prepare(sql)
+				if err != nil {
+					fmt.Println(err)
+					panic("Prepare failed")
+				}
+				sel.Bind(entryid, userid)
+				rows, _, err := sel.Exec()
+				if err != nil {
+					fmt.Println(err)
+					panic("Exec() failed")
+				}
+				for _, _ = range rows {
+					alreadyExists = true
+				}
+			}
+			if alreadyExists {
+				stmt, err := db.Prepare("UPDATE calcron_entry SET is_suspended = 1, is_dismissed = 1, is_defunct = 1 WHERE (id_cal_ent = ?) AND (id_user = ?);")
+				if err != nil {
+					fmt.Println(err)
+					panic("Prepare failed")
+				}
+				stmt.Bind(entryid, userid)
+				_, _, err = stmt.Exec()
+			}
+			if err != nil {
+				fmt.Println(err)
+				panic("Exec failed")
+			}
+			http.Redirect(w, r, "chimes", 302)
+		}
+	}
+	if showform {
+		header := w.Header()
+		header.Set("Content-Type", "text/html; charset=utf-8")
+		fmt.Fprint(w, getDoctype())
+		db := accessdb.GetDbConnection()
+		defer db.Close()
+		fmt.Fprint(w, `<title>CalCron Entry</title>
+<link rel="stylesheet" type="text/css" href="/style.css">
+</head>
+<body>
+  <section>
+`)
+		showCalcronMenuBar(w, userName)
+		fmt.Fprint(w, `
+    <h1>Suspend Entry</h1>
+
+<form action="suspend" method="post">
+<input type="hidden" name="entry" value="`+strconv.FormatUint(entryid, 10)+`" />
+`)
+		if errorOccurred {
+			fmt.Fprintln(w, "<h2>Error occurred</h2><ul>")
+			for _, errMsg := range errorList {
+				fmt.Fprintln(w, "<li>"+html.EscapeString(errMsg)+"</li>")
+			}
+			fmt.Fprintln(w, "</ul>")
+		}
+		fmt.Fprint(w, `
+<p>Do you want to suspend: <p>`+html.EscapeString(ui.title)+`</p>
+<p>`+html.EscapeString(ui.description)+`</p>
+<table><tr><td> `+html.EscapeString(ui.year)+` </td><td> `+html.EscapeString(ui.month)+` </td><td> `+html.EscapeString(ui.dom)+` </td> <td> `+html.EscapeString(ui.dow)+` </td><td> `+html.EscapeString(ui.nth)+` </td><td> `+html.EscapeString(ui.doe)+` </td> <td> 
+`+html.EscapeString(ui.hour)+` </td><td> `+html.EscapeString(ui.minute)+` </td><td> `+html.EscapeString(ui.second)+` </td></tr></table>
+<p><input type="hidden" name="do_suspend" value="1" /><input type="submit" value="Suspend"></p>
+</form>
+
+  </section>
+
+</body>
+</html>`)
+	}
+}
+
 func Handler(w http.ResponseWriter, r *http.Request, op string, userid uint64, userName string) {
 	testCheckTimeFieldSyntaxError()
 	testApplyRule()
@@ -2016,6 +2197,10 @@ func Handler(w http.ResponseWriter, r *http.Request, op string, userid uint64, u
 	case op == "dismiss":
 		if userid != 0 {
 			doDismiss(w, r, op, userid, userName)
+		}
+	case op == "suspend":
+		if userid != 0 {
+			showSuspendPage(w, r, op, userid, userName)
 		}
 	default:
 		// fmt.Fprintln(w, "Could not find page:", op)
