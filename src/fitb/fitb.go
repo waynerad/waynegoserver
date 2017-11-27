@@ -975,100 +975,106 @@ func calculateLnum(str string) float64 {
 				l = 200
 			}
 			if char == rune("-"[0]) {
-				l = 200
+				l = 201
 			}
 			if char == rune("."[0]) {
-				l = 200
+				l = 202
 			}
 			if char == rune("?"[0]) {
-				l = 200
+				l = 203
 			}
 			if char == rune("!"[0]) {
-				l = 200
+				l = 204
 			}
 			if char == rune(":"[0]) {
-				l = 200
+				l = 205
 			}
 			if char == rune(";"[0]) {
-				l = 200
+				l = 206
 			}
 			if char == rune("'"[0]) {
-				l = 200
+				l = 207
 			}
 			if char == rune(`"`[0]) {
-				l = 200
+				l = 208
 			}
 			if char == rune("/"[0]) {
 				l = 300
 			}
 			if char == rune("<"[0]) {
-				l = 300
+				l = 301
 			}
 			if char == rune(">"[0]) {
-				l = 300
+				l = 302
 			}
 			if char == rune("["[0]) {
-				l = 300
+				l = 303
 			}
 			if char == rune("("[0]) {
-				l = 200
+				l = 209
 			}
 			if char == rune(")"[0]) {
-				l = 200
+				l = 210
 			}
 			if char == rune("]"[0]) {
-				l = 300
+				l = 304
 			}
 			if char == rune("="[0]) {
-				l = 300
+				l = 305
 			}
 			if char == rune("+"[0]) {
-				l = 300
+				l = 306
 			}
 			if char == rune("{"[0]) {
-				l = 300
+				l = 307
 			}
 			if char == rune("}"[0]) {
-				l = 300
+				l = 308
 			}
 			if char == rune("$"[0]) {
-				l = 300
+				l = 310
 			}
 			if char == rune("~"[0]) {
 				l = 600
 			}
 			if char == rune("1"[0]) {
-				l = 200
+				l = 211
 			}
 			if char == rune("2"[0]) {
-				l = 200
+				l = 211
 			}
 			if char == rune("3"[0]) {
-				l = 200
+				l = 211
 			}
 			if char == rune("4"[0]) {
-				l = 200
+				l = 211
 			}
 			if char == rune("5"[0]) {
-				l = 200
+				l = 211
 			}
 			if char == rune("6"[0]) {
-				l = 200
+				l = 211
 			}
 			if char == rune("7"[0]) {
-				l = 200
+				l = 211
 			}
 			if char == rune("8"[0]) {
-				l = 200
+				l = 211
 			}
 			if char == rune("9"[0]) {
-				l = 200
+				l = 211
 			}
 			if char == rune("0"[0]) {
-				l = 200
+				l = 211
 			}
 			if char == rune("|"[0]) {
-				l = 200
+				l = 211
+			}
+			if char == rune("&"[0]) {
+				l = 211
+			}
+			if char == 92 { // backslash
+				l = 500
 			}
 			if char == 181 { // greek character mu for "micro" for Metric (SI) prefix abbreviation
 				l = 999
@@ -1951,7 +1957,7 @@ func showEditQuestionPage(w http.ResponseWriter, r *http.Request, op string, use
 			fmt.Fprint(w, `>`+htmlize(currentChapt.name)+`</option>`)
 		}
 		fmt.Fprint(w, `</select> </td></tr>
-<tr><td> Question in FITB format </td><td> <input type="text" name="fitb" id="fitb" value="`+htmlize(ui.theFitbStr)+`" /> </td></tr>
+<tr><td> Question in FITB format <br /><textarea name="fitb" id="fitb" rows="8" cols="80">`+htmlize(ui.theFitbStr)+`</textarea></td></tr>
 </table>
 `)
 		fmt.Fprint(w, `
