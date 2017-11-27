@@ -13,6 +13,7 @@ import (
 	"static"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // "math"
@@ -200,10 +201,11 @@ func storeStory(db mysql.Conn, itemNum int, storyAttributes map[string]string) {
 		url     string
 		title   string
 	}
-	// fmt.Println("------")
-	// for y, z := range(storyAttributes) {
+	// fmt.Println("------storyAttributes")
+	// for y, z := range storyAttributes {
 	//	fmt.Println(y, z)
 	// }
+	// fmt.Println("------")
 	// return
 	rec.itemNum = uint64(itemNum)
 	sql := "SELECT id_story FROM hnfire_story WHERE item_num = ?;"
@@ -240,13 +242,19 @@ func storeStory(db mysql.Conn, itemNum int, storyAttributes map[string]string) {
 	_, _, err = stmt.Exec()
 }
 
-func pull(w http.ResponseWriter, r *http.Request, op string, userid uint64, userName string) {
+// exported so runnable as a cron
+func Pull(w http.ResponseWriter, r *http.Request, op string, userid uint64, userName string) {
 	dopull := true
-	header := w.Header()
-	header.Set("Content-Type", "text/html; charset=utf-8")
-	fmt.Fprint(w, getDoctype())
-	title := "Pulling Firebase"
-	fmt.Fprint(w, `<title>`+title+`</title>
+	outputToBrowser := false
+	if op != "cron" {
+		outputToBrowser = true
+	}
+	if outputToBrowser {
+		header := w.Header()
+		header.Set("Content-Type", "text/html; charset=utf-8")
+		fmt.Fprint(w, getDoctype())
+		title := "Pulling Firebase"
+		fmt.Fprint(w, `<title>`+title+`</title>
 `+getStyle()+`
 </head>
 <body>
@@ -254,7 +262,10 @@ func pull(w http.ResponseWriter, r *http.Request, op string, userid uint64, user
 <h1>`+title+`</h1>
 <p>Pulling Firebase</p>
 `)
-
+	} else {
+		current := time.Now()
+		fmt.Println("Firebase pull at: ", current)
+	}
 	newstoriesURL := "https://hacker-news.firebaseio.com/v0/newstories.json"
 	newstoriesFile := "/home/ec2-user/hnnewstories.json"
 	if dopull {
@@ -277,7 +288,11 @@ func pull(w http.ResponseWriter, r *http.Request, op string, userid uint64, user
 		for _, itemnumber := range stuff {
 			// hacky parser, assumes source is well-formed
 			itemnumber = debracket(itemnumber)
-			fmt.Fprint(w, itemnumber+"<br />")
+			if outputToBrowser {
+				fmt.Fprint(w, itemnumber+"<br />")
+			} else {
+				fmt.Println(itemnumber)
+			}
 			if itemnumber != "" {
 				itemNum := strToInt(itemnumber)
 				if !itemExistsInDb(db, itemNum) {
@@ -287,17 +302,27 @@ func pull(w http.ResponseWriter, r *http.Request, op string, userid uint64, user
 						fetchfile(storyurl, storyfile)
 					}
 					storyAttributes := parseStoryFile(storyfile, itemNum)
+					_, ok := storyAttributes["time"]
+					if !ok {
+						storyAttributes["time"] = "0"
+						storyAttributes["url"] = ""
+						storyAttributes["title"] = ""
+					}
 					storeStory(db, itemNum, storyAttributes)
 					count++
 				}
 			}
 		}
 	}
-	fmt.Fprint(w, `
+	if outputToBrowser {
+		fmt.Fprint(w, `
 <p> Added <b>`+intToStr(count)+`</b> stories.</p>
 </section>
 </body>
 </html>`)
+	} else {
+		fmt.Println("Added " + intToStr(count) + " stories.")
+	}
 }
 
 func getLastId(db mysql.Conn) int {
@@ -382,24 +407,25 @@ func search(w http.ResponseWriter, r *http.Request, op string, userid uint64, us
 	}
 	fmt.Fprint(w, "<p>Last ID: "+intToStr(lastId)+"</p>")
 	fmt.Fprint(w, "<p>Displaying from: "+intToStr(fromEntry)+"</p>")
-	terms := [63]string{"damore", "tensorflow", "pytorch", "deepmind", "deep learn", "neura", "neuro", "robo", "autonomous", "automate", "artificial", "algorithm", "machine learn", "reinforcement learn", "AI", "brain", "intelligence", "IQ", "data science", "nanometer", "moore", "google", "microsoft", "amazon", "facebook", "apple", "nvidia", "snapchat", "evolution", "genetic", "dna", "bill gates", "carmack", "elon musk", "golang", "python", "video game", "music", "porn", "police", "kill", "computer science", "startup", "silicon valley", "math", "emotion", "fermi", "female", "digital", "salary", "hire", "hiring", "dark", "paul graham", "jessica livingston", "sam altman", "VR", "AR", "fast", "speed", "medical", "youtube", "Go"}
+	terms := [64]string{"damore", "tensorflow", "pytorch", "deepmind", "deep learn", "neura", "neuro", "robo", "autonomous", "automate", "artificial", "algorithm", "machine learn", "reinforcement learn", "AI", "brain", "intelligence", "IQ", "data science", "nanometer", "moore", "google", "microsoft", "amazon", "facebook", "apple", "nvidia", "snapchat", "evolution", "genetic", "dna", "crypt", "bill gates", "carmack", "elon musk", "golang", "python", "video game", "music", "porn", "police", "kill", "computer science", "startup", "silicon valley", "math", "emotion", "fermi", "female", "digital", "salary", "hire", "hiring", "dark", "paul graham", "jessica livingston", "sam altman", "VR", "AR", "fast", "speed", "medical", "youtube", "Go"}
 	for idx := 0; idx < 63; idx++ {
 		// fmt.Fprint(w, intToStr(idx)+": "+terms[idx]+"<br />")
 		fmt.Fprint(w, "<h1>"+terms[idx]+"</h1>")
 		showMatchingArticles(db, terms[idx], fromEntry, w)
 	}
 	fmt.Fprint(w, `
+<p>Done</p>
 </section>
 </body>
 </html>`)
 }
 
 func Handler(w http.ResponseWriter, r *http.Request, op string, userid uint64, userName string) {
-	fmt.Println("in hnfire handler, op is", op)
+	// fmt.Println("in hnfire handler, op is", op)
 	switch {
 	case op == "pull":
 		if userid == 1 {
-			pull(w, r, op, userid, userName)
+			Pull(w, r, op, userid, userName)
 		}
 	case op == "search":
 		if userid == 1 {
