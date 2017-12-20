@@ -1,6 +1,7 @@
 package static
 
 import (
+	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -21,7 +22,12 @@ func FigureOutContentTypeFromFilename(filename string) string {
 					if filename[len(filename)-4:] == ".ico" {
 						return "image/vnd.microsoft.icon"
 					} else {
-						return "text/html; charset=utf-8"
+						if filename[len(filename)-4:] == ".zip" {
+							return "application/zip"
+						} else {
+
+							return "text/html; charset=utf-8"
+						}
 					}
 				}
 			}
@@ -49,7 +55,7 @@ func StaticHandler(w http.ResponseWriter, r *http.Request, operation string) {
 		operation = "/index.html"
 	}
 	filename := "/home/ec2-user/wayneserver/staticdoc/" + operation[1:]
-	// fmt.Println("filename", filename)
+	fmt.Println("static handle: filename", filename)
 	OutputStaticFileWithContentType(w, filename)
 }
 
