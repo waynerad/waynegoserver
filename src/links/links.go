@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"html"
 	"net/http"
+	"os"
 	"static"
 	"strconv"
 	"strings"
@@ -22,7 +23,7 @@ func getDoctype() string {
 `
 }
 
-func htm(str string) string {
+func htmize(str string) string {
 	return html.EscapeString(str)
 }
 
@@ -53,43 +54,51 @@ func uintToStr(ii uint64) string {
 	return str
 }
 
+func intToStr(ii int) string {
+	str := strconv.FormatInt(int64(ii), 10)
+	return str
+}
+
 func showLinksMenuBar(w http.ResponseWriter, userName string) {
 	fmt.Fprint(w, `
 <p><a href="add">Add</a>
 <a href="list">List</a> &middot;
-<font color="grey">`+htm(userName)+`</font>
+<font color="grey">`+htmize(userName)+`</font>
 </p>`)
 }
 
-func showExposition(w http.ResponseWriter, targetUrl string, imageUrl string, description string, my_comment string) {
+func showExposition(w http.ResponseWriter, targetUrl string, imageUrl string, description string, myComment string, title string) {
 	fmt.Fprint(w, `
       <p>
 Google+ / <a href="https://www.facebook.com/">Facebook</a> / <a href="http://www.linkedin.com/">LinkedIn</a> / <a href="http://www.twitter.com/">Twitter</a> / <a href="https://www.tumblr.com/blog/waynerad/new/link">Tumblr</a></p>
       <p><textarea cols="80" rows="20">`)
 	fmt.Fprint(w, description)
 	fmt.Fprint(w, `
-
 `)
 	fmt.Fprint(w, targetUrl)
 	fmt.Fprint(w, `</textarea> <textarea cols="80" rows="20">`)
-	fmt.Fprint(w, my_comment)
-	fmt.Fprint(w, `</textarea></p>
+	fmt.Fprint(w, myComment)
+	fmt.Fprint(w, `</textarea> <textarea cols="80" rows="4">`)
+	fmt.Fprint(w, title)
+	fmt.Fprint(w, ` `)
+	fmt.Fprint(w, targetUrl)
+	fmt.Fprint(w, `</textarea> </p>
 <p> <img src="`+imageUrl+`" alt="Thumbnail" /> </p>
-
   </section>
 `)
 }
 
-func add(w http.ResponseWriter, r *http.Request, op string, userid uint64, userName string) {
+func showAddPage(w http.ResponseWriter, r *http.Request, op string, userid uint64, userName string) {
 	var showform bool
-	var error_list map[string]string
-	var ui_grabbed_url string
-	var ui_original_text string
-	var ui_my_comment string
-	var ui_image_url string
-	var ui_bpm string
+	var errorList map[string]string
+	var uiGrabbedUrl string
+	var uiOriginalText string
+	var uiMyComment string
+	var uiImageUrl string
+	var uiTitle string
+	var uiBpm string
 
-	error_occurred := false
+	errorOccurred := false
 	method := r.Method
 	if method == "POST" {
 		showform = false
@@ -99,60 +108,67 @@ func add(w http.ResponseWriter, r *http.Request, op string, userid uint64, userN
 			panic("parseform failed")
 		}
 		postform := r.Form
-		if (postform["grabbed_url"][0] == "") || (postform["original_text"][0] == "") {
+		if (postform["grabbed_url"][0] == "") || (postform["original_text"][0] == "") || (postform["title"][0] == "") {
 			showform = true
-			error_occurred = true
-			error_list = make(map[string]string)
+			errorOccurred = true
+			errorList = make(map[string]string)
 			if postform["grabbed_url"][0] == "" {
-				error_list["grabbed_url"] = "Grabbed URL is empty"
+				errorList["grabbed_url"] = "Grabbed URL is empty"
 			}
 			if postform["original_text"][0] == "" {
-				error_list["original_text"] = "Original text is empty"
+				errorList["original_text"] = "Original text is empty"
 			}
-			if postform["bpm"][0] != "" {
-				if !isNumeric(postform["bpm"][0]) {
-					error_list["bpm"] = "BPM is not a number"
-				}
+			if postform["title"][0] == "" {
+				errorList["title"] = "Title is empty"
 			}
 		}
-		if error_occurred == false {
+		if postform["bpm"][0] != "" {
+			if !isNumeric(postform["bpm"][0]) {
+				showform = true
+				errorOccurred = true
+				errorList["bpm"] = "BPM is not a number"
+			}
+		}
+		if errorOccurred == false {
 			db := accessdb.GetDbConnection()
 			defer db.Close()
-			stmt, err := db.Prepare("INSERT INTO link_link (created_gmt, target_url, image_url, description, my_comment, is_email, is_public, is_video, is_pdf, bpm) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);")
+			stmt, err := db.Prepare("INSERT INTO link_link (created_gmt, target_url, image_url, description, my_comment, title, is_email, is_public, is_video, is_pdf, bpm) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);")
 			if err != nil {
 				fmt.Fprintln(w, err)
 				return
 			}
 			// defer stmt.Close();
-			save_created_gmt := uint64(time.Now().Unix())
-			save_target_url := postform["grabbed_url"][0]
-			save_image_url := postform["image_url"][0]
-			save_description := postform["original_text"][0]
-			save_description = strings.Trim(save_description, " \r\n\t")
-			save_my_comment := postform["my_comment"][0]
-			save_my_comment = strings.Trim(save_my_comment, " \r\n\t")
-			save_is_email := 0
-			save_is_pdf := 0
+			saveCreatedGmt := uint64(time.Now().Unix())
+			saveTargetUrl := postform["grabbed_url"][0]
+			saveImageUrl := postform["image_url"][0]
+			saveDescription := postform["original_text"][0]
+			saveDescription = strings.Trim(saveDescription, " \r\n\t")
+			saveMyComment := postform["my_comment"][0]
+			saveMyComment = strings.Trim(saveMyComment, " \r\n\t")
+			saveTitle := postform["title"][0]
+			saveTitle = strings.Trim(saveTitle, " \r\n\t")
+			saveIsEmail := 0
+			saveIsPdf := 0
 			_, ok := postform["email"]
 			if ok {
-				save_is_email = 1
+				saveIsEmail = 1
 			}
-			save_is_public := save_is_email
-			save_is_video := 0
+			saveIsPublic := saveIsEmail
+			saveIsVideo := 0
 			_, ok = postform["video"]
 			if ok {
-				save_is_video = 1
+				saveIsVideo = 1
 			}
 			_, ok = postform["pdf"]
 			if ok {
-				save_is_pdf = 1
+				saveIsPdf = 1
 			}
-			var save_bpm float64
-			save_bpm = 0.0
+			var saveBpm float64
+			saveBpm = 0.0
 			if postform["bpm"][0] != "" {
-				save_bpm = strToFloat(postform["bpm"][0])
+				saveBpm = strToFloat(postform["bpm"][0])
 			}
-			stmt.Bind(save_created_gmt, save_target_url, save_image_url, save_description, save_my_comment, save_is_email, save_is_public, save_is_video, save_is_pdf, save_bpm)
+			stmt.Bind(saveCreatedGmt, saveTargetUrl, saveImageUrl, saveDescription, saveMyComment, saveTitle, saveIsEmail, saveIsPublic, saveIsVideo, saveIsPdf, saveBpm)
 			_, _, err = stmt.Exec()
 			if err != nil {
 				fmt.Fprintln(w, err)
@@ -172,21 +188,23 @@ func add(w http.ResponseWriter, r *http.Request, op string, userid uint64, userN
 	<a href="add">Next</a>
 	<a href="list">List</a>
 `)
-			showExposition(w, save_target_url, save_image_url, save_description, save_my_comment)
+			showExposition(w, saveTargetUrl, saveImageUrl, saveDescription, saveMyComment, saveTitle)
 			fmt.Fprint(w, `
-</body></html>`)
+</section></body></html>`)
 		}
-		ui_grabbed_url = postform["grabbed_url"][0]
-		ui_image_url = postform["image_url"][0]
-		ui_original_text = postform["original_text"][0]
-		ui_bpm = postform["bpm"][0]
+		uiGrabbedUrl = postform["grabbed_url"][0]
+		uiImageUrl = postform["image_url"][0]
+		uiOriginalText = postform["original_text"][0]
+		uiTitle = postform["title"][0]
+		uiBpm = postform["bpm"][0]
 	}
 	if method == "GET" {
 		showform = true
-		ui_grabbed_url = ""
-		ui_image_url = ""
-		ui_original_text = ""
-		ui_bpm = ""
+		uiGrabbedUrl = ""
+		uiImageUrl = ""
+		uiOriginalText = ""
+		uiTitle = ""
+		uiBpm = ""
 	}
 	if showform {
 		header := w.Header()
@@ -194,7 +212,7 @@ func add(w http.ResponseWriter, r *http.Request, op string, userid uint64, userN
 		fmt.Fprint(w, getDoctype())
 		db := accessdb.GetDbConnection()
 		defer db.Close()
-		sql := "SELECT COUNT(*) FROM link_link WHERE is_email=1;"
+		sql := "SELECT COUNT(*) FROM link_link WHERE is_email = 1;"
 		res, err := db.Start(sql)
 		if err != nil {
 			fmt.Fprintln(w, err)
@@ -206,7 +224,7 @@ func add(w http.ResponseWriter, r *http.Request, op string, userid uint64, userN
 			fmt.Fprintln(w, err)
 			return
 		}
-		email_count := row.Uint64(0)
+		emailCount := row.Uint64(0)
 		fmt.Fprint(w, `<title>URL saver</title>
 <link rel="stylesheet" type="text/css" href="/style.css">
 
@@ -540,23 +558,23 @@ timeridUrl = window.setInterval(execUrlGrab, 100);
 		fmt.Fprint(w, `
     <h1>URL Saver</h1>
 
-<p>Email count: `+html.EscapeString(strconv.FormatUint(email_count, 10))+`
+<p>Email count: `+htmize(strconv.FormatUint(emailCount, 10))+`
 
 <form action="add" method="post">
 `)
-		if error_occurred {
+		if errorOccurred {
 			fmt.Fprintln(w, "<h2>Error occurred</h2><ul>")
-			for err_on, err_msg := range error_list {
-				fmt.Fprintln(w, "<li>"+html.EscapeString(err_on)+": "+html.EscapeString(err_msg)+"</li>")
+			for errOn, errMsg := range errorList {
+				fmt.Fprintln(w, "<li>"+htmize(errOn)+": "+htmize(errMsg)+"</li>")
 			}
 			fmt.Fprintln(w, "</ul>")
 		}
-		if email_count < 80 {
+		if emailCount < 80 {
 			fmt.Fprint(w, `
 
 <p>
 <input name="grab_url" id="grab_url" type="button" value="Grab URL" />
-URL: <input class="biginput" name="grabbed_url" id="grabbed_url" type="text" value="`+html.EscapeString(ui_grabbed_url)+`" />
+URL: <input class="biginput" name="grabbed_url" id="grabbed_url" type="text" value="`+htmize(uiGrabbedUrl)+`" />
 </p>
 <p>
 <input name="do_resize" id="do_resize" type="button" value="resize" />
@@ -567,8 +585,8 @@ URL: <input class="biginput" name="grabbed_url" id="grabbed_url" type="text" val
 </p>
 <p>
 <input name="grab_image" id="grab_image" type="button" value="Grab URL" />
-Image URL: <input class="biginput" name="image_url" id="image_url" type="text" value="`+html.EscapeString(ui_image_url)+`" /> </p>
-<p><textarea class="bigtextarea" name="original_text" id="original_text" cols="80" rows="20">`+html.EscapeString(ui_original_text)+`</textarea></p>
+Image URL: <input class="biginput" name="image_url" id="image_url" type="text" value="`+htmize(uiImageUrl)+`" /> </p>
+<p><textarea class="bigtextarea" name="original_text" id="original_text" cols="80" rows="20">`+htmize(uiOriginalText)+`</textarea></p>
 <p><input name="do_lcase" id="do_lcase" type="button" value="lcase" />
  <input name="do_underscores" id="do_underscores" type="button" value="underscores" />
  <input name="do_flip_quotes" id="do_flip_quotes" type="button" value="flip quotes" />
@@ -577,10 +595,11 @@ Image URL: <input class="biginput" name="image_url" id="image_url" type="text" v
  <input name="do_quotes_hyphens" id="do_quoteshyphens" type="button" value="quotes hyphens" />
  <input name="do_both" id="do_both" type="button" value="both" />
 </p>
-<p><textarea class="bigtextarea" name="my_comment" id="my_comment" cols="80" rows="20">`+html.EscapeString(ui_my_comment)+`</textarea></p>
-<p>Analysis<br /><textarea class="bigtextarea" name="analyze_result" id="analyze_result" cols="80" rows="20"></textarea></p>
+<p><textarea class="bigtextarea" name="my_comment" id="my_comment" cols="80" rows="20">`+htmize(uiMyComment)+`</textarea></p>
+<p> Title: <input class="biginput" name="title" id="title" type="text" value="`+htmize(uiTitle)+`" /> </p>
+<p>Analysis<br /><textarea class="bigtextarea" name="analyze_result" id="analyze_result" cols="80" rows="10"></textarea></p>
 <p>
-BPM: <input class="biginput" name="bpm" id="bpm" type="text" value="`+html.EscapeString(ui_bpm)+`" />
+BPM: <input class="biginput" name="bpm" id="bpm" type="text" value="`+htmize(uiBpm)+`" />
 </p>
 
 </form>
@@ -629,7 +648,7 @@ startElement.addEventListener('click', execDoBothQuotesHyphensAndSingle, true);
 
 }
 
-func list(w http.ResponseWriter, r *http.Request, op string, userid uint64, userName string) {
+func showListPage(w http.ResponseWriter, r *http.Request, op string, userid uint64, userName string) {
 	var sql string
 	header := w.Header()
 	header.Set("Content-Type", "text/html; charset=utf-8")
@@ -651,14 +670,14 @@ func list(w http.ResponseWriter, r *http.Request, op string, userid uint64, user
 		return
 	}
 	getform := r.Form
-	_, show_all := getform["showall"]
-	if show_all {
-		sql = "SELECT id_lnk, created_gmt, target_url, image_url, description FROM link_link WHERE 1 ORDER BY id_lnk DESC;"
+	_, showAll := getform["showall"]
+	if showAll {
+		sql = "SELECT id_lnk, created_gmt, target_url, image_url, description, my_comment FROM link_link WHERE 1 ORDER BY id_lnk DESC;"
 	} else {
-		_, show_email := getform["emailonly"]
-		if show_email {
-			// email_cutoff
-			sql = "SELECT id_lnk, created_gmt, target_url, image_url, description FROM link_link WHERE (is_email = 1) AND (is_pdf = 0) ORDER BY id_lnk DESC;"
+		_, showEmail := getform["emailonly"]
+		if showEmail {
+			// emailCutoff
+			sql = "SELECT id_lnk, created_gmt, target_url, image_url, description, my_comment FROM link_link WHERE (is_email = 1) AND (is_pdf = 0) ORDER BY id_lnk DESC;"
 			_, exists := getform["cutoff"]
 			if exists {
 				cutstr := getform["cutoff"][0]
@@ -667,23 +686,23 @@ func list(w http.ResponseWriter, r *http.Request, op string, userid uint64, user
 					fmt.Fprintln(w, err)
 					return
 				}
-				sql = "SELECT id_lnk, created_gmt, target_url, image_url, description FROM link_link WHERE (is_email = 1) AND (id_lnk < " + strconv.FormatUint(cutoff, 10) + ") ORDER BY id_lnk DESC;"
+				sql = "SELECT id_lnk, created_gmt, target_url, image_url, description, my_comment FROM link_link WHERE (is_email = 1) AND (id_lnk < " + strconv.FormatUint(cutoff, 10) + ") ORDER BY id_lnk DESC;"
 			}
 		} else {
-			_, video_only := getform["videoonly"]
-			if video_only {
-				sql = "SELECT id_lnk, created_gmt, target_url, image_url, description FROM link_link WHERE (is_video = 1) ORDER BY id_lnk DESC LIMIT 0, 200;"
+			_, videoOnly := getform["videoonly"]
+			if videoOnly {
+				sql = "SELECT id_lnk, created_gmt, target_url, image_url, description, my_comment FROM link_link WHERE (is_video = 1) ORDER BY id_lnk DESC LIMIT 0, 200;"
 			} else {
 				_, pdf_only := getform["pdfonly"]
 				if pdf_only {
-					sql = "SELECT id_lnk, created_gmt, target_url, image_url, description FROM link_link WHERE (is_pdf = 1) ORDER BY id_lnk DESC LIMIT 0, 200;"
+					sql = "SELECT id_lnk, created_gmt, target_url, image_url, description, my_comment FROM link_link WHERE (is_pdf = 1) ORDER BY id_lnk DESC LIMIT 0, 200;"
 				} else {
 
-					_, do_search := getform["search"]
-					if do_search {
-						sql = "SELECT id_lnk, created_gmt, target_url, image_url, description FROM link_link WHERE (description LIKE '%3D print%') OR (description LIKE '%3D-print%') ORDER BY id_lnk;"
+					_, doSearch := getform["search"]
+					if doSearch {
+						sql = "SELECT id_lnk, created_gmt, target_url, image_url, description, my_comment FROM link_link WHERE (description LIKE '%3D print%') OR (description LIKE '%3D-print%') ORDER BY id_lnk;"
 					} else {
-						sql = "SELECT id_lnk, created_gmt, target_url, image_url, description FROM link_link WHERE 1 ORDER BY id_lnk DESC LIMIT 0, 50;"
+						sql = "SELECT id_lnk, created_gmt, target_url, image_url, description, my_comment FROM link_link WHERE 1 ORDER BY id_lnk DESC LIMIT 0, 50;"
 					}
 				}
 			}
@@ -705,14 +724,19 @@ func list(w http.ResponseWriter, r *http.Request, op string, userid uint64, user
 			break
 		} else {
 			linkid := row.Uint64(0)
-			// created_gmt = row.Uint64(1)
-			target_url := row.Str(2)
-			// image_url = row.Str(3)
+			// createdGmt = row.Uint64(1)
+			targetUrl := row.Str(2)
+			// imageUrl = row.Str(3)
 			description := row.Str(4)
+			myComment := row.Str(5)
 			fmt.Fprint(w, `<p>`)
-			fmt.Fprint(w, html.EscapeString(description))
+			fmt.Fprint(w, htmize(description))
 			fmt.Fprint(w, `<br />`)
-			fmt.Fprint(w, "<a href="+target_url+">"+html.EscapeString(target_url)+"</a>")
+			if myComment != "" {
+				fmt.Fprint(w, htmize(myComment))
+				fmt.Fprint(w, `<br />`)
+			}
+			fmt.Fprint(w, "<a href="+targetUrl+">"+htmize(targetUrl)+"</a>")
 			fmt.Fprint(w, ` &middot; <a href="exposit?link=`+strconv.FormatUint(linkid, 10)+`">exposit</a> &middot; <a href="edit?link=`+strconv.FormatUint(linkid, 10)+`">edit</a> &middot; <a href="delete?link=`+strconv.FormatUint(linkid, 10)+`">delete</a>
 </p>`)
 		}
@@ -723,7 +747,7 @@ func list(w http.ResponseWriter, r *http.Request, op string, userid uint64, user
 </html>`)
 }
 
-func exposit(w http.ResponseWriter, r *http.Request, op string, userid uint64, userName string) {
+func showExpositPage(w http.ResponseWriter, r *http.Request, op string, userid uint64, userName string) {
 	err := r.ParseForm()
 	if err != nil {
 		fmt.Fprintln(w, err)
@@ -750,7 +774,7 @@ func exposit(w http.ResponseWriter, r *http.Request, op string, userid uint64, u
 `)
 	db := accessdb.GetDbConnection()
 	defer db.Close()
-	res, err := db.Start("SELECT id_lnk, created_gmt, target_url, image_url, description, my_comment FROM link_link WHERE id_lnk=" + strconv.FormatUint(linkid, 10) + " ORDER BY id_lnk DESC;")
+	res, err := db.Start("SELECT id_lnk, created_gmt, target_url, image_url, description, my_comment, title FROM link_link WHERE id_lnk=" + strconv.FormatUint(linkid, 10) + " ORDER BY id_lnk DESC;")
 	if err != nil {
 		fmt.Fprintln(w, err)
 		return
@@ -766,40 +790,42 @@ func exposit(w http.ResponseWriter, r *http.Request, op string, userid uint64, u
 			break
 		} else {
 			// linkid = row.Uint64(0)
-			// created_gmt = row.Uint64(1)
-			target_url := row.Str(2)
-			image_url := row.Str(3)
+			// createdGmt = row.Uint64(1)
+			targetUrl := row.Str(2)
+			imageUrl := row.Str(3)
 			description := row.Str(4)
-			my_comment := row.Str(5)
-			showExposition(w, target_url, image_url, description, my_comment)
+			myComment := row.Str(5)
+			title := row.Str(6)
+			showExposition(w, targetUrl, imageUrl, description, myComment, title)
 		}
 	}
 }
 
-func checkedStr(is_set bool) string {
-	if is_set {
+func checkedStr(isSet bool) string {
+	if isSet {
 		return `checked="checked"`
 	}
 	return ""
 }
 
-func edit(w http.ResponseWriter, r *http.Request, op string, userid uint64, userName string) {
-	var error_occurred bool
-	var error_list map[string]string
+func showEditPage(w http.ResponseWriter, r *http.Request, op string, userid uint64, userName string) {
+	var errorOccurred bool
+	var errorList map[string]string
 	var linkid uint64
 	var linkstr string
-	var ui_is_email bool
-	var ui_is_public bool
-	var ui_is_video bool
-	var ui_is_pdf bool
-	var ui_created string
-	var ui_target_url string
-	var ui_image_url string
-	var ui_description string
-	var ui_my_comment string
-	var ui_bpm string
+	var uiIsEmail bool
+	var uiIsPublic bool
+	var uiIsVideo bool
+	var uiIsPdf bool
+	var uiCreated string
+	var uiTargetUrl string
+	var uiImageUrl string
+	var uiDescription string
+	var uiMyComment string
+	var uiTitle string
+	var uiBpm string
 	method := r.Method
-	error_list = make(map[string]string)
+	errorList = make(map[string]string)
 	showform := true
 	if method == "GET" {
 		err := r.ParseForm()
@@ -820,7 +846,7 @@ func edit(w http.ResponseWriter, r *http.Request, op string, userid uint64, user
 			return
 		}
 		db := accessdb.GetDbConnection()
-		res, err := db.Start("SELECT id_lnk, created_gmt, target_url, image_url, description, my_comment, is_email, is_public, is_video, is_pdf, bpm FROM link_link WHERE id_lnk=" + strconv.FormatUint(linkid, 10) + " ORDER BY id_lnk DESC;")
+		res, err := db.Start("SELECT id_lnk, created_gmt, target_url, image_url, description, my_comment, title, is_email, is_public, is_video, is_pdf, bpm FROM link_link WHERE id_lnk=" + strconv.FormatUint(linkid, 10) + " ORDER BY id_lnk DESC;")
 		if err != nil {
 			fmt.Fprintln(w, err)
 			return
@@ -836,24 +862,26 @@ func edit(w http.ResponseWriter, r *http.Request, op string, userid uint64, user
 			return
 		} else {
 			// linkid = row.Uint64(0)
-			created_gmt := row.Uint64(1)
-			target_url := row.Str(2)
-			image_url := row.Str(3)
+			createdGmt := row.Uint64(1)
+			targetUrl := row.Str(2)
+			imageUrl := row.Str(3)
 			description := row.Str(4)
-			my_comment := row.Str(5)
-			time_object := time.Unix(int64(created_gmt), 0)
-			// time_object.Format("Mon Jan 2 15:04:05 MST 2006  (MST is GMT-0700)
-			createstr := time_object.Format("2006-01-02 15:04:05")
-			ui_created = createstr
-			ui_target_url = target_url
-			ui_image_url = image_url
-			ui_description = description
-			ui_my_comment = my_comment
-			ui_is_email = row.Bool(6)
-			ui_is_public = row.Bool(7)
-			ui_is_video = row.Bool(8)
-			ui_is_pdf = row.Bool(9)
-			ui_bpm = floatToStr(row.Float(10))
+			myComment := row.Str(5)
+			title := row.Str(6)
+			timeObject := time.Unix(int64(createdGmt), 0)
+			// timeObject.Format("Mon Jan 2 15:04:05 MST 2006  (MST is GMT-0700)
+			createstr := timeObject.Format("2006-01-02 15:04:05")
+			uiCreated = createstr
+			uiTargetUrl = targetUrl
+			uiImageUrl = imageUrl
+			uiDescription = description
+			uiMyComment = myComment
+			uiTitle = title
+			uiIsEmail = row.Bool(7)
+			uiIsPublic = row.Bool(8)
+			uiIsVideo = row.Bool(9)
+			uiIsPdf = row.Bool(10)
+			uiBpm = floatToStr(row.Float(11))
 		}
 	}
 	if method == "POST" {
@@ -864,97 +892,106 @@ func edit(w http.ResponseWriter, r *http.Request, op string, userid uint64, user
 			return
 		}
 		postform := r.Form
-		ui_created = postform["created"][0]
-		ui_target_url = postform["target_url"][0]
-		ui_image_url = postform["image_url"][0]
-		ui_description = postform["description"][0]
-		ui_my_comment = postform["my_comment"][0]
-		_, ui_is_email = postform["email"]
-		_, ui_is_public = postform["public"]
-		_, ui_is_video = postform["video"]
-		_, ui_is_pdf = postform["pdf"]
-		ui_bpm = postform["bpm"][0]
-		if (postform["target_url"][0] == "") || (postform["description"][0] == "") {
+		uiCreated = postform["created"][0]
+		uiTargetUrl = postform["target_url"][0]
+		uiImageUrl = postform["image_url"][0]
+		uiDescription = postform["description"][0]
+		uiMyComment = postform["my_comment"][0]
+		uiTitle = postform["title"][0]
+		_, uiIsEmail = postform["email"]
+		_, uiIsPublic = postform["public"]
+		_, uiIsVideo = postform["video"]
+		_, uiIsPdf = postform["pdf"]
+		uiBpm = postform["bpm"][0]
+		if (postform["target_url"][0] == "") || (postform["description"][0] == "") || (postform["title"][0] == "") {
 			showform = true
-			error_occurred = true
+			errorOccurred = true
 			if postform["target_url"][0] == "" {
-				error_list["target_url"] = "Target URL is empty"
+				errorList["target_url"] = "Target URL is empty"
 			}
 			if postform["description"][0] == "" {
-				error_list["description"] = "Description is empty"
+				errorList["description"] = "Description is empty"
 			}
+			if postform["title"][0] == "" {
+				errorList["title"] = "Title is empty"
+			}
+		}
+		if postform["bpm"][0] != "" {
 			if postform["bpm"][0] != "" {
 				if !isNumeric(postform["bpm"][0]) {
-					error_list["bpm"] = "BPM is not a number"
+					errorList["bpm"] = "BPM is not a number"
+					showform = true
+					errorOccurred = true
 				}
 			}
 		}
-		if error_occurred == false {
+		linkstr = postform["link"][0]
+		linkid, err = strconv.ParseUint(linkstr, 10, 64)
+		if err != nil {
+			fmt.Fprintln(w, err)
+			return
+		}
+		if errorOccurred == false {
 			db := accessdb.GetDbConnection()
 			defer db.Close()
-			stmt, err := db.Prepare("UPDATE link_link SET target_url=?, image_url=?, description=?, my_comment=?, is_email=?, is_public=?, is_video=?, is_pdf=?, bpm=? WHERE id_lnk=?;")
+			stmt, err := db.Prepare("UPDATE link_link SET target_url = ?, image_url = ?, description = ?, my_comment = ?, title = ?, is_email = ?, is_public = ?, is_video = ?, is_pdf = ?, bpm = ? WHERE id_lnk = ?;")
 			if err != nil {
 				fmt.Fprintln(w, err)
 				return
 			}
 			// defer stmt.Close();
-			linkstr = postform["link"][0]
-			linkid, err = strconv.ParseUint(linkstr, 10, 64)
-			if err != nil {
-				fmt.Fprintln(w, err)
-				return
-			}
-			// update_created_gmt = uint64(time.Now().Unix())
-			update_target_url := postform["target_url"][0]
-			update_image_url := postform["image_url"][0]
-			update_description := postform["description"][0]
-			update_description = strings.Trim(update_description, " \r\n\t")
-			update_my_comment := postform["my_comment"][0]
-			update_my_comment = strings.Trim(update_my_comment, " \r\n\t")
-			update_id_lnk := linkid
-			update_is_email := 0
+			// updateCreatedGmt = uint64(time.Now().Unix())
+			updateTargetUrl := postform["target_url"][0]
+			updateImageUrl := postform["image_url"][0]
+			updateDescription := postform["description"][0]
+			updateDescription = strings.Trim(updateDescription, " \r\n\t")
+			updateMyComment := postform["my_comment"][0]
+			updateMyComment = strings.Trim(updateMyComment, " \r\n\t")
+			updateTitle := postform["title"][0]
+			updateTitle = strings.Trim(updateTitle, " \r\n\t")
+			updateIdLnk := linkid
+			updateIsEmail := 0
 			_, ok := postform["email"]
 			if ok {
-				update_is_email = 1
+				updateIsEmail = 1
 			}
 			_, ok = postform["public"]
-			update_is_public := 0
+			updateIsPublic := 0
 			if ok {
-				update_is_public = 1
+				updateIsPublic = 1
 			}
 			_, ok = postform["video"]
-			update_is_video := 0
+			updateIsVideo := 0
 			if ok {
-				update_is_video = 1
+				updateIsVideo = 1
 			}
 			_, ok = postform["pdf"]
-			update_is_pdf := 0
+			updateIsPdf := 0
 			if ok {
-				update_is_pdf = 1
+				updateIsPdf = 1
 			}
-			var update_bpm float64
-			update_bpm = 0.0
+			var updateBpm float64
+			updateBpm = 0.0
 			if postform["bpm"][0] != "" {
-				update_bpm = strToFloat(postform["bpm"][0])
+				updateBpm = strToFloat(postform["bpm"][0])
 			}
-			stmt.Bind(update_target_url, update_image_url, update_description, update_my_comment, update_is_email, update_is_public, update_is_video, update_is_pdf, update_bpm, update_id_lnk)
+			stmt.Bind(updateTargetUrl, updateImageUrl, updateDescription, updateMyComment, updateTitle, updateIsEmail, updateIsPublic, updateIsVideo, updateIsPdf, updateBpm, updateIdLnk)
 			_, _, err = stmt.Exec()
 			if err != nil {
 				fmt.Fprintln(w, err)
 				return
 			}
+			http.Redirect(w, r, "exposit?link="+linkstr, 302)
+			return
 		}
-		http.Redirect(w, r, "exposit?link="+linkstr, 302)
-		return
 	}
 	if showform {
 		header := w.Header()
 		header.Set("Content-Type", "text/html; charset=utf-8")
-
-		if error_occurred {
+		if errorOccurred {
 			fmt.Fprintln(w, "<h2>Error occurred</h2><ul>")
-			for err_on, err_msg := range error_list {
-				fmt.Fprintln(w, "<li>"+html.EscapeString(err_on)+": "+html.EscapeString(err_msg)+"</li>")
+			for errOn, errMsg := range errorList {
+				fmt.Fprintln(w, "<li>"+htmize(errOn)+": "+htmize(errMsg)+"</li>")
 			}
 			fmt.Fprintln(w, "</ul>")
 		}
@@ -970,32 +1007,33 @@ func edit(w http.ResponseWriter, r *http.Request, op string, userid uint64, user
 <form action="edit" method="post">
 
 <table border="0" cellpadding="4">
-<tr><td> Created </td><td> <input name="link" id="link" value="`+strconv.FormatUint(linkid, 10)+`" type="hidden" /> <input name="created" id="created" type="text" value="`+html.EscapeString(ui_created)+`" readonly="readonly" /> </td></tr>
-<tr><td> Target URL </td><td> <input name="target_url" id="target_url" type="text" value="`+html.EscapeString(ui_target_url)+`" style="width:400px;" /> </td></tr>
-<tr><td> Image URL </td><td> <input name="image_url" id="image_url" type="text" value="`+html.EscapeString(ui_image_url)+`" style="width:400px;" /> </td></tr>
-<tr><td> Description </td><td> <textarea name="description" id="description" rows="20" cols="80">`+html.EscapeString(ui_description)+`</textarea> </td></tr>
-<tr><td> My Comment </td><td> <textarea name="my_comment" id="my_comment" rows="20" cols="80">`+html.EscapeString(ui_my_comment)+`</textarea> </td></tr>
-<tr><td> Email </td><td> <input type="checkbox" name="email" id="email" `+checkedStr(ui_is_email)+`> Email </td></tr>
-<tr><td> Public </td><td> <input type="checkbox" name="public" id="public" `+checkedStr(ui_is_public)+`> Public </td></tr>
-<tr><td> Video </td><td> <input type="checkbox" name="video" id="video" `+checkedStr(ui_is_video)+`> Video </td></tr>
-<tr><td> PDF </td><td> <input type="checkbox" name="pdf" id="video" `+checkedStr(ui_is_pdf)+`> PDF </td></tr>
-<tr><td> BPM </td><td> <input name="bpm" id="bpm" type="text" value="`+html.EscapeString(ui_bpm)+`" style="width:400px;" /> </td></tr>
+<tr><td> Created </td><td> <input name="link" id="link" value="`+strconv.FormatUint(linkid, 10)+`" type="hidden" /> <input name="created" id="created" type="text" value="`+htmize(uiCreated)+`" readonly="readonly" /> </td></tr>
+<tr><td> Target URL </td><td> <input name="target_url" id="target_url" type="text" value="`+htmize(uiTargetUrl)+`" style="width:400px;" /> </td></tr>
+<tr><td> Image URL </td><td> <input name="image_url" id="image_url" type="text" value="`+htmize(uiImageUrl)+`" style="width:400px;" /> </td></tr>
+<tr><td> Description </td><td> <textarea name="description" id="description" rows="20" cols="80">`+htmize(uiDescription)+`</textarea> </td></tr>
+<tr><td> My Comment </td><td> <textarea name="my_comment" id="my_comment" rows="20" cols="80">`+htmize(uiMyComment)+`</textarea> </td></tr>
+<tr><td> Title </td><td> <input name="title" id="title" type="text" value="`+htmize(uiTitle)+`" style="width:400px;" /> </td></tr>
+<tr><td> Email </td><td> <input type="checkbox" name="email" id="email" `+checkedStr(uiIsEmail)+`> Email </td></tr>
+<tr><td> Public </td><td> <input type="checkbox" name="public" id="public" `+checkedStr(uiIsPublic)+`> Public </td></tr>
+<tr><td> Video </td><td> <input type="checkbox" name="video" id="video" `+checkedStr(uiIsVideo)+`> Video </td></tr>
+<tr><td> PDF </td><td> <input type="checkbox" name="pdf" id="video" `+checkedStr(uiIsPdf)+`> PDF </td></tr>
+<tr><td> BPM </td><td> <input name="bpm" id="bpm" type="text" value="`+htmize(uiBpm)+`" style="width:400px;" /> </td></tr>
 </table>
 
 <p><input name="submit" id="submit" type="submit" />
 
 </form>
 
-</body></html`)
+</body></html>`)
 	}
 	return
 }
 
-func delete(w http.ResponseWriter, r *http.Request, op string, userid uint64, userName string) {
+func showDeletePage(w http.ResponseWriter, r *http.Request, op string, userid uint64, userName string) {
 	var linkid uint64
-	var ui_target_url string
-	var ui_description string
-	var ui_my_comment string
+	var uiTargetUrl string
+	var uiDescription string
+	var uiMyComment string
 	method := r.Method
 	showform := true
 	if method == "GET" {
@@ -1028,19 +1066,19 @@ func delete(w http.ResponseWriter, r *http.Request, op string, userid uint64, us
 			return
 		} else {
 			// linkid = row.Uint64(0)
-			// created_gmt = row.Uint64(1)
-			target_url := row.Str(2)
-			// image_url = row.Str(3)
+			// createdGmt = row.Uint64(1)
+			targetUrl := row.Str(2)
+			// imageUrl = row.Str(3)
 			description := row.Str(4)
-			my_comment := row.Str(5)
-			// time_object = time.Unix(int64(created_gmt), 0)
-			// time_object.Format("Mon Jan 2 15:04:05 MST 2006  (MST is GMT-0700)
-			// createstr = time_object.Format("2006-01-02 15:04:05")
-			// ui_created = createstr
-			ui_target_url = target_url
-			// ui_image_url = image_url
-			ui_description = description
-			ui_my_comment = my_comment
+			myComment := row.Str(5)
+			// timeObject = time.Unix(int64(createdGmt), 0)
+			// timeObject.Format("Mon Jan 2 15:04:05 MST 2006  (MST is GMT-0700)
+			// createstr = timeObject.Format("2006-01-02 15:04:05")
+			// uiCreated = createstr
+			uiTargetUrl = targetUrl
+			// uiImageUrl = imageUrl
+			uiDescription = description
+			uiMyComment = myComment
 		}
 	}
 	if method == "POST" {
@@ -1088,10 +1126,10 @@ func delete(w http.ResponseWriter, r *http.Request, op string, userid uint64, us
 
 <form action="delete" method="post">
 
-<p> Delete link to: <a href="`+html.EscapeString(ui_target_url)+`">`+html.EscapeString(ui_target_url)+`</a>? </p>
+<p> Delete link to: <a href="`+htmize(uiTargetUrl)+`">`+htmize(uiTargetUrl)+`</a>? </p>
 
-<p> `+html.EscapeString(ui_description)+`</p>
-<p> `+html.EscapeString(ui_my_comment)+`</p>
+<p> `+htmize(uiDescription)+`</p>
+<p> `+htmize(uiMyComment)+`</p>
 
 <p><input type="submit" id="submit" name="submit" value="Delete" />
 <input name="link" id="link" value="`+strconv.FormatUint(linkid, 10)+`" type="hidden" />
@@ -1099,14 +1137,14 @@ func delete(w http.ResponseWriter, r *http.Request, op string, userid uint64, us
 
 </form>
 
-</body></html`)
+</body></html>`)
 	}
 	return
 }
 
-func email(w http.ResponseWriter, r *http.Request, op string, userid uint64, userName string) {
+func showEmailPage(w http.ResponseWriter, r *http.Request, op string, userid uint64, userName string) {
 	var cutoff uint64
-	double_linefeeds := true
+	doubleLinefeeds := true
 	method := r.Method
 	if method == "GET" {
 		err := r.ParseForm()
@@ -1116,7 +1154,7 @@ func email(w http.ResponseWriter, r *http.Request, op string, userid uint64, use
 		}
 		getform := r.Form
 		_, nodouble := getform["nodouble"]
-		double_linefeeds = !nodouble
+		doubleLinefeeds = !nodouble
 		_, exists := getform["cutoff"]
 		if exists {
 			cutstr := getform["cutoff"][0]
@@ -1152,7 +1190,7 @@ func email(w http.ResponseWriter, r *http.Request, op string, userid uint64, use
 
 	count := 0
 
-	// email_cutoff
+	// emailCutoff
 	res, err := db.Start("SELECT target_url, description, my_comment FROM link_link WHERE (is_email = 1) AND (is_video = 0) AND (is_pdf = 0) AND (id_lnk < " + strconv.FormatUint(cutoff, 10) + ") ORDER BY id_lnk DESC;")
 	if err != nil {
 		fmt.Fprintln(w, err)
@@ -1168,22 +1206,24 @@ func email(w http.ResponseWriter, r *http.Request, op string, userid uint64, use
 		if row == nil {
 			break
 		} else {
-			target_url := row.Str(0)
+			targetUrl := row.Str(0)
 			description := row.Str(1)
-			my_comment := row.Str(2)
+			myComment := row.Str(2)
 			fmt.Fprint(w, "\n")
-			if double_linefeeds {
+			if doubleLinefeeds {
 				fmt.Fprint(w, "\n")
 			}
-			fmt.Fprint(w, html.EscapeString(strings.Replace(strings.Replace(description, "\r", "", -1), "\n", " ", -1)))
+			fmt.Fprint(w, htmize(strings.Replace(strings.Replace(description, "\r", "", -1), "\n", " ", -1)))
 			fmt.Fprint(w, "\n")
-			if double_linefeeds {
+			if doubleLinefeeds {
 				fmt.Fprint(w, "\n")
 			}
-			fmt.Fprint(w, html.EscapeString(target_url)+"\n")
-			fmt.Fprint(w, "\n")
-			fmt.Fprint(w, html.EscapeString(strings.Replace(strings.Replace(my_comment, "\r", "", -1), "\n", " ", -1)))
-			fmt.Fprint(w, "\n")
+			fmt.Fprint(w, htmize(targetUrl)+"\n")
+			if myComment != "" {
+				fmt.Fprint(w, "\n")
+				fmt.Fprint(w, htmize(strings.Replace(strings.Replace(myComment, "\r", "", -1), "\n", " ", -1)))
+				fmt.Fprint(w, "\n")
+			}
 			count++
 		}
 	}
@@ -1195,7 +1235,7 @@ func email(w http.ResponseWriter, r *http.Request, op string, userid uint64, use
 
 
 `)
-	// email_cutoff
+	// emailCutoff
 	res, err = db.Start("SELECT target_url, description, my_comment FROM link_link WHERE (is_email = 1) AND (is_video = 1) AND (is_pdf = 0) AND (id_lnk < " + strconv.FormatUint(cutoff, 10) + ") ORDER BY id_lnk DESC;")
 	if err != nil {
 		fmt.Fprintln(w, err)
@@ -1211,27 +1251,29 @@ func email(w http.ResponseWriter, r *http.Request, op string, userid uint64, use
 		if row == nil {
 			break
 		} else {
-			target_url := row.Str(0)
+			targetUrl := row.Str(0)
 			description := row.Str(1)
-			my_comment := row.Str(2)
+			myComment := row.Str(2)
 			fmt.Fprint(w, "\n")
-			if double_linefeeds {
+			if doubleLinefeeds {
 				fmt.Fprint(w, "\n")
 			}
-			fmt.Fprint(w, html.EscapeString(strings.Replace(strings.Replace(description, "\r", "", -1), "\n", " ", -1)))
+			fmt.Fprint(w, htmize(strings.Replace(strings.Replace(description, "\r", "", -1), "\n", " ", -1)))
 			fmt.Fprint(w, "\n")
-			if double_linefeeds {
+			if doubleLinefeeds {
 				fmt.Fprint(w, "\n")
 			}
-			fmt.Fprint(w, html.EscapeString(target_url)+"\n")
-			fmt.Fprint(w, "\n")
-			fmt.Fprint(w, html.EscapeString(strings.Replace(strings.Replace(my_comment, "\r", "", -1), "\n", " ", -1)))
-			fmt.Fprint(w, "\n")
+			fmt.Fprint(w, htmize(targetUrl)+"\n")
+			if myComment != "" {
+				fmt.Fprint(w, "\n")
+				fmt.Fprint(w, htmize(strings.Replace(strings.Replace(myComment, "\r", "", -1), "\n", " ", -1)))
+				fmt.Fprint(w, "\n")
+			}
 			count++
 		}
 	}
 	fmt.Fprint(w, "</textarea>")
-	fmt.Fprint(w, "<p>Count: "+html.EscapeString(strconv.FormatInt(int64(count), 10))+`</p>
+	fmt.Fprint(w, "<p>Count: "+htmize(strconv.FormatInt(int64(count), 10))+`</p>
 </body></html>`)
 }
 
@@ -1253,7 +1295,7 @@ func urlToDomainOnly(url string) string {
 	return rv
 }
 
-func homepage(w http.ResponseWriter, r *http.Request, op string, userid uint64, userName string, showMusic bool) {
+func showHomePage(w http.ResponseWriter, r *http.Request, op string, userid uint64, userName string, showMusic bool) {
 	var sql string
 	header := w.Header()
 	header.Set("Content-Type", "text/html; charset=utf-8")
@@ -1281,13 +1323,13 @@ body {
 		return
 	}
 	getform := r.Form
-	_, show_all := getform["showall"]
-	if show_all {
+	_, showAll := getform["showall"]
+	if showAll {
 		sql = "SELECT id_lnk, created_gmt, target_url, image_url, description FROM link_link WHERE 1 ORDER BY id_lnk DESC;"
 	} else {
-		_, show_email := getform["emailonly"]
-		if show_email {
-			// email_cutoff
+		_, showEmail := getform["emailonly"]
+		if showEmail {
+			// emailCutoff
 			sql = "SELECT id_lnk, created_gmt, target_url, image_url, description FROM link_link WHERE (is_email = 1) AND (is_pdf = 0) ORDER BY id_lnk DESC;"
 			_, exists := getform["cutoff"]
 			if exists {
@@ -1300,8 +1342,8 @@ body {
 				sql = "SELECT id_lnk, created_gmt, target_url, image_url, description FROM link_link WHERE (is_email = 1) AND (id_lnk < " + strconv.FormatUint(cutoff, 10) + ") ORDER BY id_lnk DESC;"
 			}
 		} else {
-			_, video_only := getform["videoonly"]
-			if video_only {
+			_, videoOnly := getform["videoonly"]
+			if videoOnly {
 				sql = "SELECT id_lnk, created_gmt, target_url, image_url, description FROM link_link WHERE (is_video = 1) ORDER BY id_lnk DESC LIMIT 0, 200;"
 			} else {
 				_, pdf_only := getform["pdfonly"]
@@ -1309,8 +1351,8 @@ body {
 					sql = "SELECT id_lnk, created_gmt, target_url, image_url, description FROM link_link WHERE (is_pdf = 1) ORDER BY id_lnk DESC LIMIT 0, 200;"
 				} else {
 
-					_, do_search := getform["search"]
-					if do_search {
+					_, doSearch := getform["search"]
+					if doSearch {
 						sql = "SELECT id_lnk, created_gmt, target_url, image_url, description FROM link_link WHERE (description LIKE '%3D print%') OR (description LIKE '%3D-print%') ORDER BY id_lnk;"
 					} else {
 						_, music := getform["music"]
@@ -1349,7 +1391,7 @@ body {
 			break
 		} else {
 			linkid := row.Uint64(0)
-			// created_gmt = row.Uint64(1)
+			// createdGmt = row.Uint64(1)
 			targetUrl := row.Str(2)
 			imageUrl := row.Str(3)
 			description := row.Str(4)
@@ -1362,10 +1404,10 @@ body {
 				fmt.Fprint(w, `<a href="`+targetUrl+`"><img width="196" src="`+imageUrl+`" alt="Thumbnail" /></a>`)
 			}
 			fmt.Fprint(w, ` </td><td valign="top"> `)
-			fmt.Fprint(w, strings.Replace(html.EscapeString(description), "\n", "<br />", 32768))
+			fmt.Fprint(w, strings.Replace(htmize(description), "\n", "<br />", 32768))
 			if userid == 1 {
 				fmt.Fprint(w, `<br />`)
-				fmt.Fprint(w, "<a href="+targetUrl+">"+html.EscapeString(targetUrl)+"</a>")
+				fmt.Fprint(w, "<a href="+targetUrl+">"+htmize(targetUrl)+"</a>")
 				fmt.Fprint(w, ` &middot; <a href="exposit?link=`+strconv.FormatUint(linkid, 10)+`">exposit</a> &middot; <a href="edit?link=`+strconv.FormatUint(linkid, 10)+`">edit</a> &middot; <a href="delete?link=`+strconv.FormatUint(linkid, 10)+`">delete</a>`)
 				// } else {
 				// fmt.Fprint(w, " <a href="+targetUrl+">"+urlToDomainOnly(targetUrl)+"</a>")
@@ -1382,12 +1424,12 @@ body {
 </html>`)
 }
 
-func search(w http.ResponseWriter, r *http.Request, op string, userid uint64, userName string) {
+func showSearchPage(w http.ResponseWriter, r *http.Request, op string, userid uint64, userName string) {
 	var showform bool
-	var error_list map[string]string
-	var ui_search_term string
+	var errorList map[string]string
+	var uiSearchTerm string
 
-	error_occurred := false
+	errorOccurred := false
 	method := r.Method
 	if method == "POST" {
 		showform = false
@@ -1399,13 +1441,13 @@ func search(w http.ResponseWriter, r *http.Request, op string, userid uint64, us
 		postform := r.Form
 		if postform["search_term"][0] == "" {
 			showform = true
-			error_occurred = true
-			error_list = make(map[string]string)
-			error_list["search_term"] = "Search term is empty"
+			errorOccurred = true
+			errorList = make(map[string]string)
+			errorList["search_term"] = "Search term is empty"
 		}
-		if error_occurred == false {
+		if errorOccurred == false {
 			// put search code here
-			ui_search_term = postform["search_term"][0]
+			uiSearchTerm = postform["search_term"][0]
 			header := w.Header()
 			header.Set("Content-Type", "text/html; charset=utf-8")
 			fmt.Fprint(w, getDoctype())
@@ -1427,7 +1469,7 @@ func search(w http.ResponseWriter, r *http.Request, op string, userid uint64, us
 				fmt.Println(err)
 				panic("Prepare failed")
 			}
-			sel.Bind("%" + ui_search_term + "%")
+			sel.Bind("%" + uiSearchTerm + "%")
 			rows, _, err := sel.Exec()
 			if err != nil {
 				fmt.Println(err)
@@ -1438,7 +1480,7 @@ func search(w http.ResponseWriter, r *http.Request, op string, userid uint64, us
 			for _, row := range rows {
 				linkId := row.Uint64(0)
 				description := row.Str(1)
-				fmt.Fprint(w, `<tr><td valign="top"> <a href="exposit?link=`+uintToStr(linkId)+`">`+uintToStr(linkId)+`</a> </td><td valign="top"> `+htm(description)+`</td></tr>
+				fmt.Fprint(w, `<tr><td valign="top"> <a href="exposit?link=`+uintToStr(linkId)+`">`+uintToStr(linkId)+`</a> </td><td valign="top"> `+htmize(description)+`</td></tr>
 `)
 			}
 			fmt.Fprint(w, `</table>
@@ -1448,7 +1490,7 @@ func search(w http.ResponseWriter, r *http.Request, op string, userid uint64, us
 	}
 	if method == "GET" {
 		showform = true
-		ui_search_term = ""
+		uiSearchTerm = ""
 	}
 	if showform {
 		header := w.Header()
@@ -1466,17 +1508,17 @@ func search(w http.ResponseWriter, r *http.Request, op string, userid uint64, us
 
 <form action="search" method="post">
 `)
-		if error_occurred {
+		if errorOccurred {
 			fmt.Fprintln(w, "<h2>Error occurred</h2><ul>")
-			for err_on, err_msg := range error_list {
-				fmt.Fprintln(w, "<li>"+html.EscapeString(err_on)+": "+html.EscapeString(err_msg)+"</li>")
+			for errOn, errMsg := range errorList {
+				fmt.Fprintln(w, "<li>"+htmize(errOn)+": "+htmize(errMsg)+"</li>")
 			}
 			fmt.Fprintln(w, "</ul>")
 		}
 		fmt.Fprintln(w, `
 
 <table border="0" cellpadding="4">
-<tr><td> Search Term </td><td> <input name="search_term" id="search_term" type="text" value="`+html.EscapeString(ui_search_term)+`" /> </td></tr>
+<tr><td> Search Term </td><td> <input name="search_term" id="search_term" type="text" value="`+htmize(uiSearchTerm)+`" /> </td></tr>
 <tr><td colspan="2" align="center"> <input name="submit" id="submit" type="submit" /> </td></tr>
 </table>
 </form>
@@ -1484,6 +1526,392 @@ func search(w http.ResponseWriter, r *http.Request, op string, userid uint64, us
 </html>`)
 		return
 	}
+}
+
+func linesToParagraphBreaks(str string) string {
+	return strings.Replace(str, "\r\n\r\n", "</p><p>", -1)
+}
+
+func linkify(text string) string {
+	foundstuff := false
+	i := strings.Index(text, "http:")
+	for i >= 0 {
+		foundstuff = true
+		j := strings.IndexAny(text[i:], " \t\n\r") + i
+		var link string
+		var repl string
+		if j >= i {
+			link = text[i:j]
+			repl = "gwikkagakkageek:" + text[i+5:j]
+		} else {
+			link = text[i:]
+			repl = "gwikkagakkageek:" + text[i+5:]
+		}
+		text = strings.Replace(text, link, `<a href="`+repl+`">`+repl+"</a>", -1)
+		i = strings.Index(text, "http:")
+	}
+	i = strings.Index(text, "https:")
+	for i >= 0 {
+		foundstuff = true
+		j := strings.IndexAny(text[i:], " \t\n\r") + i
+		var link string
+		var repl string
+		if j >= i {
+			link = text[i:j]
+			repl = "gwikkagakkageeks:" + text[i+6:j]
+		} else {
+			link = text[i:]
+			repl = "gwikkagakkageeks:" + text[i+6:]
+		}
+		text = strings.Replace(text, link, `<a href="`+repl+`">`+repl+"</a>", -1)
+		i = strings.Index(text, "https:")
+	}
+	if !foundstuff {
+		return text
+	}
+	text = strings.Replace(text, "gwikkagakkageeks:", "https:", -1)
+	text = strings.Replace(text, "gwikkagakkageek:", "http:", -1)
+	return text
+}
+
+func genTrentBlogVersion(targetUrl string, imageUrl string, description string, myComment string) string {
+	result := `<p><a href="` + targetUrl + `"><img border="0" src="` + imageUrl + `" width="200" style="float:left; margin-right:10px; margin-bottom-10px;" /></a>` + linesToParagraphBreaks(linkify(description)) + "</p>" + `
+`
+	if myComment != "" {
+		result = result + "<p>My comment: " + linesToParagraphBreaks(linkify(myComment)) + "</p>" + `
+`
+	}
+	result = result + "<p><a href=" + `"` + targetUrl + `"` + ">Read more...</a></p>"
+	return result
+}
+
+func showTrentExposition(w http.ResponseWriter, targetUrl string, imageUrl string, description string, myComment string) {
+	fmt.Fprint(w, `
+      <p><textarea cols="80" rows="20">`)
+	fmt.Fprint(w, htmize(`<p><a href="`+targetUrl+`"><img border="0" src="`+imageUrl+`" width="200" style="float:left; margin-right:10px; margin-bottom-10px;" /></a>`))
+	fmt.Fprint(w, linesToParagraphBreaks(description))
+	fmt.Fprint(w, htmize("</p>"))
+	fmt.Fprint(w, `
+`)
+	fmt.Fprint(w, htmize("<p><a href="+`"`))
+	fmt.Fprint(w, targetUrl)
+	fmt.Fprint(w, htmize(`"`+">Read more...</a></p>"))
+	fmt.Fprint(w, `</textarea> <textarea cols="80" rows="20">`)
+	fmt.Fprint(w, "<p>"+linesToParagraphBreaks(myComment)+"</p>")
+	fmt.Fprint(w, `</textarea></p>
+<p> <img src="`+imageUrl+`" alt="Thumbnail" /> </p>
+  </section>
+`)
+}
+
+func showTrentExpoPage(w http.ResponseWriter, r *http.Request, op string, userid uint64, userName string) {
+	err := r.ParseForm()
+	if err != nil {
+		fmt.Fprintln(w, err)
+		return
+	}
+	postform := r.Form
+	linkstr := postform["link"][0]
+	linkid, err := strconv.ParseUint(linkstr, 10, 64)
+	if err != nil {
+		fmt.Fprintln(w, err)
+		return
+	}
+	header := w.Header()
+	header.Set("Content-Type", "text/html; charset=utf-8")
+	fmt.Fprint(w, getDoctype())
+	fmt.Fprint(w, `<title>Trent Exposition</title>
+</head>
+<body>
+  <section>
+`)
+	showLinksMenuBar(w, userName)
+	fmt.Fprint(w, `
+    <h1>Trent Exposition</h1>
+`)
+	db := accessdb.GetDbConnection()
+	defer db.Close()
+	res, err := db.Start("SELECT id_lnk, created_gmt, target_url, image_url, description, my_comment FROM link_link WHERE id_lnk=" + strconv.FormatUint(linkid, 10) + " ORDER BY id_lnk DESC;")
+	if err != nil {
+		fmt.Fprintln(w, err)
+		return
+	}
+	// defer res.Close();
+	for {
+		row, err := res.GetRow()
+		if err != nil {
+			fmt.Fprintln(w, err)
+			return
+		}
+		if row == nil {
+			break
+		} else {
+			// linkid = row.Uint64(0)
+			// createdGmt = row.Uint64(1)
+			targetUrl := row.Str(2)
+			imageUrl := row.Str(3)
+			description := row.Str(4)
+			myComment := row.Str(5)
+			// description = db.Escape(description)
+			// myComment = db.Escape(myComment)
+			showTrentExposition(w, targetUrl, imageUrl, description, myComment)
+		}
+	}
+}
+
+func descripShorten(description string) string {
+	punct := ".,!?"
+	for num := range punct {
+		pmk := punct[num : num+1]
+		i := strings.Index(description, pmk)
+		if i >= 0 {
+			i = strings.LastIndex(description, pmk)
+			if pmk == "?" {
+				// we keep question marks
+				description = description[:i+1]
+				description = strings.Trim(description, " \n\r\t")
+				if len(description) < 65 { // this if prevents endless loop
+					return description
+				}
+			} else {
+				description = description[:i]
+				description = strings.Trim(description, " \n\r\t")
+				return description
+			}
+		}
+	}
+	description = description[:65]
+	for (len(description) > 10) && (description[len(description)-1:len(description)] != " ") {
+		description = description[:len(description)-1]
+	}
+	description = strings.Trim(description, " \n\r\t")
+	return description
+}
+
+func genTitleFromDescription(description string) string {
+	description = strings.Replace(description, `"`, "", -1)
+	description = strings.Replace(description, "\n", " ", -1)
+	description = strings.Replace(description, "\r", " ", -1)
+	description = strings.Replace(description, "\t", " ", -1)
+	description = strings.Replace(description, "  ", " ", -1)
+	description = strings.Replace(description, "  ", " ", -1)
+	description = strings.Replace(description, "  ", " ", -1)
+	if len(description) > 17 {
+		if description[:17] == "Music for today. " {
+			description = description[17:]
+		}
+	}
+	if len(description) > 18 {
+		if description[:18] == "Sign O The Times. " {
+			description = description[18:]
+		}
+	}
+	// commonWords := [84]string{"the", "be", "to", "of", "and", "a", "in", "that", "have", "I", "it", "for", "on", "with", "he", "as", "you", "do", "at", "this", "but", "his", "by", "from", "they", "we", "say", "her", "she", "or", "will", "an", "my", "one", "all", "would", "there", "their", "what", "so", "up", "out", "if", "about", "who", "get", "which", "go", "when", "me", "can", "like", "no", "just", "him", "know", "take", "into", "your", "some", "could", "them", "see", "other", "than", "then", "now", "look", "only", "come", "its", "over", "also", "back", "use", "two", "how", "our", "even", "new", "any", "these", "give", "us"}
+	// commonWords := [13]string{"the", "a", "an", "be", "of", "and", "that", "it", "this", "would", "could", "there", "so"}
+	commonWords := [13]string{"the", "a", "an"}
+	for num := range commonWords {
+		word := commonWords[num]
+		word = " " + word + " "
+		i := strings.Index(description, word)
+		for i >= 0 {
+			description = strings.Replace(description, word, " ", -1)
+			i = strings.Index(description, word)
+		}
+	}
+	type srPair struct {
+		searchFor string
+		replaceBy string
+	}
+	searchAndReplace := []srPair{{"United States", "US"}}
+	for num := range searchAndReplace {
+		srch := searchAndReplace[num].searchFor
+		repl := searchAndReplace[num].replaceBy
+		i := strings.Index(description, srch)
+		for i >= 0 {
+			description = strings.Replace(description, srch, repl, -1)
+			i = strings.Index(description, srch)
+		}
+	}
+	// have to check for space after period because of ".js", ".gov", etc
+	i := strings.Index(description, ". ")
+	if i >= 0 {
+		description = description[:i]
+	}
+	i = strings.Index(description, "!")
+	if i >= 0 {
+		description = description[:i]
+	}
+	i = strings.Index(description, "?")
+	if i >= 0 {
+		description = description[:i+1]
+	}
+	for len(description) > 65 {
+		description = descripShorten(description)
+	}
+	description = strings.Trim(description, " \n\r\t.") // eliminate trailing periods left by period+space search above
+	return description
+}
+
+func showGenTitlesPage(w http.ResponseWriter, r *http.Request, op string, userid uint64, userName string) {
+	header := w.Header()
+	header.Set("Content-Type", "text/html; charset=utf-8")
+	fmt.Fprint(w, getDoctype())
+	fmt.Fprint(w, `<title>Generate Titles</title>
+</head>
+<body>
+  <section>
+`)
+	showLinksMenuBar(w, userName)
+	fmt.Fprint(w, `
+    <h1>Generate Titles</h1>
+`)
+	type updateLinkTitleRec struct {
+		linkId uint64
+		title  string
+	}
+	var updateList [8192]updateLinkTitleRec
+	count := 0
+	db := accessdb.GetDbConnection()
+	defer db.Close()
+	res, err := db.Start("SELECT id_lnk, target_url, description FROM link_link WHERE title = '' ORDER BY id_lnk LIMIT 0, 8192;")
+	if err != nil {
+		fmt.Fprintln(w, err)
+		return
+	}
+	// defer res.Close();
+	for {
+		row, err := res.GetRow()
+		if err != nil {
+			fmt.Fprintln(w, err)
+			return
+		}
+		if row == nil {
+			break
+		} else {
+			linkid := row.Uint64(0)
+			// targetUrl := row.Str(1)
+			description := row.Str(2)
+			fmt.Fprint(w, `<p> Description "`+htmize(description)+`"</p>`)
+			newTitle := genTitleFromDescription(description)
+			fmt.Fprint(w, `<p> Title "`+htmize(newTitle)+`"</p>`)
+			updateList[count].linkId = linkid
+			updateList[count].title = newTitle
+			count++
+		}
+	}
+	for i := 0; i < count; i++ {
+		updateLnkId := updateList[i].linkId
+		updateTitle := updateList[i].title
+		stmt, err := db.Prepare("UPDATE link_link SET title = ? WHERE id_lnk = ?;")
+		if err != nil {
+			fmt.Fprintln(w, err)
+			return
+		}
+		// defer stmt.Close();
+		stmt.Bind(updateTitle, updateLnkId)
+		_, _, err = stmt.Exec()
+		if err != nil {
+			fmt.Fprintln(w, err)
+			return
+		}
+	}
+}
+
+func showGenTrentSQL(w http.ResponseWriter, r *http.Request, op string, userid uint64, userName string) {
+	header := w.Header()
+	header.Set("Content-Type", "text/html; charset=utf-8")
+	fmt.Fprint(w, getDoctype())
+	fmt.Fprint(w, `<title>Generate SQL</title>
+</head>
+<body>
+  <section>
+`)
+	showLinksMenuBar(w, userName)
+	fmt.Fprint(w, `
+    <h1>Generate SQL</h1>
+`)
+	localfile := "/home/ec2-user/trentblog.sql"
+	outFile, err := os.Create(localfile)
+	if err != nil {
+		fmt.Println("os.Create failed")
+		fmt.Println(err)
+		panic("os.Create failed")
+	}
+	defer outFile.Close()
+	var record struct {
+		linkId      uint64
+		createdGMT  uint64
+		targetURL   string
+		imageURL    string
+		description string
+		myComment   string
+		title       string
+	}
+	idNum := 6
+	timeZoneConvert := -25200
+	db := accessdb.GetDbConnection()
+	defer db.Close()
+	res, err := db.Start("SELECT id_lnk, created_gmt, target_url, image_url, description, my_comment, title FROM link_link WHERE (description NOT LIKE 'Music for today%') AND (description NOT LIKE 'Sign O The Times%') AND (is_pdf = 0) ORDER BY id_lnk;")
+	if err != nil {
+		fmt.Fprintln(w, err)
+		return
+	}
+	// defer res.Close();
+	for {
+		row, err := res.GetRow()
+		if err != nil {
+			fmt.Fprintln(w, err)
+			return
+		}
+		if row == nil {
+			break
+		} else {
+			record.linkId = row.Uint64(0)
+			record.createdGMT = row.Uint64(1)
+			record.targetURL = row.Str(2)
+			record.imageURL = row.Str(3)
+			record.description = row.Str(4)
+			record.myComment = row.Str(5)
+			record.title = row.Str(6)
+			url := strings.Replace(record.title, " ", "-", -1)
+			postTime := time.Unix(int64(record.createdGMT)+int64(timeZoneConvert), 0)
+			dateString := postTime.Format("2006-01-02 15:04:05")
+			postContent := genTrentBlogVersion(record.targetURL, record.imageURL, record.description, record.myComment)
+			outRec := make(map[string]string)
+			idNum++
+			outRec["ID"] = intToStr(idNum)
+			outRec["post_date"] = "'" + db.Escape(dateString) + "'"
+			outRec["post_date_gmt"] = "'" + db.Escape(dateString) + "'"
+			outRec["description"] = "'" + db.Escape("") + "'"
+			outRec["post_content"] = "'" + db.Escape(postContent) + "'"
+			outRec["post_title"] = "'" + db.Escape(record.title) + "'"
+			outRec["post_name"] = "'" + db.Escape(url) + "'"
+			outRec["author_name"] = "'" + db.Escape("Wayne Radinsky") + "'"
+			outRec["author_id"] = "1"
+			outRec["post_status"] = "1"
+			outRec["views"] = "1"
+			outRec["header_image"] = "''"
+			outRec["categoryid"] = "3"
+			fields := ""
+			values := ""
+			for k := range outRec {
+				fields = fields + ", " + k
+				values = values + ", " + outRec[k]
+			}
+			fields = fields[2:]
+			values = values[2:]
+			sql := "INSERT INTO blog_posts (" + fields + ") VALUES (" + values + ");"
+			_, err = outFile.WriteString(sql + "\n\n")
+			if err != nil {
+				fmt.Println("outFile.WriteString failed")
+				fmt.Println(err)
+				panic("os.WriteString failed")
+			}
+		}
+	}
+	fmt.Fprint(w, `
+<p>Done</p>
+</section></body></html>`)
 }
 
 func Handler(w http.ResponseWriter, r *http.Request, host string, op string, userid uint64, userName string) {
@@ -1497,30 +1925,36 @@ func Handler(w http.ResponseWriter, r *http.Request, host string, op string, use
 	switch {
 	case op == "add":
 		if userid == 1 {
-			add(w, r, op, userid, userName)
+			showAddPage(w, r, op, userid, userName)
 		}
 	case op == "list":
-		list(w, r, op, userid, userName)
+		showListPage(w, r, op, userid, userName)
 	case op == "exposit":
 		if userid == 1 {
-			exposit(w, r, op, userid, userName)
+			showExpositPage(w, r, op, userid, userName)
 		}
 	case op == "edit":
 		if userid == 1 {
-			edit(w, r, op, userid, userName)
+			showEditPage(w, r, op, userid, userName)
 		}
 	case op == "delete":
 		if userid == 1 {
-			delete(w, r, op, userid, userName)
+			showDeletePage(w, r, op, userid, userName)
 		}
 	case op == "email":
-		email(w, r, op, userid, userName)
+		showEmailPage(w, r, op, userid, userName)
 	case op == "":
-		homepage(w, r, op, userid, userName, music)
+		showHomePage(w, r, op, userid, userName, music)
 	case op == "home":
-		homepage(w, r, op, userid, userName, music)
+		showHomePage(w, r, op, userid, userName, music)
 	case op == "search":
-		search(w, r, op, userid, userName)
+		showSearchPage(w, r, op, userid, userName)
+	case op == "trent":
+		showTrentExpoPage(w, r, op, userid, userName)
+	case op == "gentitles":
+		showGenTitlesPage(w, r, op, userid, userName)
+	case op == "gensql":
+		showGenTrentSQL(w, r, op, userid, userName)
 	default:
 		filename := "/home/ec2-user/wayneserver/staticappcontent/links/" + op
 		static.OutputStaticFileWithContentType(w, filename)
