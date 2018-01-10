@@ -1455,7 +1455,7 @@ func showChimesPage(w http.ResponseWriter, r *http.Request, op string, userid ui
 	// rightNow := uint64(time.Now().Unix())
 	// sql := "SELECT id_cal_ent, title, description, currenttime FROM calcron_entry WHERE currenttime >= ? ORDER BY currenttime LIMIT 1;"
 	// sql := "SELECT id_cal_ent, title, description, currenttime FROM calcron_entry WHERE is_dismissed = 0 ORDER BY currenttime LIMIT 1;"
-	sql := "SELECT id_cal_ent, title, description, currenttime FROM calcron_entry WHERE (id_user = ?) AND (is_dismissed = 0) ORDER BY currenttime LIMIT 1;"
+	sql := "SELECT id_cal_ent, title, description, currenttime FROM calcron_entry WHERE (id_user = ?) AND (is_dismissed = 0) AND (is_suspended = 0) ORDER BY currenttime LIMIT 1;"
 	sel, err := db.Prepare(sql)
 	if err != nil {
 		fmt.Println(err)
