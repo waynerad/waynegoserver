@@ -3,6 +3,8 @@ package links
 import (
 	"accessdb"
 	"fmt"
+	"github.com/ziutek/mymysql/mysql"
+	_ "github.com/ziutek/mymysql/native" // Native engine
 	"html"
 	"net/http"
 	"os"
@@ -12,8 +14,15 @@ import (
 	"time"
 )
 
-// "github.com/ziutek/mymysql/mysql"
-// _ "github.com/ziutek/mymysql/native" // Native engine
+type lnksqlfields struct {
+	linkId      uint64
+	createdGMT  uint64
+	targetURL   string
+	imageURL    string
+	description string
+	myComment   string
+	title       string
+}
 
 func getDoctype() string {
 	return `<!DOCTYPE html>
@@ -59,6 +68,15 @@ func intToStr(ii int) string {
 	return str
 }
 
+func strToInt(s string) int {
+	ii, err := strconv.ParseInt(s, 10, 64)
+	if err != nil {
+		fmt.Println(err)
+		panic("strToInt failed")
+	}
+	return int(ii)
+}
+
 func showLinksMenuBar(w http.ResponseWriter, userName string) {
 	fmt.Fprint(w, `
 <p><a href="add">Add</a>
@@ -67,7 +85,7 @@ func showLinksMenuBar(w http.ResponseWriter, userName string) {
 </p>`)
 }
 
-func showExposition(w http.ResponseWriter, targetUrl string, imageUrl string, description string, myComment string, title string) {
+func showExposition(w http.ResponseWriter, db mysql.Conn, targetUrl string, imageUrl string, description string, myComment string, title string, createTimeGMT uint64) {
 	fmt.Fprint(w, `
       <p>
 Google+ / <a href="https://www.facebook.com/">Facebook</a> / <a href="http://www.linkedin.com/">LinkedIn</a> / <a href="http://www.twitter.com/">Twitter</a> / <a href="https://www.tumblr.com/blog/waynerad/new/link">Tumblr</a></p>
@@ -84,6 +102,9 @@ Google+ / <a href="https://www.facebook.com/">Facebook</a> / <a href="http://www
 	fmt.Fprint(w, targetUrl)
 	fmt.Fprint(w, `</textarea> </p>
 <p> <img src="`+imageUrl+`" alt="Thumbnail" /> </p>
+`)
+	showTrentExposition(w, db, targetUrl, imageUrl, description, myComment, title, createTimeGMT)
+	fmt.Fprint(w, `
   </section>
 `)
 }
@@ -188,7 +209,7 @@ func showAddPage(w http.ResponseWriter, r *http.Request, op string, userid uint6
 	<a href="add">Next</a>
 	<a href="list">List</a>
 `)
-			showExposition(w, saveTargetUrl, saveImageUrl, saveDescription, saveMyComment, saveTitle)
+			showExposition(w, db, saveTargetUrl, saveImageUrl, saveDescription, saveMyComment, saveTitle, saveCreatedGmt)
 			fmt.Fprint(w, `
 </section></body></html>`)
 		}
@@ -586,6 +607,7 @@ URL: <input class="biginput" name="grabbed_url" id="grabbed_url" type="text" val
 <p>
 <input name="grab_image" id="grab_image" type="button" value="Grab URL" />
 Image URL: <input class="biginput" name="image_url" id="image_url" type="text" value="`+htmize(uiImageUrl)+`" /> </p>
+<p> Title: <input class="biginput" name="title" id="title" type="text" value="`+htmize(uiTitle)+`" /> </p>
 <p><textarea class="bigtextarea" name="original_text" id="original_text" cols="80" rows="20">`+htmize(uiOriginalText)+`</textarea></p>
 <p><input name="do_lcase" id="do_lcase" type="button" value="lcase" />
  <input name="do_underscores" id="do_underscores" type="button" value="underscores" />
@@ -596,7 +618,6 @@ Image URL: <input class="biginput" name="image_url" id="image_url" type="text" v
  <input name="do_both" id="do_both" type="button" value="both" />
 </p>
 <p><textarea class="bigtextarea" name="my_comment" id="my_comment" cols="80" rows="20">`+htmize(uiMyComment)+`</textarea></p>
-<p> Title: <input class="biginput" name="title" id="title" type="text" value="`+htmize(uiTitle)+`" /> </p>
 <p>Analysis<br /><textarea class="bigtextarea" name="analyze_result" id="analyze_result" cols="80" rows="10"></textarea></p>
 <p>
 BPM: <input class="biginput" name="bpm" id="bpm" type="text" value="`+htmize(uiBpm)+`" />
@@ -790,13 +811,13 @@ func showExpositPage(w http.ResponseWriter, r *http.Request, op string, userid u
 			break
 		} else {
 			// linkid = row.Uint64(0)
-			// createdGmt = row.Uint64(1)
+			createdGmt := row.Uint64(1)
 			targetUrl := row.Str(2)
 			imageUrl := row.Str(3)
 			description := row.Str(4)
 			myComment := row.Str(5)
 			title := row.Str(6)
-			showExposition(w, targetUrl, imageUrl, description, myComment, title)
+			showExposition(w, db, targetUrl, imageUrl, description, myComment, title, createdGmt)
 		}
 	}
 }
@@ -1585,9 +1606,29 @@ func genTrentBlogVersion(targetUrl string, imageUrl string, description string, 
 	return result
 }
 
-func showTrentExposition(w http.ResponseWriter, targetUrl string, imageUrl string, description string, myComment string) {
+func showTrentExposition(w http.ResponseWriter, db mysql.Conn, targetUrl string, imageUrl string, description string, myComment string, title string, createTimeGMT uint64) {
 	fmt.Fprint(w, `
       <p><textarea cols="80" rows="20">`)
+	trentVersion := genTrentBlogVersion(targetUrl, imageUrl, description, myComment)
+	fmt.Fprint(w, htmize(trentVersion))
+	fmt.Fprint(w, `</textarea></p>
+<p>`)
+	fmt.Fprint(w, trentVersion)
+	var record lnksqlfields
+	record.linkId = 0
+	record.createdGMT = createTimeGMT
+	record.targetURL = targetUrl
+	record.imageURL = imageUrl
+	record.description = description
+	record.myComment = myComment
+	record.title = title
+	sql := genSQLFromRecord(db, 9999998, record)
+	fmt.Fprint(w, `</p><p><textarea cols="80" rows="20">`)
+	fmt.Fprint(w, htmize(sql))
+	fmt.Fprint(w, `</textarea></p>
+`)
+	return
+	// candelete after this
 	fmt.Fprint(w, htmize(`<p><a href="`+targetUrl+`"><img border="0" src="`+imageUrl+`" width="200" style="float:left; margin-right:10px; margin-bottom-10px;" /></a>`))
 	fmt.Fprint(w, linesToParagraphBreaks(description))
 	fmt.Fprint(w, htmize("</p>"))
@@ -1631,7 +1672,7 @@ func showTrentExpoPage(w http.ResponseWriter, r *http.Request, op string, userid
 `)
 	db := accessdb.GetDbConnection()
 	defer db.Close()
-	res, err := db.Start("SELECT id_lnk, created_gmt, target_url, image_url, description, my_comment FROM link_link WHERE id_lnk=" + strconv.FormatUint(linkid, 10) + " ORDER BY id_lnk DESC;")
+	res, err := db.Start("SELECT id_lnk, created_gmt, target_url, image_url, description, my_comment, title FROM link_link WHERE id_lnk=" + strconv.FormatUint(linkid, 10) + " ORDER BY id_lnk DESC;")
 	if err != nil {
 		fmt.Fprintln(w, err)
 		return
@@ -1647,14 +1688,15 @@ func showTrentExpoPage(w http.ResponseWriter, r *http.Request, op string, userid
 			break
 		} else {
 			// linkid = row.Uint64(0)
-			// createdGmt = row.Uint64(1)
+			createdGmt := row.Uint64(1)
 			targetUrl := row.Str(2)
 			imageUrl := row.Str(3)
 			description := row.Str(4)
 			myComment := row.Str(5)
+			title := row.Str(6)
 			// description = db.Escape(description)
 			// myComment = db.Escape(myComment)
-			showTrentExposition(w, targetUrl, imageUrl, description, myComment)
+			showTrentExposition(w, db, targetUrl, imageUrl, description, myComment, title, createdGmt)
 		}
 	}
 }
@@ -1817,7 +1859,40 @@ func showGenTitlesPage(w http.ResponseWriter, r *http.Request, op string, userid
 	}
 }
 
+func genSQLFromRecord(db mysql.Conn, idNum int, record lnksqlfields) string {
+	timeZoneConvert := -25200
+	url := strings.Replace(record.title, " ", "-", -1)
+	postTime := time.Unix(int64(record.createdGMT)+int64(timeZoneConvert), 0)
+	dateString := postTime.Format("2006-01-02 15:04:05")
+	postContent := genTrentBlogVersion(record.targetURL, record.imageURL, record.description, record.myComment)
+	outRec := make(map[string]string)
+	outRec["ID"] = intToStr(idNum)
+	outRec["post_date"] = "'" + db.Escape(dateString) + "'"
+	outRec["post_date_gmt"] = "'" + db.Escape(dateString) + "'"
+	outRec["description"] = "'" + db.Escape("") + "'"
+	outRec["post_content"] = "'" + db.Escape(postContent) + "'"
+	outRec["post_title"] = "'" + db.Escape(record.title) + "'"
+	outRec["post_name"] = "'" + db.Escape(url) + "'"
+	outRec["author_name"] = "'" + db.Escape("Wayne Radinsky") + "'"
+	outRec["author_id"] = "1"
+	outRec["post_status"] = "1"
+	outRec["views"] = "1"
+	outRec["header_image"] = "''"
+	outRec["categoryid"] = "3"
+	fields := ""
+	values := ""
+	for k := range outRec {
+		fields = fields + ", " + k
+		values = values + ", " + outRec[k]
+	}
+	fields = fields[2:]
+	values = values[2:]
+	sql := "INSERT INTO blog_posts (" + fields + ") VALUES (" + values + ");"
+	return sql
+}
+
 func showGenTrentSQL(w http.ResponseWriter, r *http.Request, op string, userid uint64, userName string) {
+	idNum := 99999998
 	header := w.Header()
 	header.Set("Content-Type", "text/html; charset=utf-8")
 	fmt.Fprint(w, getDoctype())
@@ -1838,17 +1913,7 @@ func showGenTrentSQL(w http.ResponseWriter, r *http.Request, op string, userid u
 		panic("os.Create failed")
 	}
 	defer outFile.Close()
-	var record struct {
-		linkId      uint64
-		createdGMT  uint64
-		targetURL   string
-		imageURL    string
-		description string
-		myComment   string
-		title       string
-	}
-	idNum := 6
-	timeZoneConvert := -25200
+	var record lnksqlfields
 	db := accessdb.GetDbConnection()
 	defer db.Close()
 	res, err := db.Start("SELECT id_lnk, created_gmt, target_url, image_url, description, my_comment, title FROM link_link WHERE (description NOT LIKE 'Music for today%') AND (description NOT LIKE 'Sign O The Times%') AND (is_pdf = 0) ORDER BY id_lnk;")
@@ -1873,34 +1938,7 @@ func showGenTrentSQL(w http.ResponseWriter, r *http.Request, op string, userid u
 			record.description = row.Str(4)
 			record.myComment = row.Str(5)
 			record.title = row.Str(6)
-			url := strings.Replace(record.title, " ", "-", -1)
-			postTime := time.Unix(int64(record.createdGMT)+int64(timeZoneConvert), 0)
-			dateString := postTime.Format("2006-01-02 15:04:05")
-			postContent := genTrentBlogVersion(record.targetURL, record.imageURL, record.description, record.myComment)
-			outRec := make(map[string]string)
-			idNum++
-			outRec["ID"] = intToStr(idNum)
-			outRec["post_date"] = "'" + db.Escape(dateString) + "'"
-			outRec["post_date_gmt"] = "'" + db.Escape(dateString) + "'"
-			outRec["description"] = "'" + db.Escape("") + "'"
-			outRec["post_content"] = "'" + db.Escape(postContent) + "'"
-			outRec["post_title"] = "'" + db.Escape(record.title) + "'"
-			outRec["post_name"] = "'" + db.Escape(url) + "'"
-			outRec["author_name"] = "'" + db.Escape("Wayne Radinsky") + "'"
-			outRec["author_id"] = "1"
-			outRec["post_status"] = "1"
-			outRec["views"] = "1"
-			outRec["header_image"] = "''"
-			outRec["categoryid"] = "3"
-			fields := ""
-			values := ""
-			for k := range outRec {
-				fields = fields + ", " + k
-				values = values + ", " + outRec[k]
-			}
-			fields = fields[2:]
-			values = values[2:]
-			sql := "INSERT INTO blog_posts (" + fields + ") VALUES (" + values + ");"
+			sql := genSQLFromRecord(db, idNum, record)
 			_, err = outFile.WriteString(sql + "\n\n")
 			if err != nil {
 				fmt.Println("outFile.WriteString failed")
@@ -1910,6 +1948,63 @@ func showGenTrentSQL(w http.ResponseWriter, r *http.Request, op string, userid u
 		}
 	}
 	fmt.Fprint(w, `
+<p>Done</p>
+</section></body></html>`)
+}
+
+func showGenTrentCatchupSQL(w http.ResponseWriter, r *http.Request, op string, userid uint64, userName string) {
+	err := r.ParseForm()
+	if err != nil {
+		fmt.Fprintln(w, err)
+		panic("parseform failed")
+	}
+	postform := r.Form
+	fromNum := strToInt(postform["from"][0])
+	idNum := strToInt(postform["target"][0])
+	header := w.Header()
+	header.Set("Content-Type", "text/html; charset=utf-8")
+	fmt.Fprint(w, getDoctype())
+	fmt.Fprint(w, `<title>Generate Catchup SQL</title>
+</head>
+<body>
+  <section>
+`)
+	showLinksMenuBar(w, userName)
+	fmt.Fprint(w, `
+    <h1>Generate Catchup SQL</h1>
+<textarea rows="80" cols="80">`)
+	var record lnksqlfields
+	db := accessdb.GetDbConnection()
+	defer db.Close()
+	res, err := db.Start("SELECT id_lnk, created_gmt, target_url, image_url, description, my_comment, title FROM link_link WHERE (id_lnk >= " + intToStr(fromNum) + ") AND (description NOT LIKE 'Music for today%') AND (description NOT LIKE 'Sign O The Times%') AND (is_pdf = 0) ORDER BY id_lnk;")
+	if err != nil {
+		fmt.Fprintln(w, err)
+		return
+	}
+	// defer res.Close();
+	for {
+		row, err := res.GetRow()
+		if err != nil {
+			fmt.Fprintln(w, err)
+			return
+		}
+		if row == nil {
+			break
+		} else {
+			record.linkId = row.Uint64(0)
+			record.createdGMT = row.Uint64(1)
+			record.targetURL = row.Str(2)
+			record.imageURL = row.Str(3)
+			record.description = row.Str(4)
+			record.myComment = row.Str(5)
+			record.title = row.Str(6)
+			sql := genSQLFromRecord(db, idNum, record)
+			idNum++
+			fmt.Fprint(w, htmize(sql))
+			fmt.Fprint(w, "\n\n")
+		}
+	}
+	fmt.Fprint(w, `</textarea>
 <p>Done</p>
 </section></body></html>`)
 }
@@ -1951,10 +2046,12 @@ func Handler(w http.ResponseWriter, r *http.Request, host string, op string, use
 		showSearchPage(w, r, op, userid, userName)
 	case op == "trent":
 		showTrentExpoPage(w, r, op, userid, userName)
-	case op == "gentitles":
-		showGenTitlesPage(w, r, op, userid, userName)
-	case op == "gensql":
-		showGenTrentSQL(w, r, op, userid, userName)
+	// case op == "gentitles":
+	//	showGenTitlesPage(w, r, op, userid, userName)
+	// case op == "gensql":
+	// 	showGenTrentSQL(w, r, op, userid, userName)
+	case op == "catchup":
+		showGenTrentCatchupSQL(w, r, op, userid, userName)
 	default:
 		filename := "/home/ec2-user/wayneserver/staticappcontent/links/" + op
 		static.OutputStaticFileWithContentType(w, filename)
