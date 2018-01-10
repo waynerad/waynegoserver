@@ -47,7 +47,7 @@ func intToStr(z int) string {
 	return strconv.FormatInt(int64(z), 10)
 }
 
-func float64ToStr(z float64) string {
+func floatToStr(z float64) string {
 	return strconv.FormatFloat(z, 'g', 5, 64)
 }
 
@@ -806,8 +806,9 @@ func calculateLnum(str string) float64 {
 
 	inAnswer := false
 	var rv float64
+	fmt.Println(str)
 	for _, char := range str {
-		fmt.Println("char", char) // uncomment this line to debug bad character issues.
+		fmt.Println("    ", char) // uncomment this line to debug bad character issues.
 		if char == rune("_"[0]) {
 			inAnswer = !inAnswer
 		} else {
@@ -1082,6 +1083,31 @@ func calculateLnum(str string) float64 {
 			if char == rune(" "[0]) {
 				l = 0.5 // works as long as the e add is more than 0.7
 			}
+			// Just for French
+			if char == 232 {
+				// e`
+				l = 150
+			}
+			if char == 233 {
+				// e'
+				l = 149
+			}
+			if char == 244 {
+				// o^
+				l = 170
+			}
+			if char == 224 {
+				// a`
+				l = 151
+			}
+			if char == 231 {
+				// ,c
+				l = 155
+			}
+			if char == 226 {
+				// a^
+				l = 171
+			}
 			if inAnswer {
 				if l == 0.0 {
 					panic("Encountered uncountable character in input(1038)")
@@ -1329,7 +1355,7 @@ func showBulkEditQuestionsPage(w http.ResponseWriter, r *http.Request, op string
 				}
 				fmt.Fprint(w, `>`+htmlize(currentChapt.name)+`</option>`)
 			}
-			fmt.Fprint(w, `</select> </td><td> <input type="text" name="quest`+intToStr(count)+`" id="quest`+intToStr(count)+`" value="`+htmlize(currentQuest.theFitbStr)+`" /> </td><td align="right"> `+float64ToStr(currentQuest.lnum)+` </td></tr>
+			fmt.Fprint(w, `</select> </td><td> <input type="text" name="quest`+intToStr(count)+`" id="quest`+intToStr(count)+`" value="`+htmlize(currentQuest.theFitbStr)+`" /> </td><td align="right"> `+floatToStr(currentQuest.lnum)+` </td></tr>
 `)
 			last = count // to get this var out of the loop
 			if currentQuest.seqNum > maxSeq {
@@ -1494,7 +1520,7 @@ func showListQuestionsPage(w http.ResponseWriter, r *http.Request, op string, us
 `)
 		for _, currentQuest := range allQuests {
 			fmt.Fprint(w, `
-<tr><td> `+int64ToStr(currentQuest.seqNum)+` </td><td> `+allChapters[currentQuest.idChapter]+` </td> <td> `+htmlize(currentQuest.theFitbStr)+` </td><td align="right"> `+float64ToStr(currentQuest.lnum)+` </td><td> <a href="editquestion?question=`+uint64ToStr(currentQuest.idQuestion)+`">Edit</a> </td> </tr>
+<tr><td> `+int64ToStr(currentQuest.seqNum)+` </td><td> `+allChapters[currentQuest.idChapter]+` </td> <td> `+htmlize(currentQuest.theFitbStr)+` </td><td align="right"> `+floatToStr(currentQuest.lnum)+` </td><td> <a href="editquestion?question=`+uint64ToStr(currentQuest.idQuestion)+`">Edit</a> </td> </tr>
 `)
 		}
 		fmt.Fprint(w, `
@@ -2135,7 +2161,7 @@ func initialize(db mysql.Conn, userid uint64, topicid uint64) {
 		}
 		// defer stmt.Close();
 		sequenceNum := seqNumMap[questionid]
-		askTime := 1 + sequenceNum                               // This is so the sequence of first introduction is the same as the sequence_num bers in the database
+		askTime := 1 + sequenceNum                                    // This is so the sequence of first introduction is the same as the sequence_num bers in the database
 		stmt.Bind(userid, questionid, topicid, askTime, 60, 1.0, 1.0) // INITIAL REPETITIVENESS is set here
 		_, _, err = stmt.Exec()
 	}
@@ -2240,20 +2266,6 @@ func followJctToQuestionInfo(db mysql.Conn, questionjctid uint64, userid uint64)
 	var factordown float64
 	var theFitbStr string
 	var topicName string
-	// mysql> DESCRIBE fitb_user_question_jct;
-	// +---------------+------------------+------+-----+---------+----------------+
-	// | Field         | Type             | Null | Key | Default | Extra          |
-	// +---------------+------------------+------+-----+---------+----------------+
-	// | id_uq_jct     | int(10) unsigned | NO   | PRI | NULL    | auto_increment |
-	// | id_user       | int(10) unsigned | NO   | MUL | 0       |                |
-	// | id_question   | int(10) unsigned | NO   |     | 0       |                |
-	// | id_topic      | int(10) unsigned | NO   |     | 0       |                |
-	// | ask_time_gmt  | int(10) unsigned | NO   |     | 0       |                |
-	// | time_interval | int(10) unsigned | NO   |     | 0       |                |
-	// | factorup      | double           | NO   |     | 0       |                |
-	// | factordown    | double           | NO   |     | 0       |                |
-	// +---------------+------------------+------+-----+---------+----------------+
-	// 7 rows in set (0.00 sec)
 	sql := "SELECT id_question, id_topic, ask_time_gmt, time_interval, factorup, factordown FROM fitb_user_question_jct WHERE (id_uq_jct = ?) AND (id_user = ?);"
 	sel, err := db.Prepare(sql)
 	if err != nil {
@@ -2274,24 +2286,6 @@ func followJctToQuestionInfo(db mysql.Conn, questionjctid uint64, userid uint64)
 		factorup = row.Float(4)
 		factordown = row.Float(5)
 	}
-	fmt.Println("questionid", questionid)
-	fmt.Println("topicid", topicid)
-	fmt.Println("askTimeGmt", askTimeGmt)
-	fmt.Println("timeInterval", timeInterval)
-	fmt.Println("factorup", factorup)
-	fmt.Println("factordown", factordown)
-	// mysql> DESCRIBE fitb_question;
-	// +--------------+------------------+------+-----+---------+----------------+
-	// | Field        | Type             | Null | Key | Default | Extra          |
-	// +--------------+------------------+------+-----+---------+----------------+
-	// | id_question  | int(10) unsigned | NO   | PRI | NULL    | auto_increment |
-	// | id_topic     | int(10) unsigned | NO   | MUL | 0       |                |
-	// | id_chapter   | int(10) unsigned | NO   |     | 0       |                |
-	// | sequence_num | int(11)          | NO   |     | 0       |                |
-	// | the_fitb_str | varchar(255)     | NO   |     |         |                |
-	// | lnum         | double           | NO   |     | 0       |                |
-	// +--------------+------------------+------+-----+---------+----------------+
-	// 6 rows in set (0.00 sec)
 	sql = "SELECT the_fitb_str FROM fitb_question WHERE id_question = ?;"
 	sel, err = db.Prepare(sql)
 	if err != nil {
@@ -2378,6 +2372,44 @@ func timeIntervalSecondsToEnglish(inv int) string {
 	return rv[1:]
 }
 
+func getCountFromSQLForUserTopicAndTime(db mysql.Conn, sql string, userid uint64, topicid uint64, currentTime uint64, bindCurrentTime bool) int {
+	sel, err := db.Prepare(sql)
+	if err != nil {
+		fmt.Println(err)
+		panic("Prepare failed")
+	}
+	// this is kinda werd, having the number of bind variables be variable, but allows us to do this one function for all the counts
+	if bindCurrentTime {
+		sel.Bind(userid, topicid, currentTime)
+	} else {
+		sel.Bind(userid, topicid)
+	}
+	rows, _, err := sel.Exec()
+	if err != nil {
+		fmt.Println(err)
+		panic("Exec() failed")
+	}
+	count := -1 // we should always get a value back
+	for _, row := range rows {
+		count = row.Int(0)
+	}
+	if count < 0 {
+		fmt.Println("Count query returned nothing")
+		panic("Count query returned nothing")
+	}
+	return count
+}
+
+func genProgressMessage(db mysql.Conn, userid uint64, topicid uint64, currentTime uint64) string {
+	sql := "SELECT COUNT(*) FROM fitb_user_question_jct WHERE (id_user = ?) AND (id_topic = ?) AND (ask_time_gmt < 1474838209);" // the time code here is the moment the program first went live
+	notStarted := getCountFromSQLForUserTopicAndTime(db, sql, userid, topicid, currentTime, false)
+	sql = "SELECT COUNT(*) FROM fitb_user_question_jct WHERE (id_user = ?) AND (id_topic = ?) AND (ask_time_gmt > 1474838209) AND (ask_time_gmt < ?);"
+	needToBeReviewed := getCountFromSQLForUserTopicAndTime(db, sql, userid, topicid, currentTime, true)
+	sql = "SELECT COUNT(*) FROM fitb_user_question_jct WHERE (id_user = ?) AND (id_topic = ?) AND (ask_time_gmt > ?);"
+	learned := getCountFromSQLForUserTopicAndTime(db, sql, userid, topicid, currentTime, true)
+	return intToStr(learned) + " learned, " + intToStr(needToBeReviewed) + " need to be reviewed, " + intToStr(notStarted) + " not started.<br />" + floatToStr(float64(learned*100)/float64(learned+needToBeReviewed)) + "% reviewed, " + floatToStr(float64(learned*100)/float64(learned+needToBeReviewed+notStarted)) + "% of total."
+}
+
 func showAskQuestionPage(w http.ResponseWriter, r *http.Request, op string, userid uint64, userName string) {
 	var questionjctid uint64
 	var questionid uint64
@@ -2389,21 +2421,16 @@ func showAskQuestionPage(w http.ResponseWriter, r *http.Request, op string, user
 	var theFitbStr string
 	var topicName string
 	var alreadywrong int
-	fmt.Println("")
-	fmt.Println("--------------------")
 	err := r.ParseForm()
 	if err != nil {
 		fmt.Println(err)
 		panic("Parseform failed")
 	}
 	questionjctid = 0
-	fmt.Println("questionjctid", questionjctid)
 	theform := r.Form
 	_, questionJctExists := theform["questionjct"]
 	if questionJctExists {
-		fmt.Println("questionJctExists", questionJctExists)
 		questionjctid = strToUint64(theform["questionjct"][0])
-		fmt.Println("questionjctid", questionjctid)
 	}
 	db := accessdb.GetDbConnection()
 	defer db.Close()
@@ -2416,20 +2443,14 @@ func showAskQuestionPage(w http.ResponseWriter, r *http.Request, op string, user
 	gotRight := false
 	doBreakRedirect := false
 	increment := 0.6931471805599453 // log of 2
-	decrement := 2.0 // divide by this instead of subtract
+	decrement := 2.0                // divide by this instead of subtract
 	currentTime := uint64(time.Now().Unix())
-	fmt.Println("currentTime", currentTime)
 	_, responseExists := theform["response1"]
 	if responseExists {
 		alreadywrong = strToInt(theform["alreadywrong"][0])
 		allCorrect := true
 		questionid, topicid, askTimeGmt, timeInterval, factorup, factordown, theFitbStr, topicName = followJctToQuestionInfo(db, questionjctid, userid)
-		fmt.Println("questionid", questionid)
-		fmt.Println("topicid", topicid)
-		fmt.Println("askTimeGmt", askTimeGmt)
-		fmt.Println("timeInterval", timeInterval)
-		fmt.Println("factorup", factorup)
-		fmt.Println("factordown", factordown)
+		fmt.Println("debug", "questionid", questionid)
 		fitbList := strings.Split(theFitbStr, "_")
 		inBlank := false
 		for idx, entry := range fitbList {
@@ -2437,15 +2458,8 @@ func showAskQuestionPage(w http.ResponseWriter, r *http.Request, op string, user
 			if inBlank {
 				answer := theform["response"+intToStr(idx)][0]
 				responseMap[idx] = answer
-				fmt.Println("answer", answer)
-				fmt.Println("entry", entry)
 				if trim(answer) != entry {
-					fmt.Println("does not equal")
-					fmt.Println("answer bytes", []byte(trim(answer)))
-					fmt.Println("entry bytes", []byte(entry))
 					allCorrect = false
-				} else {
-					fmt.Println("equals")
 				}
 			}
 			inBlank = !inBlank
@@ -2503,7 +2517,7 @@ func showAskQuestionPage(w http.ResponseWriter, r *http.Request, op string, user
 					factordown = 1.0
 				}
 				factordown = factordown * (1.0 + ((rand.Float64() - 0.5) / 25.0)) // allows 2% variation
-//////
+				//////
 				if timeInterval < 1 {
 					timeInterval = 1
 				}
@@ -2523,21 +2537,16 @@ func showAskQuestionPage(w http.ResponseWriter, r *http.Request, op string, user
 		// If not, we assume we are starting a new topic, and the topic ID will be provided
 		if topicid == 0 {
 			topicid = strToUint64(theform["topic"][0])
-			fmt.Println("topicid", topicid)
 		}
 		// Ok, first we see if there are any questions already started that are ready to be asked
 		currentTime := uint64(time.Now().Unix())
 
-		fmt.Println("currentTime", currentTime)
 		sql := "SELECT id_uq_jct FROM fitb_user_question_jct WHERE (id_user = ?) AND (id_topic = ?) AND (ask_time_gmt > 1474838209) AND (ask_time_gmt <=?) ORDER BY ask_time_gmt LIMIT 1;" // the time code here is the moment the program first went live
-		fmt.Println("sql", sql)
 		sel, err := db.Prepare(sql)
 		if err != nil {
 			fmt.Println(err)
 			panic("Prepare failed")
 		}
-		fmt.Println("userid", userid)
-		fmt.Println("topicid", topicid)
 		sel.Bind(userid, topicid, currentTime)
 		rows, _, err := sel.Exec()
 		if err != nil {
@@ -2546,21 +2555,16 @@ func showAskQuestionPage(w http.ResponseWriter, r *http.Request, op string, user
 		}
 		for _, row := range rows {
 			questionjctid = row.Uint64(0)
-			fmt.Println("questionjctid", questionjctid)
 		}
-		fmt.Println("questionjctid", questionjctid)
 
 		// Now, if we didn't get anything from the last query, it means we are out of questions already asked, so we should retrieve a new question that has never been asked
 		if questionjctid == 0 {
 			sql := "SELECT id_uq_jct FROM fitb_user_question_jct WHERE (id_user = ?) AND (id_topic = ?) AND (ask_time_gmt < 1474838209) ORDER BY ask_time_gmt LIMIT 1;" // the time code here is the moment the program first went live
-			fmt.Println("sql", sql)
 			sel, err := db.Prepare(sql)
 			if err != nil {
 				fmt.Println(err)
 				panic("Prepare failed")
 			}
-			fmt.Println("userid", userid)
-			fmt.Println("topicid", topicid)
 			sel.Bind(userid, topicid)
 			rows, _, err := sel.Exec()
 			if err != nil {
@@ -2569,23 +2573,17 @@ func showAskQuestionPage(w http.ResponseWriter, r *http.Request, op string, user
 			}
 			for _, row := range rows {
 				questionjctid = row.Uint64(0)
-				fmt.Println("questionjctid", questionjctid)
 			}
-			fmt.Println("questionjctid", questionjctid)
 		}
 	}
 	if questionjctid == 0 {
 		// Still zero?? Then we have to give the user a message telling them there is nothing to learn!
-		fmt.Println("currentTime", currentTime)
 		sql := "SELECT id_uq_jct FROM fitb_user_question_jct WHERE (id_user = ?) AND (id_topic = ?) AND (ask_time_gmt > 1474838209) ORDER BY ask_time_gmt LIMIT 1;" // the time code here is the moment the program first went live
-		fmt.Println("sql", sql)
 		sel, err := db.Prepare(sql)
 		if err != nil {
 			fmt.Println(err)
 			panic("Prepare failed")
 		}
-		fmt.Println("userid", userid)
-		fmt.Println("topicid", topicid)
 		sel.Bind(userid, topicid)
 		rows, _, err := sel.Exec()
 		if err != nil {
@@ -2595,23 +2593,18 @@ func showAskQuestionPage(w http.ResponseWriter, r *http.Request, op string, user
 		var wouldBeQuestionjctid uint64
 		for _, row := range rows {
 			wouldBeQuestionjctid = row.Uint64(0)
-			fmt.Println("wouldBeQuestionjctid", wouldBeQuestionjctid)
 		}
-		fmt.Println("wouldBeQuestionjctid", wouldBeQuestionjctid)
 		questionid, topicid, askTimeGmt, timeInterval, factorup, factordown, theFitbStr, topicName = followJctToQuestionInfo(db, wouldBeQuestionjctid, userid)
+		fmt.Println("debug", "questionid", questionid)
 		takeABreakMode = true
 		if gotRight {
 			doBreakRedirect = true
 		}
 	} else {
 		questionid, topicid, askTimeGmt, timeInterval, factorup, factordown, theFitbStr, topicName = followJctToQuestionInfo(db, questionjctid, userid)
-		fmt.Println("questionid", questionid)
-		fmt.Println("topicid", topicid)
-		fmt.Println("askTimeGmt", askTimeGmt)
-		fmt.Println("timeInterval", timeInterval)
-		fmt.Println("factorup", factorup)
-		fmt.Println("factordown", factordown)
+		fmt.Println("debug", "questionid", questionid)
 	}
+	progressMessage := genProgressMessage(db, userid, topicid, currentTime)
 	if doBreakRedirect {
 		http.Redirect(w, r, "quiz?topic="+uint64ToStr(topicid), 302)
 	} else {
@@ -2628,6 +2621,7 @@ func showAskQuestionPage(w http.ResponseWriter, r *http.Request, op string, user
 </head>
 <body onload="document.getElementById('response1').focus();">
   <section>
+    <p>`+progressMessage+`</p>
     <h1>`+title+`</h1>
     <p>Time to take a break!</p>
     <p>Come back in `+inEnglish+`.</p>
@@ -2671,6 +2665,7 @@ function advanceOnReturn(ev, num) {
 </head>
 <body onload="document.getElementById('response1').focus();">
   <section>
+    <p>`+progressMessage+`</p>
     <h1>`+title+`</h1>
     <p>`+correctMessage+`</p>
 <form action="quiz" name="frmQuiz" id="frmQuiz" method="post" onsubmit="return false;">
