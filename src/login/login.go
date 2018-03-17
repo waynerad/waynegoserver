@@ -17,7 +17,10 @@ import (
 	"time"
 )
 
-// "os"
+type UserInformationRecord struct {
+	UserId   uint64
+	UserName string
+}
 
 func getDoctype() string {
 	return `<!DOCTYPE html>
@@ -262,6 +265,7 @@ func editAccount(w http.ResponseWriter, r *http.Request, operation string, newAc
 				defer db.Close()
 				stmt, err := db.Prepare("INSERT INTO login_user (created_gmt, email, password, salt, fname, lname, gps_lat, gps_long, time_zone_offset) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);")
 				if err != nil {
+					fmt.Println(err)
 					fmt.Fprintln(w, err)
 					panic("point 282")
 				}
@@ -281,11 +285,13 @@ func editAccount(w http.ResponseWriter, r *http.Request, operation string, newAc
 				saveRecord.email = uiFrm.email
 				saveRecord.salt, err = generateSalt(128)
 				if err != nil {
+					fmt.Println(err)
 					fmt.Fprintln(w, err)
 					panic("point 301")
 				}
 				saveRecord.password, err = computePasswordHash(uiFrm.password, saveRecord.salt)
 				if err != nil {
+					fmt.Println(err)
 					fmt.Fprintln(w, err)
 					panic("point 306")
 				}
@@ -298,6 +304,7 @@ func editAccount(w http.ResponseWriter, r *http.Request, operation string, newAc
 				_, _, err = stmt.Exec()
 				fmt.Println("THE Exec() CALL WAS DONE")
 				if err != nil {
+					fmt.Println(err)
 					fmt.Fprintln(w, err)
 					panic("point 318")
 				}
@@ -329,9 +336,10 @@ func editAccount(w http.ResponseWriter, r *http.Request, operation string, newAc
 					userData.salt = row.Str(1)
 				}
 				row, err = res.GetRow() // without this we get "reply is not completely read" error
-				stmt, err := db.Prepare("UPDATE login_user SET email=?, password=?, salt=?, fname=?, lname=? gps_lat=?, gps_long=?, time_zone_offset=? WHERE id_user=?;")
+				stmt, err := db.Prepare("UPDATE login_user SET email=?, password=?, salt=?, fname=?, lname=?, gps_lat=?, gps_long=?, time_zone_offset=? WHERE id_user=?;")
 				if err != nil {
 					fmt.Fprintln(w, err)
+					fmt.Println(w, err)
 					panic("point 355")
 				}
 				// defer stmt.Close();
@@ -356,11 +364,13 @@ func editAccount(w http.ResponseWriter, r *http.Request, operation string, newAc
 				} else {
 					updateRecord.salt, err = generateSalt(128)
 					if err != nil {
+						fmt.Println(err)
 						fmt.Fprintln(w, err)
 						panic("point 380")
 					}
 					updateRecord.password, err = computePasswordHash(uiFrm.password, updateRecord.salt)
 					if err != nil {
+						fmt.Println(err)
 						fmt.Fprintln(w, err)
 						panic("point 385")
 					}
@@ -374,6 +384,7 @@ func editAccount(w http.ResponseWriter, r *http.Request, operation string, newAc
 				stmt.Bind(updateRecord.email, updateRecord.password, updateRecord.salt, updateRecord.fname, updateRecord.lname, updateRecord.gpsLat, updateRecord.gpsLong, updateRecord.timeZoneOffset, updateRecord.userId)
 				_, _, err = stmt.Exec()
 				if err != nil {
+					fmt.Println(err)
 					fmt.Fprintln(w, err)
 					panic("point 398")
 				}
@@ -766,9 +777,10 @@ func Handler(w http.ResponseWriter, r *http.Request, operation string, userid ui
 	}
 }
 
-func IdentifyLoggedInUser(w http.ResponseWriter, r *http.Request) (uint64, string) {
+func IdentifyLoggedInUser(db mysql.Conn, w http.ResponseWriter, r *http.Request) *UserInformationRecord {
 	var userid uint64
 	var err error
+	var rv UserInformationRecord
 	xcheckC := ""
 	userid = 0
 	for _, cookie := range r.Cookies() {
@@ -776,55 +788,71 @@ func IdentifyLoggedInUser(w http.ResponseWriter, r *http.Request) (uint64, strin
 		if cookie.Name == "wgs_user" {
 			userid, err = strconv.ParseUint(cookie.Value, 10, 64)
 			if err != nil {
-				return 0, ""
+				rv.UserId = 0
+				rv.UserName = ""
+				return &rv
 			}
 		}
 		if cookie.Name == "wgs_xcheck" {
 			xcheckC = cookie.Value
 		}
 	}
-	db := accessdb.GetDbConnection()
+	// db := accessdb.GetDbConnection()
 	// res, err := db.Start("SELECT id_user FROM login_session WHERE (id_user = ?) AND (xcheck = '?');", userid, xcheckC)
-	res, err := db.Start("SELECT id_user FROM login_session WHERE (id_user = " + strconv.FormatUint(userid, 10) + ") AND (xcheck = '" + mysql.Escape(db, xcheckC) + "');") // , userid, xcheckC
+	// res, err := db.Start("SELECT id_user FROM login_session WHERE (id_user = " + strconv.FormatUint(userid, 10) + ") AND (xcheck = '" + mysql.Escape(db, xcheckC) + "');") // , userid, xcheckC
+
+	stmt, err := db.Prepare("SELECT id_user FROM login_session WHERE (id_user = ?) AND (xcheck = ?);")
+	if err != nil {
+		fmt.Println(err)
+		panic("prepare failed, login point 799")
+	}
+	stmt.Bind(userid, xcheckC)
+	res, err := stmt.Run()
 	if err != nil {
 		fmt.Fprintln(w, err)
-		panic("query failed point 683")
+		panic("run failed, login point 805")
 	}
 	row, err := res.GetRow()
 	if err != nil {
 		fmt.Fprintln(w, err)
-		panic("get row failed point 683")
+		panic("getrow failed, login point 810")
 	}
 	if row == nil {
-		return 0, ""
+		rv.UserId = 0
+		rv.UserName = ""
+		return &rv
 	}
 	for row != nil {
 		row, err = res.GetRow()
 	}
-	stmt, err := db.Prepare("SELECT fname, lname FROM login_user WHERE (id_user=?);")
+	// Verified session, now let's get the user's name
+	stmt, err = db.Prepare("SELECT fname, lname FROM login_user WHERE (id_user=?);")
 	if err != nil {
 		fmt.Println(err)
-		panic("point 811")
+		panic("prepare failed, login point 827")
 	}
 	stmt.Bind(userid)
 	res, err = stmt.Run()
 	if err != nil {
 		fmt.Fprintln(w, err)
-		panic("point 817")
+		panic("run failed, login point 833")
 	}
 	row, err = res.GetRow()
 	if err != nil {
 		fmt.Fprintln(w, err)
-		panic("point 822")
+		panic("getrow failed, login point 838")
 	}
-	fullName := ""
+	fullname := ""
 	if row != nil {
 		fname := row.Str(0)
 		lname := row.Str(1)
 		for row != nil {
 			row, err = res.GetRow()
 		}
-		fullName = fname + " " + lname
+		fullname = fname + " " + lname
 	}
-	return userid, fullName
+
+	rv.UserId = userid
+	rv.UserName = fullname
+	return &rv
 }
