@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strings"
 )
 
 func FigureOutContentTypeFromFilename(filename string) string {
@@ -38,6 +39,11 @@ func FigureOutContentTypeFromFilename(filename string) string {
 }
 
 func OutputStaticFileWithContentType(w http.ResponseWriter, filename string) {
+	z := strings.Index(filename, "..")
+	if z >= 0 {
+		fmt.Fprint(w, "Path error")
+		return
+	}
 	contentType := FigureOutContentTypeFromFilename(filename)
 	fh, err := os.Open(filename)
 	if err != nil {
@@ -60,11 +66,11 @@ func StaticHandler(w http.ResponseWriter, r *http.Request, operation string) {
 }
 
 func StaticDirHandler(w http.ResponseWriter, r *http.Request, dir string, operation string) {
-	// fmt.Println("dir", dir)
+	fmt.Println("dir", dir)
 	if operation == "/" {
 		operation = "/index.html"
 	}
 	filename := "/home/ec2-user/wayneserver/staticdoc/" + dir + "/" + operation[1:]
-	// fmt.Println("filename", filename)
+	fmt.Println("filename", filename)
 	OutputStaticFileWithContentType(w, filename)
 }
