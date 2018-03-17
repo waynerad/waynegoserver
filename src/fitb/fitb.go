@@ -808,7 +808,7 @@ func calculateLnum(str string) float64 {
 	var rv float64
 	fmt.Println(str)
 	for _, char := range str {
-		fmt.Println("    ", char) // uncomment this line to debug bad character issues.
+		// fmt.Println("    ", char) // uncomment this line to debug bad character issues.
 		if char == rune("_"[0]) {
 			inAnswer = !inAnswer
 		} else {
@@ -1107,6 +1107,26 @@ func calculateLnum(str string) float64 {
 			if char == 226 {
 				// a^
 				l = 171
+			}
+			if char == 234 {
+				// e^
+				l = 171
+			}
+			if char == 171 {
+				// << quote
+				l = 172
+			}
+			if char == 187 {
+				// >> quote
+				l = 172
+			}
+			if char == 339 {
+				// oe
+				l = 156
+			}
+			if char == 192 {
+				// capital A`
+				l =  351  // lower case + 200 for the shift
 			}
 			if inAnswer {
 				if l == 0.0 {
@@ -1516,11 +1536,11 @@ func showListQuestionsPage(w http.ResponseWriter, r *http.Request, op string, us
 		}
 		fmt.Fprint(w, `
 <table border="0" cellpadding="4">
-<tr><th> Sequence number </th><th> Chapter <th> Question in FITB format </th><th> Size </th></tr>
+<tr><th> Sequence number </th><th> Chapter <th> Question in FITB format point2 </th><th> Size </th></tr>
 `)
 		for _, currentQuest := range allQuests {
 			fmt.Fprint(w, `
-<tr><td> `+int64ToStr(currentQuest.seqNum)+` </td><td> `+allChapters[currentQuest.idChapter]+` </td> <td> `+htmlize(currentQuest.theFitbStr)+` </td><td align="right"> `+floatToStr(currentQuest.lnum)+` </td><td> <a href="editquestion?question=`+uint64ToStr(currentQuest.idQuestion)+`">Edit</a> </td> </tr>
+<tr><td> `+int64ToStr(currentQuest.seqNum)+` </td><td> `+allChapters[currentQuest.idChapter]+` </td> <td> `+htmlize(currentQuest.theFitbStr)+` </td><td align="right"> `+floatToStr(currentQuest.lnum)+` </td><td> <a href="editquestion?question=`+uint64ToStr(currentQuest.idQuestion)+`">Edit</a> <a href="deletequestion?question=`+uint64ToStr(currentQuest.idQuestion)+`">Delete</a> </td> </tr>
 `)
 		}
 		fmt.Fprint(w, `
@@ -1655,6 +1675,11 @@ func showAddBulkQuestionsPage(w http.ResponseWriter, r *http.Request, op string,
 			bulkAddSlice := strings.Split(bulkAdditionStr, "\n")
 			for _, entry := range bulkAddSlice {
 				trEnt := trim(entry)
+				if len(trEnt) > 0 {
+					if trEnt[0:1] == "#" {
+						trEnt = "" // if it's a comment, throw it away
+					}
+				}
 				if trEnt != "" {
 					var currentSave saveTyp
 					currentSave.idTopic = topicid
@@ -1781,13 +1806,13 @@ func showEditQuestionPage(w http.ResponseWriter, r *http.Request, op string, use
 	topicName := ""
 	var questionid uint64
 	questionid = 0
-	type questionType struct {
-		idQuestion uint64
-		idChapter  uint64
-		seqNum     int64
-		theFitbStr string
-		lnum       float64
-	}
+	// type questionType struct {
+	//	idQuestion uint64
+	//	idChapter  uint64
+	//	seqNum     int64
+	//	theFitbStr string
+	//	lnum       float64
+	// }
 	var ui struct {
 		idChapter  uint64
 		theFitbStr string
@@ -1921,7 +1946,7 @@ func showEditQuestionPage(w http.ResponseWriter, r *http.Request, op string, use
 			// save.idChapter = chapterid
 			// save.idTopic = ui.idTopic
 			// save.name = ui.name
-			http.Redirect(w, r, "listtopics?topic="+uint64ToStr(topicid), 302)
+			http.Redirect(w, r, "listquestions?topic="+uint64ToStr(topicid), 302)
 		}
 	}
 	if showform {
@@ -1983,11 +2008,205 @@ func showEditQuestionPage(w http.ResponseWriter, r *http.Request, op string, use
 			fmt.Fprint(w, `>`+htmlize(currentChapt.name)+`</option>`)
 		}
 		fmt.Fprint(w, `</select> </td></tr>
-<tr><td> Question in FITB format <br /><textarea name="fitb" id="fitb" rows="8" cols="80">`+htmlize(ui.theFitbStr)+`</textarea></td></tr>
+<tr><td colspan="2"> Question in FITB format <br /><textarea name="fitb" id="fitb" rows="8" cols="80">`+htmlize(ui.theFitbStr)+`</textarea></td></tr>
 </table>
 `)
 		fmt.Fprint(w, `
 <tr><td colspan="2" align="center"> <input type="submit"> </td></tr>
+</table>
+</form>
+  </section>
+</body>
+</html>`)
+	}
+}
+
+func showDeleteQuestionPage(w http.ResponseWriter, r *http.Request, op string, userid uint64, userName string) {
+	showform := false
+	errorList := make(map[string]string)
+	errorOccurred := false
+	method := r.Method
+	var topicid uint64
+	topicid = 0
+	topicName := ""
+	theFitbStr := ""
+	var questionid uint64
+	questionid = 0
+	if method == "GET" {
+		// set defaults
+		showform = true
+		err := r.ParseForm()
+		if err != nil {
+			fmt.Println(err)
+			panic("parseform failed")
+		}
+		getform := r.Form
+		_, questionExists := getform["question"]
+		if questionExists {
+			questionid, err = strconv.ParseUint(getform["question"][0], 10, 64)
+			if err != nil {
+				fmt.Println(err)
+				panic("ParseUint failed")
+			}
+			db := accessdb.GetDbConnection()
+			defer db.Close()
+			sql := "SELECT id_topic, the_fitb_str FROM fitb_question WHERE (id_question = ?);"
+			sel, err := db.Prepare(sql)
+			if err != nil {
+				fmt.Println(err)
+				panic("Prepare failed")
+			}
+			sel.Bind(questionid)
+			rows, _, err := sel.Exec()
+			if err != nil {
+				fmt.Println(err)
+				panic("Bind/Exec failed")
+			}
+			for _, row := range rows {
+				topicid = row.Uint64(0)
+				theFitbStr = row.Str(1)
+			}
+			sql = "SELECT name FROM fitb_topic WHERE (id_topic = ?) AND (id_user = ?);"
+			sel, err = db.Prepare(sql)
+			if err != nil {
+				fmt.Println(err)
+				panic("Prepare failed")
+			}
+			sel.Bind(topicid, userid)
+			rows, _, err = sel.Exec()
+			if err != nil {
+				fmt.Println(err)
+				panic("Bind/Exec failed")
+			}
+			for _, row := range rows {
+				topicName = row.Str(0)
+			}
+		}
+	}
+	if method == "POST" {
+		err := r.ParseForm()
+		if err != nil {
+			fmt.Println(err)
+			panic("parseform failed")
+		}
+		postform := r.Form
+		// error checking
+		questionid = strToUint64(postform["question"][0])
+		topicid = strToUint64(postform["topic"][0])
+		db := accessdb.GetDbConnection()
+		userOwnsTopic := false
+		if topicid > 0 {
+			defer db.Close()
+			sql := "SELECT id_topic FROM fitb_topic WHERE (id_topic = ?) AND (id_user = ?);"
+			sel, err := db.Prepare(sql)
+			if err != nil {
+				fmt.Println(err)
+				panic("Prepare failed")
+			}
+			sel.Bind(topicid, userid)
+			rows, _, err := sel.Exec()
+			if err != nil {
+				fmt.Println(err)
+				panic("Exec() failed")
+			}
+			for _, _ = range rows {
+				userOwnsTopic = true
+			}
+		}
+		if userOwnsTopic {
+			// var del struct {
+			// 	idQuestion uint64
+			// 	idUser  uint64
+			// }
+			// del.idQuestion = questionid
+			// del.idUser = userid
+			// del.theFitbStr = fitbStr
+			// del.lnum = calculateLnum(del.theFitbStr)
+			if questionid != 0 {
+				sql := "DELETE FROM fitb_question WHERE id_question = ?;"
+				stmt, err := db.Prepare(sql)
+				if err != nil {
+					fmt.Println(err)
+					panic("Prepare failed")
+				}
+				// defer stmt.Close();
+				stmt.Bind(questionid)
+				_, _, err = stmt.Exec()
+				sql = "DELETE FROM fitb_user_question_jct WHERE id_question = ?;"
+				stmt, err = db.Prepare(sql)
+				if err != nil {
+					fmt.Println(err)
+					panic("Prepare failed")
+				}
+				// defer stmt.Close();
+				stmt.Bind(questionid)
+				_, _, err = stmt.Exec()
+			}
+		} else {
+			errorList["topic"] = "Topic is missing or invalid(2)"
+			errorOccurred = true
+		}
+		if errorOccurred {
+			showform = true
+		} else {
+			db := accessdb.GetDbConnection()
+			defer db.Close()
+			http.Redirect(w, r, "listquestions?topic="+uint64ToStr(topicid), 302)
+		}
+	}
+	if showform {
+		header := w.Header()
+		header.Set("Content-Type", "text/html; charset=utf-8")
+		fmt.Fprint(w, getDoctype())
+		db := accessdb.GetDbConnection()
+		defer db.Close()
+		type chapterType struct {
+			idChapter uint64
+			name      string
+		}
+		var allChapters []chapterType
+		allChapters = make([]chapterType, 0)
+		sql := "SELECT id_chapter, name FROM fitb_chapter WHERE id_topic = ?;"
+		sel, err := db.Prepare(sql)
+		if err != nil {
+			fmt.Println(err)
+			panic("Prepare failed")
+		}
+		sel.Bind(topicid)
+		rows, _, err := sel.Exec()
+		if err != nil {
+			fmt.Println(err)
+			panic("Bind/Exec failed")
+		}
+		for _, row := range rows {
+			var currentChap chapterType
+			currentChap.idChapter = row.Uint64(0)
+			currentChap.name = row.Str(1)
+			allChapters = append(allChapters, currentChap)
+		}
+		fmt.Fprint(w, `<title>Delete question for topic: `+topicName+`</title>
+`+getStyle()+`
+</head>
+<body>
+  <section>
+    <h1>Delete question for topic: `+topicName+`</h1>
+<form action="deletequestion" method="post">
+<input type="hidden" name="question" value="`+uint64ToStr(questionid)+`" />
+<input type="hidden" name="topic" value="`+uint64ToStr(topicid)+`" />
+`)
+		if errorOccurred {
+			fmt.Fprintln(w, "<h2>Error occurred</h2><ul>")
+			for _, errMsg := range errorList {
+				fmt.Fprintln(w, "<li>"+html.EscapeString(errMsg)+"</li>")
+			}
+			fmt.Fprintln(w, "</ul>")
+		}
+		fmt.Fprint(w, `
+	<p>Are you sure you want to delete:</p>
+	<p>`+htmlize(theFitbStr)+`</p>
+`)
+		fmt.Fprint(w, `
+<tr><td colspan="2" align="center"> <input type="submit" value="Delete"> </td></tr>
 </table>
 </form>
   </section>
@@ -2698,6 +2917,7 @@ function advanceOnReturn(ev, num) {
 }
 
 func Handler(w http.ResponseWriter, r *http.Request, op string, userid uint64, userName string) {
+	// fmt.Println("In FITB handler, running op:", op)
 	switch {
 	case op == "listtopics":
 		if userid == 1 {
@@ -2731,9 +2951,14 @@ func Handler(w http.ResponseWriter, r *http.Request, op string, userid uint64, u
 		if userid == 1 {
 			showAddBulkQuestionsPage(w, r, op, userid, userName)
 		}
+
 	case op == "editquestion":
 		if userid == 1 {
 			showEditQuestionPage(w, r, op, userid, userName)
+		}
+	case op == "deletequestion":
+		if userid == 1 {
+			showDeleteQuestionPage(w, r, op, userid, userName)
 		}
 	case op == "renumber":
 		if userid == 1 {
