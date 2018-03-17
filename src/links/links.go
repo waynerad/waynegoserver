@@ -1976,7 +1976,7 @@ func showGenTrentCatchupSQL(w http.ResponseWriter, r *http.Request, op string, u
 	var record lnksqlfields
 	db := accessdb.GetDbConnection()
 	defer db.Close()
-	res, err := db.Start("SELECT id_lnk, created_gmt, target_url, image_url, description, my_comment, title FROM link_link WHERE (id_lnk >= " + intToStr(fromNum) + ") AND (description NOT LIKE 'Music for today%') AND (description NOT LIKE 'Sign O The Times%') AND (is_pdf = 0) ORDER BY id_lnk;")
+	res, err := db.Start("SELECT id_lnk, created_gmt, target_url, image_url, description, my_comment, title FROM link_link WHERE (id_lnk > " + intToStr(fromNum) + ") AND (description NOT LIKE 'Music for today%') AND (description NOT LIKE 'Sign O The Times%') AND (is_pdf = 0) ORDER BY id_lnk;")
 	if err != nil {
 		fmt.Fprintln(w, err)
 		return
@@ -1998,8 +1998,8 @@ func showGenTrentCatchupSQL(w http.ResponseWriter, r *http.Request, op string, u
 			record.description = row.Str(4)
 			record.myComment = row.Str(5)
 			record.title = row.Str(6)
-			sql := genSQLFromRecord(db, idNum, record)
 			idNum++
+			sql := genSQLFromRecord(db, idNum, record)
 			fmt.Fprint(w, htmize(sql))
 			fmt.Fprint(w, "\n\n")
 		}
