@@ -7,6 +7,7 @@ import (
 	_ "github.com/ziutek/mymysql/native" // Native engine
 	"html"
 	"io"
+	"langtext"
 	"math"
 	"math/rand"
 	"net/http"
@@ -1126,7 +1127,7 @@ func calculateLnum(str string) float64 {
 			}
 			if char == 192 {
 				// capital A`
-				l =  351  // lower case + 200 for the shift
+				l = 351 // lower case + 200 for the shift
 			}
 			if inAnswer {
 				if l == 0.0 {
@@ -2381,7 +2382,7 @@ func initialize(db mysql.Conn, userid uint64, topicid uint64) {
 		// defer stmt.Close();
 		sequenceNum := seqNumMap[questionid]
 		askTime := 1 + sequenceNum                                    // This is so the sequence of first introduction is the same as the sequence_num bers in the database
-		stmt.Bind(userid, questionid, topicid, askTime, 60, 1.0, 1.0) // INITIAL REPETITIVENESS is set here
+		stmt.Bind(userid, questionid, topicid, askTime, 10, 1.0, 1.0) // INITIAL REPETITIVENESS is set here
 		_, _, err = stmt.Exec()
 	}
 }
@@ -2626,7 +2627,7 @@ func genProgressMessage(db mysql.Conn, userid uint64, topicid uint64, currentTim
 	needToBeReviewed := getCountFromSQLForUserTopicAndTime(db, sql, userid, topicid, currentTime, true)
 	sql = "SELECT COUNT(*) FROM fitb_user_question_jct WHERE (id_user = ?) AND (id_topic = ?) AND (ask_time_gmt > ?);"
 	learned := getCountFromSQLForUserTopicAndTime(db, sql, userid, topicid, currentTime, true)
-	return intToStr(learned) + " learned, " + intToStr(needToBeReviewed) + " need to be reviewed, " + intToStr(notStarted) + " not started.<br />" + floatToStr(float64(learned*100)/float64(learned+needToBeReviewed)) + "% reviewed, " + floatToStr(float64(learned*100)/float64(learned+needToBeReviewed+notStarted)) + "% of total."
+	return intToStr(learned) + " learned, " + intToStr(needToBeReviewed) + " need to be reviewed, " + intToStr(notStarted) + " not started.<br />" + floatToStr(float64(learned*100)/float64(learned+needToBeReviewed)) + "% of started entries learned, " + floatToStr(float64(learned*100)/float64(learned+needToBeReviewed+notStarted)) + "% of total entries learned."
 }
 
 func showAskQuestionPage(w http.ResponseWriter, r *http.Request, op string, userid uint64, userName string) {
@@ -2676,6 +2677,7 @@ func showAskQuestionPage(w http.ResponseWriter, r *http.Request, op string, user
 			fullAnswer = fullAnswer + entry
 			if inBlank {
 				answer := theform["response"+intToStr(idx)][0]
+				answer = langtext.ProcessInternationalLanguageCharacterConversion(answer)
 				responseMap[idx] = answer
 				if trim(answer) != entry {
 					allCorrect = false
