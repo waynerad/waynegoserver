@@ -1625,13 +1625,13 @@ function chimesDoTimerPulse() {
         fromMoment = gChimesData.globalCtx.currentTime;
         chimesQueUpANote(fromMoment, frequency, startTime, duration, amplitude);
         xl = Math.log(Math.abs(interval)) / gChimesData.LOG2;
-        xl = xl * 5;
+        xl = xl * 5.25;
         // document.getElementById("xl").value = xl;
         xl = Math.floor(xl);
     } else {
         xl = Math.log(interval) / gChimesData.LOG2;
-        pitch = 9.0 - (xl / 4.5); // magic pitch constant
-        xl = xl * 5;
+        pitch = 9.0 - (xl / 4.25); // magic pitch constant (larger is higher)
+        xl = xl * 5.25; // constant that determines how often the chimes happen (larger is slower)
         document.getElementById("xl").value = xl;
         xl = Math.floor(xl);
         if (xl !== gChimesData.lastXl) {
