@@ -26,7 +26,39 @@ func getDoctype() string {
 	return `<!DOCTYPE html>
 <html>
 <head>
-<meta charset=utf-8 />
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta http-equiv="X-UA-Compatible" content="ie=edge" />
+`
+}
+
+func getStyle() string {
+	return `<style>
+body {
+    font-size: 1.1em;
+    font-family: helvetica;
+}
+#header {
+    background-color: #FFEFE0;
+}
+#footer {
+    background-color: #FFEFE0;
+}
+
+h1 {
+    color: #550000;
+}
+
+.infield {
+    font-size: 1.1em;
+}
+
+.biginput {
+    font-size: 1.1em;
+}
+
+</style>
+
 `
 }
 
@@ -616,11 +648,13 @@ func getTimeZoneOffset(db mysql.Conn, userid uint64) int64 {
 
 func showCalcronMenuBar(w http.ResponseWriter, userName string) {
 	fmt.Fprint(w, `
+<div id="header">
 <p><a href="chimes">Chimes</a>
 <a href="add">Add</a>
 <a href="list">List</a>
 &middot;`+htm(userName)+`
 </p>
+</div>
 `)
 }
 
@@ -886,11 +920,10 @@ func showEditPage(w http.ResponseWriter, r *http.Request, op string, userid uint
 	if showform {
 		header := w.Header()
 		header.Set("Content-Type", "text/html; charset=utf-8")
-		fmt.Fprint(w, getDoctype())
+		fmt.Fprint(w, getDoctype()+getStyle())
 		db := accessdb.GetDbConnection()
 		defer db.Close()
 		fmt.Fprint(w, `<title>CalCron Entry</title>
-<link rel="stylesheet" type="text/css" href="/style.css">
 
 <script>
 
@@ -978,7 +1011,7 @@ function ctstr(anyparameter) {
     <h1>CalCron Entry</h1>
 
 <form action="edit" method="post">
-<input type="hidden" name="entry" value="`+strconv.FormatUint(entryid, 10)+`" />
+<input class="infield" type="hidden" name="entry" value="`+strconv.FormatUint(entryid, 10)+`" />
 `)
 		if errorOccurred {
 			fmt.Fprintln(w, "<h2>Error occurred</h2><ul>")
@@ -1005,7 +1038,7 @@ function ctstr(anyparameter) {
 <tr><td align="right"> Minute: </td><td> <input class="biginput" name="minute" id="minute" type="text" value="`+html.EscapeString(ui.minute)+`" /> </td></tr>
 <tr><td align="right"> Second: </td><td> <input class="biginput" name="second" id="second" type="text" value="`+html.EscapeString(ui.second)+`" /> </td></tr>
 
-<tr><td colspan="2" align="center"> <input type="submit"> </td></tr>
+<tr><td colspan="2" align="center"> <input class="infield" type="submit"> </td></tr>
 
 </table>
 </form>
@@ -1089,9 +1122,8 @@ func showListPage(w http.ResponseWriter, r *http.Request, op string, userid uint
 	timeZoneClientSideAdjustNum := strconv.FormatInt((-timeZoneOffset)*1000, 10)
 	header := w.Header()
 	header.Set("Content-Type", "text/html; charset=utf-8")
-	fmt.Fprint(w, getDoctype())
+	fmt.Fprint(w, getDoctype()+getStyle())
 	fmt.Fprint(w, `<title>List of Calcron Entries</title>
-<link rel="stylesheet" type="text/css" href="/style.css">
 <link rel="stylesheet" href="jquery-ui.css" />
 <script src="jquery-1.9.1.js"></script>
 <script src="jquery-ui.js"></script>
@@ -1483,10 +1515,9 @@ func showChimesPage(w http.ResponseWriter, r *http.Request, op string, userid ui
 	dateTimeString := timeCodeToString(entry.currenttime, timeZoneOffset)
 	header := w.Header()
 	header.Set("Content-Type", "text/html; charset=utf-8")
-	fmt.Fprint(w, getDoctype())
+	fmt.Fprint(w, getDoctype()+getStyle())
 	timeZoneClientSideAdjustNum := strconv.FormatInt((-timeZoneOffset)*1000, 10)
 	fmt.Fprint(w, `<title>Chimes: `+html.EscapeString(theTitle)+`</title>
-<link rel="stylesheet" type="text/css" href="/style.css">
 <link rel="stylesheet" href="jquery-ui.css" />
 <script src="jquery-1.9.1.js"></script>
 <script src="jquery-ui.js"></script>
@@ -1782,23 +1813,23 @@ jQuery(function () {
 </td></tr>
 <tr><td>
 Time code: 
-    <input type="textbox" id="as_text" name="as_text" value="`)
+    <input class="infield" type="textbox" id="as_text" name="as_text" value="`)
 	// format example 2016-04-25T16:32:34.995Z
 	// fmt.Fprintf(w, "%d-%s-%sT%s:%s:%s.000Z", timeNums.year, twodigits(timeNums.month), twodigits(timeNums.day), twodigits(timeNums.hour), twodigits(timeNums.minute), twodigits(timeNums.second))
 	fmt.Fprintf(w, "%d-%s-%s %s:%s:%s", timeNums.year, twodigits(timeNums.month), twodigits(timeNums.day), twodigits(timeNums.hour), twodigits(timeNums.minute), twodigits(timeNums.second))
 	fmt.Fprint(w, `" />
-    <input type="button" id="use_time_now" name="use_time_now" value="Use time now" />
+    <input class="infield" type="button" id="use_time_now" name="use_time_now" value="Use time now" />
 </td></tr><tr><td>
-    <input type="textbox" id="next_event" name="next_event" value="" />
-Add minutes: <input type="textbox" id="add_minutes" name="add_minutes" value="" />
+    <input class="infield" type="textbox" id="next_event" name="next_event" value="" />
+Add minutes: <input class="infield" type="textbox" id="add_minutes" name="add_minutes" value="" />
 </td></tr><tr><td>
-    <input type="button" id="parse_and_set" name="parse_and_set" value="Parse And Set Time" />
+    <input class="infield" type="button" id="parse_and_set" name="parse_and_set" value="Parse And Set Time" />
 <tr><td align="right"> <span id="interv_txt"></span>
 </td></tr><tr><td>
-    <input type="textbox" id="xl" name="xl" value="" />
+    <input class="infield" type="textbox" id="xl" name="xl" value="" />
 </td></tr><tr><td>
     <input type="hidden" id="dismiss" name="dismiss" value="`+strconv.FormatUint(entry.id, 10)+`" />
-    <input type="submit" id="do_dis" name="do_dis" value="Dismiss" />
+    <input class="infield" type="submit" id="do_dis" name="do_dis" value="Dismiss" />
 </td></tr></table>
 
 </form>
@@ -1893,11 +1924,10 @@ func showViewPage(w http.ResponseWriter, r *http.Request, op string, userid uint
 
 	header := w.Header()
 	header.Set("Content-Type", "text/html; charset=utf-8")
-	fmt.Fprint(w, getDoctype())
+	fmt.Fprint(w, getDoctype()+getStyle())
 	db := accessdb.GetDbConnection()
 	defer db.Close()
 	fmt.Fprint(w, `<title>CalCron Entry View</title>
-<link rel="stylesheet" type="text/css" href="/style.css">
 
 </head>
 <body>
@@ -1941,9 +1971,8 @@ func showRecalcPage(w http.ResponseWriter, r *http.Request, op string, userid ui
 	recalculateAllEvents(db, userid, false)
 	header := w.Header()
 	header.Set("Content-Type", "text/html; charset=utf-8")
-	fmt.Fprint(w, getDoctype())
+	fmt.Fprint(w, getDoctype()+getStyle())
 	fmt.Fprint(w, `<title>Chimes: recalc</title>
-<link rel="stylesheet" type="text/css" href="/style.css">
 
 </head>
 <body>
@@ -2128,11 +2157,10 @@ func showSuspendPage(w http.ResponseWriter, r *http.Request, op string, userid u
 	if showform {
 		header := w.Header()
 		header.Set("Content-Type", "text/html; charset=utf-8")
-		fmt.Fprint(w, getDoctype())
+		fmt.Fprint(w, getDoctype()+getStyle())
 		db := accessdb.GetDbConnection()
 		defer db.Close()
 		fmt.Fprint(w, `<title>CalCron Entry</title>
-<link rel="stylesheet" type="text/css" href="/style.css">
 </head>
 <body>
   <section>
@@ -2156,7 +2184,7 @@ func showSuspendPage(w http.ResponseWriter, r *http.Request, op string, userid u
 <p>`+html.EscapeString(ui.description)+`</p>
 <table><tr><td> `+html.EscapeString(ui.year)+` </td><td> `+html.EscapeString(ui.month)+` </td><td> `+html.EscapeString(ui.dom)+` </td> <td> `+html.EscapeString(ui.dow)+` </td><td> `+html.EscapeString(ui.nth)+` </td><td> `+html.EscapeString(ui.doe)+` </td> <td> 
 `+html.EscapeString(ui.hour)+` </td><td> `+html.EscapeString(ui.minute)+` </td><td> `+html.EscapeString(ui.second)+` </td></tr></table>
-<p><input type="hidden" name="do_suspend" value="1" /><input type="submit" value="Suspend"></p>
+<p><input type="hidden" name="do_suspend" value="1" /><input class="infield" type="submit" value="Suspend"></p>
 </form>
 
   </section>
