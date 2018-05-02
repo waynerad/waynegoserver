@@ -28,7 +28,39 @@ func getDoctype() string {
 	return `<!DOCTYPE html>
 <html>
 <head>
-<meta charset=utf-8 />
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta http-equiv="X-UA-Compatible" content="ie=edge" />
+`
+}
+
+func getStyle() string {
+	return `<style>
+body {
+    font-size: 1.1em;
+    font-family: helvetica;
+}
+#header {
+    background-color: #FFEFE0;
+}
+#footer {
+    background-color: #FFEFE0;
+}
+
+h1 {
+    color: #550000;
+}
+
+.infield {
+    font-size: 1.1em;
+}
+
+.bigtextarea {
+    font-size: 1.1em;
+}
+
+</style>
+
 `
 }
 
@@ -79,24 +111,27 @@ func strToInt(s string) int {
 
 func showLinksMenuBar(w http.ResponseWriter, userName string) {
 	fmt.Fprint(w, `
+<div id="header">
 <p><a href="add">Add</a>
 <a href="list">List</a> &middot;
 <font color="grey">`+htmize(userName)+`</font>
-</p>`)
+</p>
+</div>
+`)
 }
 
 func showExposition(w http.ResponseWriter, db mysql.Conn, targetUrl string, imageUrl string, description string, myComment string, title string, createTimeGMT uint64) {
 	fmt.Fprint(w, `
       <p>
 Google+ / <a href="https://www.facebook.com/">Facebook</a> / <a href="http://www.linkedin.com/">LinkedIn</a> / <a href="http://www.twitter.com/">Twitter</a> / <a href="https://www.tumblr.com/blog/waynerad/new/link">Tumblr</a></p>
-      <p><textarea cols="80" rows="20">`)
+      <p><textarea class="infield" cols="80" rows="20">`)
 	fmt.Fprint(w, description)
 	fmt.Fprint(w, `
 `)
 	fmt.Fprint(w, targetUrl)
-	fmt.Fprint(w, `</textarea> <textarea cols="80" rows="20">`)
+	fmt.Fprint(w, `</textarea> <textarea class="infield" cols="80" rows="20">`)
 	fmt.Fprint(w, myComment)
-	fmt.Fprint(w, `</textarea> <textarea cols="80" rows="4">`)
+	fmt.Fprint(w, `</textarea> <textarea class="infield" cols="80" rows="4">`)
 	fmt.Fprint(w, title)
 	fmt.Fprint(w, ` `)
 	fmt.Fprint(w, targetUrl)
@@ -197,7 +232,7 @@ func showAddPage(w http.ResponseWriter, r *http.Request, op string, userid uint6
 			}
 			header := w.Header()
 			header.Set("Content-Type", "text/html; charset=utf-8")
-			fmt.Fprint(w, getDoctype())
+			fmt.Fprint(w, getDoctype()+getStyle())
 			fmt.Fprint(w, `<title>URL saver</title>
 </head>
 <body>
@@ -230,7 +265,7 @@ func showAddPage(w http.ResponseWriter, r *http.Request, op string, userid uint6
 	if showform {
 		header := w.Header()
 		header.Set("Content-Type", "text/html; charset=utf-8")
-		fmt.Fprint(w, getDoctype())
+		fmt.Fprint(w, getDoctype()+getStyle())
 		db := accessdb.GetDbConnection()
 		defer db.Close()
 		sql := "SELECT COUNT(*) FROM link_link WHERE is_email = 1;"
@@ -246,8 +281,8 @@ func showAddPage(w http.ResponseWriter, r *http.Request, op string, userid uint6
 			return
 		}
 		emailCount := row.Uint64(0)
+		// <link rel="stylesheet" type="text/css" href="/style.css">
 		fmt.Fprint(w, `<title>URL saver</title>
-<link rel="stylesheet" type="text/css" href="/style.css">
 
 <script>
 
@@ -594,33 +629,33 @@ timeridUrl = window.setInterval(execUrlGrab, 100);
 			fmt.Fprint(w, `
 
 <p>
-<input name="grab_url" id="grab_url" type="button" value="Grab URL" />
-URL: <input class="biginput" name="grabbed_url" id="grabbed_url" type="text" value="`+htmize(uiGrabbedUrl)+`" />
+<input class="infield" name="grab_url" id="grab_url" type="button" value="Grab URL" />
+URL: <input class="infield" class="biginput" name="grabbed_url" id="grabbed_url" type="text" value="`+htmize(uiGrabbedUrl)+`" />
 </p>
 <p>
-<input name="do_resize" id="do_resize" type="button" value="resize" />
-<input name="submit" id="submit" type="submit" />
-<input type="checkbox" checked="checked" id="email" name="email"> Email, 
-<input type="checkbox" id="video" name="video"> Video
-<input type="checkbox" id="pdf" name="pdf"> PDF
+<input class="infield" name="do_resize" id="do_resize" type="button" value="resize" />
+<input class="infield" name="submit" id="submit" type="submit" />
+<input class="infield" type="checkbox" checked="checked" id="email" name="email"> Email, 
+<input class="infield" type="checkbox" id="video" name="video"> Video
+<input class="infield" type="checkbox" id="pdf" name="pdf"> PDF
 </p>
 <p>
-<input name="grab_image" id="grab_image" type="button" value="Grab URL" />
-Image URL: <input class="biginput" name="image_url" id="image_url" type="text" value="`+htmize(uiImageUrl)+`" /> </p>
-<p> Title: <input class="biginput" name="title" id="title" type="text" value="`+htmize(uiTitle)+`" /> </p>
+<input class="infield" name="grab_image" id="grab_image" type="button" value="Grab URL" />
+Image URL: <input class="infield" class="biginput" name="image_url" id="image_url" type="text" value="`+htmize(uiImageUrl)+`" /> </p>
+<p> Title: <input class="infield" class="biginput" name="title" id="title" type="text" value="`+htmize(uiTitle)+`" /> </p>
 <p><textarea class="bigtextarea" name="original_text" id="original_text" cols="80" rows="20">`+htmize(uiOriginalText)+`</textarea></p>
-<p><input name="do_lcase" id="do_lcase" type="button" value="lcase" />
- <input name="do_underscores" id="do_underscores" type="button" value="underscores" />
- <input name="do_flip_quotes" id="do_flip_quotes" type="button" value="flip quotes" />
- <input name="do_analyze" id="do_analyze" type="button" value="analyze ascii" />
- <input name="do_single_quotes" id="do_singlequotes" type="button" value="single quotes" />
- <input name="do_quotes_hyphens" id="do_quoteshyphens" type="button" value="quotes hyphens" />
- <input name="do_both" id="do_both" type="button" value="both" />
+<p><input class="infield" name="do_lcase" id="do_lcase" type="button" value="lcase" />
+ <input class="infield" name="do_underscores" id="do_underscores" type="button" value="underscores" />
+ <input class="infield" name="do_flip_quotes" id="do_flip_quotes" type="button" value="flip quotes" />
+ <input class="infield" name="do_analyze" id="do_analyze" type="button" value="analyze ascii" />
+ <input class="infield" name="do_single_quotes" id="do_singlequotes" type="button" value="single quotes" />
+ <input class="infield" name="do_quotes_hyphens" id="do_quoteshyphens" type="button" value="quotes hyphens" />
+ <input class="infield" name="do_both" id="do_both" type="button" value="both" />
 </p>
 <p><textarea class="bigtextarea" name="my_comment" id="my_comment" cols="80" rows="20">`+htmize(uiMyComment)+`</textarea></p>
 <p>Analysis<br /><textarea class="bigtextarea" name="analyze_result" id="analyze_result" cols="80" rows="10"></textarea></p>
 <p>
-BPM: <input class="biginput" name="bpm" id="bpm" type="text" value="`+htmize(uiBpm)+`" />
+BPM: <input class="infield" class="biginput" name="bpm" id="bpm" type="text" value="`+htmize(uiBpm)+`" />
 </p>
 
 </form>
@@ -673,7 +708,7 @@ func showListPage(w http.ResponseWriter, r *http.Request, op string, userid uint
 	var sql string
 	header := w.Header()
 	header.Set("Content-Type", "text/html; charset=utf-8")
-	fmt.Fprint(w, getDoctype())
+	fmt.Fprint(w, getDoctype()+getStyle())
 	fmt.Fprint(w, `<title>List of URLs</title>
 </head>
 <body>
@@ -783,7 +818,7 @@ func showExpositPage(w http.ResponseWriter, r *http.Request, op string, userid u
 	}
 	header := w.Header()
 	header.Set("Content-Type", "text/html; charset=utf-8")
-	fmt.Fprint(w, getDoctype())
+	fmt.Fprint(w, getDoctype()+getStyle())
 	fmt.Fprint(w, `<title>URL exposition</title>
 </head>
 <body>
@@ -1016,7 +1051,7 @@ func showEditPage(w http.ResponseWriter, r *http.Request, op string, userid uint
 			}
 			fmt.Fprintln(w, "</ul>")
 		}
-		fmt.Fprint(w, getDoctype())
+		fmt.Fprint(w, getDoctype()+getStyle())
 		fmt.Fprint(w, `<title>URL saver</title>
 </head><body>
   <section>
@@ -1028,20 +1063,20 @@ func showEditPage(w http.ResponseWriter, r *http.Request, op string, userid uint
 <form action="edit" method="post">
 
 <table border="0" cellpadding="4">
-<tr><td> Created </td><td> <input name="link" id="link" value="`+strconv.FormatUint(linkid, 10)+`" type="hidden" /> <input name="created" id="created" type="text" value="`+htmize(uiCreated)+`" readonly="readonly" /> </td></tr>
-<tr><td> Target URL </td><td> <input name="target_url" id="target_url" type="text" value="`+htmize(uiTargetUrl)+`" style="width:400px;" /> </td></tr>
-<tr><td> Image URL </td><td> <input name="image_url" id="image_url" type="text" value="`+htmize(uiImageUrl)+`" style="width:400px;" /> </td></tr>
-<tr><td> Description </td><td> <textarea name="description" id="description" rows="20" cols="80">`+htmize(uiDescription)+`</textarea> </td></tr>
-<tr><td> My Comment </td><td> <textarea name="my_comment" id="my_comment" rows="20" cols="80">`+htmize(uiMyComment)+`</textarea> </td></tr>
-<tr><td> Title </td><td> <input name="title" id="title" type="text" value="`+htmize(uiTitle)+`" style="width:400px;" /> </td></tr>
-<tr><td> Email </td><td> <input type="checkbox" name="email" id="email" `+checkedStr(uiIsEmail)+`> Email </td></tr>
-<tr><td> Public </td><td> <input type="checkbox" name="public" id="public" `+checkedStr(uiIsPublic)+`> Public </td></tr>
-<tr><td> Video </td><td> <input type="checkbox" name="video" id="video" `+checkedStr(uiIsVideo)+`> Video </td></tr>
-<tr><td> PDF </td><td> <input type="checkbox" name="pdf" id="video" `+checkedStr(uiIsPdf)+`> PDF </td></tr>
-<tr><td> BPM </td><td> <input name="bpm" id="bpm" type="text" value="`+htmize(uiBpm)+`" style="width:400px;" /> </td></tr>
+<tr><td> Created </td><td> <input class="infield" name="link" id="link" value="`+strconv.FormatUint(linkid, 10)+`" type="hidden" /> <input class="infield" name="created" id="created" type="text" value="`+htmize(uiCreated)+`" readonly="readonly" /> </td></tr>
+<tr><td> Target URL </td><td> <input class="infield" name="target_url" id="target_url" type="text" value="`+htmize(uiTargetUrl)+`" style="width:400px;" /> </td></tr>
+<tr><td> Image URL </td><td> <input class="infield" name="image_url" id="image_url" type="text" value="`+htmize(uiImageUrl)+`" style="width:400px;" /> </td></tr>
+<tr><td> Description </td><td> <textarea class="infield" name="description" id="description" rows="20" cols="80">`+htmize(uiDescription)+`</textarea> </td></tr>
+<tr><td> My Comment </td><td> <textarea class="infield" name="my_comment" id="my_comment" rows="20" cols="80">`+htmize(uiMyComment)+`</textarea> </td></tr>
+<tr><td> Title </td><td> <input class="infield" name="title" id="title" type="text" value="`+htmize(uiTitle)+`" style="width:400px;" /> </td></tr>
+<tr><td> Email </td><td> <input class="infield" type="checkbox" name="email" id="email" `+checkedStr(uiIsEmail)+`> Email </td></tr>
+<tr><td> Public </td><td> <input class="infield" type="checkbox" name="public" id="public" `+checkedStr(uiIsPublic)+`> Public </td></tr>
+<tr><td> Video </td><td> <input class="infield" type="checkbox" name="video" id="video" `+checkedStr(uiIsVideo)+`> Video </td></tr>
+<tr><td> PDF </td><td> <input class="infield" type="checkbox" name="pdf" id="video" `+checkedStr(uiIsPdf)+`> PDF </td></tr>
+<tr><td> BPM </td><td> <input class="infield" name="bpm" id="bpm" type="text" value="`+htmize(uiBpm)+`" style="width:400px;" /> </td></tr>
 </table>
 
-<p><input name="submit" id="submit" type="submit" />
+<p><input class="infield" name="submit" id="submit" type="submit" />
 
 </form>
 
@@ -1136,7 +1171,7 @@ func showDeletePage(w http.ResponseWriter, r *http.Request, op string, userid ui
 	if showform {
 		header := w.Header()
 		header.Set("Content-Type", "text/html; charset=utf-8")
-		fmt.Fprint(w, getDoctype())
+		fmt.Fprint(w, getDoctype()+getStyle())
 		fmt.Fprint(w, `<title>URL saver</title>
 </head><body>
   <section>
@@ -1152,8 +1187,8 @@ func showDeletePage(w http.ResponseWriter, r *http.Request, op string, userid ui
 <p> `+htmize(uiDescription)+`</p>
 <p> `+htmize(uiMyComment)+`</p>
 
-<p><input type="submit" id="submit" name="submit" value="Delete" />
-<input name="link" id="link" value="`+strconv.FormatUint(linkid, 10)+`" type="hidden" />
+<p><input class="infield" type="submit" id="submit" name="submit" value="Delete" />
+<input class="infield" name="link" id="link" value="`+strconv.FormatUint(linkid, 10)+`" type="hidden" />
 </p>
 
 </form>
@@ -1190,7 +1225,7 @@ func showEmailPage(w http.ResponseWriter, r *http.Request, op string, userid uin
 	}
 	header := w.Header()
 	header.Set("Content-Type", "text/html; charset=utf-8")
-	fmt.Fprint(w, getDoctype())
+	fmt.Fprint(w, getDoctype()+getStyle())
 	fmt.Fprint(w, `<title>List of URLs</title>
 </head>
 <body>
@@ -1199,7 +1234,7 @@ func showEmailPage(w http.ResponseWriter, r *http.Request, op string, userid uin
 	showLinksMenuBar(w, userName)
 	fmt.Fprint(w, `
     <h1>For Emails</h1>
-<textarea rows="100" cols="80">
+<textarea class="infield" rows="100" cols="80">
 === News bits ===
 
 (In reverse chronological order, except videos which are in their own section at the bottom)
@@ -1320,7 +1355,7 @@ func showHomePage(w http.ResponseWriter, r *http.Request, op string, userid uint
 	var sql string
 	header := w.Header()
 	header.Set("Content-Type", "text/html; charset=utf-8")
-	fmt.Fprint(w, getDoctype())
+	fmt.Fprint(w, getDoctype()+getStyle())
 	title := "Wayne Brain TV"
 	if showMusic {
 		title = "Music For Today"
@@ -1471,7 +1506,7 @@ func showSearchPage(w http.ResponseWriter, r *http.Request, op string, userid ui
 			uiSearchTerm = postform["search_term"][0]
 			header := w.Header()
 			header.Set("Content-Type", "text/html; charset=utf-8")
-			fmt.Fprint(w, getDoctype())
+			fmt.Fprint(w, getDoctype()+getStyle())
 			fmt.Fprint(w, `<title>Search Results</title>
 <link rel="stylesheet" type="text/css" href="/style.css">
 </head>
@@ -1516,7 +1551,7 @@ func showSearchPage(w http.ResponseWriter, r *http.Request, op string, userid ui
 	if showform {
 		header := w.Header()
 		header.Set("Content-Type", "text/html; charset=utf-8")
-		fmt.Fprint(w, getDoctype())
+		fmt.Fprint(w, getDoctype()+getStyle())
 		fmt.Fprint(w, `<title>Search</title>
 <link rel="stylesheet" type="text/css" href="/style.css">
 </head>
@@ -1539,8 +1574,8 @@ func showSearchPage(w http.ResponseWriter, r *http.Request, op string, userid ui
 		fmt.Fprintln(w, `
 
 <table border="0" cellpadding="4">
-<tr><td> Search Term </td><td> <input name="search_term" id="search_term" type="text" value="`+htmize(uiSearchTerm)+`" /> </td></tr>
-<tr><td colspan="2" align="center"> <input name="submit" id="submit" type="submit" /> </td></tr>
+<tr><td> Search Term </td><td> <input class="infield" name="search_term" id="search_term" type="text" value="`+htmize(uiSearchTerm)+`" /> </td></tr>
+<tr><td colspan="2" align="center"> <input class="infield" name="submit" id="submit" type="submit" /> </td></tr>
 </table>
 </form>
 </body>
@@ -1608,7 +1643,7 @@ func genTrentBlogVersion(targetUrl string, imageUrl string, description string, 
 
 func showTrentExposition(w http.ResponseWriter, db mysql.Conn, targetUrl string, imageUrl string, description string, myComment string, title string, createTimeGMT uint64) {
 	fmt.Fprint(w, `
-      <p><textarea cols="80" rows="20">`)
+      <p><textarea class="infield" cols="80" rows="20">`)
 	trentVersion := genTrentBlogVersion(targetUrl, imageUrl, description, myComment)
 	fmt.Fprint(w, htmize(trentVersion))
 	fmt.Fprint(w, `</textarea></p>
@@ -1623,7 +1658,7 @@ func showTrentExposition(w http.ResponseWriter, db mysql.Conn, targetUrl string,
 	record.myComment = myComment
 	record.title = title
 	sql := genSQLFromRecord(db, 9999998, record)
-	fmt.Fprint(w, `</p><p><textarea cols="80" rows="20">`)
+	fmt.Fprint(w, `</p><p><textarea class="infield" cols="80" rows="20">`)
 	fmt.Fprint(w, htmize(sql))
 	fmt.Fprint(w, `</textarea></p>
 `)
@@ -1637,7 +1672,7 @@ func showTrentExposition(w http.ResponseWriter, db mysql.Conn, targetUrl string,
 	fmt.Fprint(w, htmize("<p><a href="+`"`))
 	fmt.Fprint(w, targetUrl)
 	fmt.Fprint(w, htmize(`"`+">Read more...</a></p>"))
-	fmt.Fprint(w, `</textarea> <textarea cols="80" rows="20">`)
+	fmt.Fprint(w, `</textarea> <textarea class="infield" cols="80" rows="20">`)
 	fmt.Fprint(w, "<p>"+linesToParagraphBreaks(myComment)+"</p>")
 	fmt.Fprint(w, `</textarea></p>
 <p> <img src="`+imageUrl+`" alt="Thumbnail" /> </p>
@@ -1660,7 +1695,7 @@ func showTrentExpoPage(w http.ResponseWriter, r *http.Request, op string, userid
 	}
 	header := w.Header()
 	header.Set("Content-Type", "text/html; charset=utf-8")
-	fmt.Fprint(w, getDoctype())
+	fmt.Fprint(w, getDoctype()+getStyle())
 	fmt.Fprint(w, `<title>Trent Exposition</title>
 </head>
 <body>
@@ -1797,7 +1832,7 @@ func genTitleFromDescription(description string) string {
 func showGenTitlesPage(w http.ResponseWriter, r *http.Request, op string, userid uint64, userName string) {
 	header := w.Header()
 	header.Set("Content-Type", "text/html; charset=utf-8")
-	fmt.Fprint(w, getDoctype())
+	fmt.Fprint(w, getDoctype()+getStyle())
 	fmt.Fprint(w, `<title>Generate Titles</title>
 </head>
 <body>
@@ -1895,7 +1930,7 @@ func showGenTrentSQL(w http.ResponseWriter, r *http.Request, op string, userid u
 	idNum := 99999998
 	header := w.Header()
 	header.Set("Content-Type", "text/html; charset=utf-8")
-	fmt.Fprint(w, getDoctype())
+	fmt.Fprint(w, getDoctype()+getStyle())
 	fmt.Fprint(w, `<title>Generate SQL</title>
 </head>
 <body>
@@ -1963,7 +1998,7 @@ func showGenTrentCatchupSQL(w http.ResponseWriter, r *http.Request, op string, u
 	idNum := strToInt(postform["target"][0])
 	header := w.Header()
 	header.Set("Content-Type", "text/html; charset=utf-8")
-	fmt.Fprint(w, getDoctype())
+	fmt.Fprint(w, getDoctype()+getStyle())
 	fmt.Fprint(w, `<title>Generate Catchup SQL</title>
 </head>
 <body>
@@ -1972,7 +2007,7 @@ func showGenTrentCatchupSQL(w http.ResponseWriter, r *http.Request, op string, u
 	showLinksMenuBar(w, userName)
 	fmt.Fprint(w, `
     <h1>Generate Catchup SQL</h1>
-<textarea rows="80" cols="80">`)
+<textarea class="infield" rows="80" cols="80">`)
 	var record lnksqlfields
 	db := accessdb.GetDbConnection()
 	defer db.Close()
