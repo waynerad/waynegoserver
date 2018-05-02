@@ -19,7 +19,41 @@ func getDoctype() string {
 	return `<!DOCTYPE html>
 <html>
 <head>
-<meta charset=utf-8 />
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta http-equiv="X-UA-Compatible" content="ie=edge" />
+`
+}
+
+func getStyle() string {
+	return `<style>
+body {
+    font-size: 1.1em;
+    font-family: helvetica;
+}
+#header {
+    background-color: #FFEFE0;
+}
+#footer {
+    background-color: #FFEFE0;
+}
+
+h1 {
+    color: #550000;
+}
+
+.infield {
+    font-size: 1.1em;
+}
+.bigtextarea {
+    font-size: 1.1em;
+}
+.biginput {
+    font-size: 1.1em;
+}
+
+</style>
+
 `
 }
 
@@ -100,7 +134,7 @@ func candeleteadd(w http.ResponseWriter, r *http.Request, op string) {
 
 			header := w.Header()
 			header.Set("Content-Type", "text/html; charset=utf-8")
-			fmt.Fprint(w, getDoctype())
+			fmt.Fprint(w, getDoctype()+getStyle())
 			fmt.Fprint(w, `<title>URL saver</title>
 </head>
 <body>
@@ -124,7 +158,7 @@ func candeleteadd(w http.ResponseWriter, r *http.Request, op string) {
 	if showform {
 		header := w.Header()
 		header.Set("Content-Type", "text/html; charset=utf-8")
-		fmt.Fprint(w, getDoctype())
+		fmt.Fprint(w, getDoctype()+getStyle())
 		db := accessdb.GetDbConnection()
 		defer db.Close()
 		sql := "SELECT COUNT(*) FROM link_link WHERE is_email=1;"
@@ -431,23 +465,23 @@ timerid = window.setInterval(execUrlgrab, 100);
 			fmt.Fprint(w, `
 
 <p>
-<input name="grab_url" id="grab_url" type="button" value="Grab URL" />
+<input class="infield" name="grab_url" id="grab_url" type="button" value="Grab URL" />
 <input class="biginput" name="grabbed_url" id="grabbed_url" type="text" value="`+html.EscapeString(ui_grabbed_url)+`" />
 </p>
 <p>
-<input name="do_resize" id="do_resize" type="button" value="resize" />
-<input name="submit" id="submit" type="submit" />
-<input type="checkbox" checked="checked" id="email" name="email"> Email, 
-<input type="checkbox" id="video" name="video"> Video
+<input class="infield" name="do_resize" id="do_resize" type="button" value="resize" />
+<input class="infield" name="submit" id="submit" type="submit" />
+<input class="infield" type="checkbox" checked="checked" id="email" name="email"> Email, 
+<input class="infield" type="checkbox" id="video" name="video"> Video
 </p>
 
 <p><textarea class="bigtextarea" name="original_text" id="original_text" cols="80" rows="20">`+html.EscapeString(ui_original_text)+`</textarea></p>
-<p><input name="do_lcase" id="do_lcase" type="button" value="lcase" />
- <input name="do_underscores" id="do_underscores" type="button" value="underscores" />
- <input name="do_flip_quotes" id="do_flip_quotes" type="button" value="flip quotes" />
- <input name="do_analyze" id="do_analyze" type="button" value="analyze ascii" />
- <input name="do_single_quotes" id="do_singlequotes" type="button" value="single quotes" />
- <input name="do_quotes_hyphens" id="do_quoteshyphens" type="button" value="quotes hyphens" />
+<p><input class="infield" name="do_lcase" id="do_lcase" type="button" value="lcase" />
+ <input class="infield" name="do_underscores" id="do_underscores" type="button" value="underscores" />
+ <input class="infield" name="do_flip_quotes" id="do_flip_quotes" type="button" value="flip quotes" />
+ <input class="infield" name="do_analyze" id="do_analyze" type="button" value="analyze ascii" />
+ <input class="infield" name="do_single_quotes" id="do_singlequotes" type="button" value="single quotes" />
+ <input class="infield" name="do_quotes_hyphens" id="do_quoteshyphens" type="button" value="quotes hyphens" />
 </p>
 <p><textarea class="bigtextarea" name="analyze_result" id="analyze_result" cols="80" rows="20"></textarea></p>
 
@@ -495,7 +529,7 @@ func candeletelist(w http.ResponseWriter, r *http.Request, op string) {
 	var sql string
 	header := w.Header()
 	header.Set("Content-Type", "text/html; charset=utf-8")
-	fmt.Fprint(w, getDoctype())
+	fmt.Fprint(w, getDoctype()+getStyle())
 	fmt.Fprint(w, `<title>List of URLs</title>
 </head>
 <body>
@@ -591,7 +625,7 @@ func candeleteexposit(w http.ResponseWriter, r *http.Request, op string) {
 	}
 	header := w.Header()
 	header.Set("Content-Type", "text/html; charset=utf-8")
-	fmt.Fprint(w, getDoctype())
+	fmt.Fprint(w, getDoctype()+getStyle())
 	fmt.Fprint(w, `<title>URL exposition</title>
 </head>
 <body>
@@ -780,7 +814,7 @@ func candeleteedit(w http.ResponseWriter, r *http.Request, op string) {
 			}
 			fmt.Fprintln(w, "</ul>")
 		}
-		fmt.Fprint(w, getDoctype())
+		fmt.Fprint(w, getDoctype()+getStyle())
 		fmt.Fprint(w, `<title>URL saver</title>
 </head><body>
   <section>
@@ -789,16 +823,16 @@ func candeleteedit(w http.ResponseWriter, r *http.Request, op string) {
 <form action="edit" method="post">
 
 <table border="1">
-<tr><td> Created </td><td> <input name="link" id="link" value="`+strconv.FormatUint(linkid, 10)+`" type="hidden" /> <input name="created" id="created" type="text" value="`+html.EscapeString(ui_created)+`" readonly="readonly" /> </td></tr>
-<tr><td> Target URL </td><td> <input name="target_url" id="target_url" type="text" value="`+html.EscapeString(ui_target_url)+`" style="width:400px;" /> </td></tr>
-<tr><td> Image URL </td><td> <input name="image_url" id="image_url" type="text" value="`+html.EscapeString(ui_image_url)+`" style="width:400px;" /> </td></tr>
+<tr><td> Created </td><td> <input class="infield" name="link" id="link" value="`+strconv.FormatUint(linkid, 10)+`" type="hidden" /> <input class="infield" name="created" id="created" type="text" value="`+html.EscapeString(ui_created)+`" readonly="readonly" /> </td></tr>
+<tr><td> Target URL </td><td> <input class="infield" name="target_url" id="target_url" type="text" value="`+html.EscapeString(ui_target_url)+`" style="width:400px;" /> </td></tr>
+<tr><td> Image URL </td><td> <input class="infield" name="image_url" id="image_url" type="text" value="`+html.EscapeString(ui_image_url)+`" style="width:400px;" /> </td></tr>
 <tr><td> Description </td><td> <textarea name="description" id="description" rows="20" cols="80">`+html.EscapeString(ui_description)+`</textarea> </td></tr>
-<tr><td> Email </td><td> <input type="checkbox" name="email" id="email" `+checkedStr(ui_is_email)+`> Email </td></tr>
-<tr><td> Public </td><td> <input type="checkbox" name="public" id="public" `+checkedStr(ui_is_public)+`> Public </td></tr>
-<tr><td> Video </td><td> <input type="checkbox" name="video" id="video" `+checkedStr(ui_is_video)+`> Video </td></tr>
+<tr><td> Email </td><td> <input class="infield" type="checkbox" name="email" id="email" `+checkedStr(ui_is_email)+`> Email </td></tr>
+<tr><td> Public </td><td> <input class="infield" type="checkbox" name="public" id="public" `+checkedStr(ui_is_public)+`> Public </td></tr>
+<tr><td> Video </td><td> <input class="infield" type="checkbox" name="video" id="video" `+checkedStr(ui_is_video)+`> Video </td></tr>
 </table>
 
-<p><input name="submit" id="submit" type="submit" />
+<p><input class="infield" name="submit" id="submit" type="submit" />
 
 </form>
 
@@ -890,7 +924,7 @@ func candeletedelete(w http.ResponseWriter, r *http.Request, op string) {
 	if showform {
 		header := w.Header()
 		header.Set("Content-Type", "text/html; charset=utf-8")
-		fmt.Fprint(w, getDoctype())
+		fmt.Fprint(w, getDoctype()+getStyle())
 		fmt.Fprint(w, `<title>URL saver</title>
 </head><body>
   <section>
@@ -902,8 +936,8 @@ func candeletedelete(w http.ResponseWriter, r *http.Request, op string) {
 
 <p> `+html.EscapeString(ui_description)+`</p>
 
-<p><input type="submit" id="submit" name="submit" value="Delete" />
-<input name="link" id="link" value="`+strconv.FormatUint(linkid, 10)+`" type="hidden" />
+<p><input class="infield" type="submit" id="submit" name="submit" value="Delete" />
+<input class="infield" name="link" id="link" value="`+strconv.FormatUint(linkid, 10)+`" type="hidden" />
 </p>
 
 </form>
@@ -940,7 +974,7 @@ func candeleteemail(w http.ResponseWriter, r *http.Request, op string) {
 	}
 	header := w.Header()
 	header.Set("Content-Type", "text/html; charset=utf-8")
-	fmt.Fprint(w, getDoctype())
+	fmt.Fprint(w, getDoctype()+getStyle())
 	fmt.Fprint(w, `<title>List of URLs</title>
 </head>
 <body>
@@ -1034,7 +1068,7 @@ func candeleteemail(w http.ResponseWriter, r *http.Request, op string) {
 }
 
 func planet(w http.ResponseWriter, r *http.Request, op string) {
-	fmt.Fprint(w, getDoctype())
+	fmt.Fprint(w, getDoctype()+getStyle())
 	fmt.Fprint(w, `<title>Geo Rand Planet</title>
 </head>
 <body>
@@ -1045,12 +1079,12 @@ func planet(w http.ResponseWriter, r *http.Request, op string) {
 	y := (math.Asin((rand.Float64()*2.0)-1.0) / (math.Pi / 2.0)) * 90.0
 	x := (rand.Float64() * 360.0) - 180.0
 	fmt.Fprintln(w, "<p>Cut & paste for Google Maps:</p>")
-	fmt.Fprintln(w, `<input type="text" style="width:400px;" value="`+strconv.FormatFloat(y, 'f', -1, 64)+","+strconv.FormatFloat(x, 'f', -1, 64)+`" /></p>`)
+	fmt.Fprintln(w, `<input class="infield" type="text" style="width:400px;" value="`+strconv.FormatFloat(y, 'f', -1, 64)+","+strconv.FormatFloat(x, 'f', -1, 64)+`" /></p>`)
 	fmt.Fprintln(w, "</body></html>")
 }
 
 func streetview(w http.ResponseWriter, r *http.Request, op string) {
-	fmt.Fprint(w, getDoctype())
+	fmt.Fprint(w, getDoctype()+getStyle())
 	fmt.Fprint(w, `<title>Geo Rand Street View</title>
 </head>
 <body>
@@ -1074,12 +1108,12 @@ func streetview(w http.ResponseWriter, r *http.Request, op string) {
 	y := (rand.Float64() * (cityInfo.lat2 - cityInfo.lat1)) + cityInfo.lat1
 	x := (rand.Float64() * (cityInfo.long2 - cityInfo.long1)) + cityInfo.long1
 	fmt.Fprintln(w, "<p>Cut & paste for Google Maps:</p>")
-	fmt.Fprintln(w, `<input type="text" style="width:400px;" value="`+strconv.FormatFloat(y, 'f', -1, 64)+","+strconv.FormatFloat(x, 'f', -1, 64)+`" /></p>`)
+	fmt.Fprintln(w, `<input class="infield" type="text" style="width:400px;" value="`+strconv.FormatFloat(y, 'f', -1, 64)+","+strconv.FormatFloat(x, 'f', -1, 64)+`" /></p>`)
 	fmt.Fprintln(w, "</body></html>")
 }
 
 func dice(w http.ResponseWriter, r *http.Request, op string) {
-	fmt.Fprint(w, getDoctype())
+	fmt.Fprint(w, getDoctype()+getStyle())
 	fmt.Fprint(w, `<title>Geo Rand Dice</title>
 </head>
 <body>
@@ -1107,9 +1141,9 @@ func dice(w http.ResponseWriter, r *http.Request, op string) {
 		fmt.Fprintln(w, `
 <form action="dice" method="post">
 	<table border="0" cellpadding="3">
-		<tr><td> Min </td><td> <input type="text" name="min" /> </td></tr>
-		<tr><td> Max </td><td> <input type="text" name="max" /> </td></tr>
-		<tr><td colspan="2"> <input type="submit" /> </td></tr>
+		<tr><td> Min </td><td> <input class="infield" type="text" name="min" /> </td></tr>
+		<tr><td> Max </td><td> <input class="infield" type="text" name="max" /> </td></tr>
+		<tr><td colspan="2"> <input class="infield" type="submit" /> </td></tr>
 	</table>
 </form>
 `)
@@ -1118,7 +1152,7 @@ func dice(w http.ResponseWriter, r *http.Request, op string) {
 }
 
 func distance(w http.ResponseWriter, r *http.Request, op string, userid uint64) {
-	fmt.Fprint(w, getDoctype())
+	fmt.Fprint(w, getDoctype()+getStyle())
 	fmt.Fprint(w, `<title>Geo Rand Distance</title>
 </head>
 <body>
@@ -1197,7 +1231,7 @@ func distance(w http.ResponseWriter, r *http.Request, op string, userid uint64) 
 		resultx := centerx + (deltax * (radius / math.Cos((resulty/180.0)*math.Pi)))
 
 		fmt.Fprintln(w, "<p>Cut & paste for Google Maps:</p>")
-		fmt.Fprintln(w, `<input type="text" style="width:400px;" value="`+strconv.FormatFloat(resulty, 'f', -1, 64)+","+strconv.FormatFloat(resultx, 'f', -1, 64)+`" /></p>`)
+		fmt.Fprintln(w, `<input class="infield" type="text" style="width:400px;" value="`+strconv.FormatFloat(resulty, 'f', -1, 64)+","+strconv.FormatFloat(resultx, 'f', -1, 64)+`" /></p>`)
 	} else {
 		action := "dist"
 		if op == "distp" {
@@ -1206,8 +1240,8 @@ func distance(w http.ResponseWriter, r *http.Request, op string, userid uint64) 
 		fmt.Fprintln(w, `
 <form action="`+action+`" method="post">
 	<table border="0" cellpadding="3">
-		<tr><td> Distance </td><td> <input type="text" name="distance" /> </td></tr>
-		<tr><td colspan="2"> <input type="submit" /> </td></tr>
+		<tr><td> Distance </td><td> <input class="infield" type="text" name="distance" /> </td></tr>
+		<tr><td colspan="2"> <input class="infield" type="submit" /> </td></tr>
 	</table>
 </form>
 `)
@@ -1216,7 +1250,7 @@ func distance(w http.ResponseWriter, r *http.Request, op string, userid uint64) 
 }
 
 func eightball(w http.ResponseWriter, r *http.Request, op string) {
-	fmt.Fprint(w, getDoctype())
+	fmt.Fprint(w, getDoctype()+getStyle())
 	fmt.Fprint(w, `<title>Geo Rand 8 ball</title>
 </head>
 <body>
@@ -1252,7 +1286,7 @@ func eightball(w http.ResponseWriter, r *http.Request, op string) {
 }
 
 func showList(w http.ResponseWriter) {
-	fmt.Fprint(w, getDoctype())
+	fmt.Fprint(w, getDoctype()+getStyle())
 	fmt.Fprint(w, `<title>Geo Rand List</title>
 </head>
 <body>
