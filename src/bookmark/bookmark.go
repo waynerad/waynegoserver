@@ -19,6 +19,32 @@ func getDoctype() string {
 `
 }
 
+func getStyle() string {
+	return `<style>
+body {
+    font-size: 1.1em;
+    font-family: helvetica;
+}
+#header {
+    background-color: #FFEFE0;
+}
+#footer {
+    background-color: #FFEFE0;
+}
+
+h1 {
+    color: #550000;
+}
+
+.infield {
+    font-size: 1.1em;
+}
+
+</style>
+
+`
+}
+
 func uintToStr(n uint64) string {
 	return strconv.FormatUint(n, 10)
 }
@@ -51,11 +77,13 @@ func htm(str string) string {
 
 func showBookmrkMenuBar(w http.ResponseWriter, userName string) {
 	fmt.Fprint(w, `
+<div id="header">
 <p><a href="list">List</a>
 <a href="list?edit=1">Edit</a>
 <a href="add">Add</a>
 &middot; `+htm(userName)+`
 </p>
+</div>
 `)
 }
 
@@ -189,11 +217,10 @@ func showEditPage(w http.ResponseWriter, r *http.Request, op string, userid uint
 	if showform {
 		header := w.Header()
 		header.Set("Content-Type", "text/html; charset=utf-8")
-		fmt.Fprint(w, getDoctype())
+		fmt.Fprint(w, getDoctype()+getStyle())
 		db := accessdb.GetDbConnection()
 		defer db.Close()
 		fmt.Fprint(w, `<title>Bookmark Entry</title>
-<link rel="stylesheet" type="text/css" href="/bookmark/style.css">
 </head>
 <body onload="document.getElementById('target').focus();">
   <section>
@@ -212,9 +239,9 @@ func showEditPage(w http.ResponseWriter, r *http.Request, op string, userid uint
 		}
 		fmt.Fprint(w, `
 <table border="0" cellpadding="4">
-<tr><td align="right"> Target: </td><td> <input type="hidden" name="bookmark" value="`+uintToStr(bookmarkid)+`"/><input size="40" name="target" id="target" type="text" value="`+html.EscapeString(ui.target)+`" /> </td></tr>
-<tr><td align="right"> Name: </td><td> <input size="40" name="name" id="name" type="text" value="`+html.EscapeString(ui.name)+`" /> </td></tr>
-<tr><td colspan="2" align="center"> <input type="submit"> </td></tr>
+<tr><td align="right"> Target: </td><td> <input type="hidden" name="bookmark" value="`+uintToStr(bookmarkid)+`"/><input size="40" name="target" id="target" class="infield" type="text" value="`+html.EscapeString(ui.target)+`" /> </td></tr>
+<tr><td align="right"> Name: </td><td> <input size="40" name="name" id="name" class="infield" type="text" value="`+html.EscapeString(ui.name)+`" /> </td></tr>
+<tr><td colspan="2" align="center"> <input class="infield" type="submit"> </td></tr>
 </table>
 </form>
   </section>
@@ -232,10 +259,9 @@ func showListPage(w http.ResponseWriter, r *http.Request, op string, userid uint
 	}
 	header := w.Header()
 	header.Set("Content-Type", "text/html; charset=utf-8")
-	fmt.Fprint(w, getDoctype())
+	// <link rel="stylesheet" href="jquery-ui.css" />
+	fmt.Fprint(w, getDoctype()+getStyle())
 	fmt.Fprint(w, `<title>List of Bookmarks</title>
-<link rel="stylesheet" type="text/css" href="/bookmark/style.css">
-<link rel="stylesheet" href="jquery-ui.css" />
 </head>
 <body>
   <section>
@@ -445,11 +471,10 @@ func showDeletePage(w http.ResponseWriter, r *http.Request, op string, userid ui
 	if showform {
 		header := w.Header()
 		header.Set("Content-Type", "text/html; charset=utf-8")
-		fmt.Fprint(w, getDoctype())
+		fmt.Fprint(w, getDoctype()+getStyle())
 		db := accessdb.GetDbConnection()
 		defer db.Close()
 		fmt.Fprint(w, `<title>Delete Bookmark</title>
-<link rel="stylesheet" type="text/css" href="/bookmark/style.css">
 </head>
 <body>
   <section>
