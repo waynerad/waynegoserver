@@ -22,7 +22,9 @@ func getDoctype() string {
 	return `<!DOCTYPE html>
 <html>
 <head>
-<meta charset=utf-8 />
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta http-equiv="X-UA-Compatible" content="ie=edge" />
 `
 }
 
@@ -30,9 +32,24 @@ func getStyle() string {
 	return `
 <style>
 body {
-	font-family: "Trebuchet MS", "Helvetica", "Arial",  "Verdana", "sans-serif";
-	font-size: 80%;
+    font-size: 1.1em;
+    font-family: helvetica;
 }
+#header {
+    background-color: #FFEFE0;
+}
+#footer {
+    background-color: #FFEFE0;
+}
+
+h1 {
+    color: #550000;
+}
+
+.infield {
+    font-size: 1.1em;
+}
+
 </style>
 `
 }
