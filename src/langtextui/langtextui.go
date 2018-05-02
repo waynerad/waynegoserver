@@ -20,14 +20,17 @@ func ShowHeadHeader(w http.ResponseWriter, displayInfo map[string]string) {
         <style>
 
 body {
-    font-size: 1.4em;
+    font-size: 1.1em;
     font-family: helvetica;
 }
 #header {
     background-color: #FFEFE0;
 }
 #footer {
-    background-color: #FFE0E0;
+    background-color: #FFEFE0;
+}
+#langtocvt {
+    width: 800px;
 }
 .utyp {
     color: #008080;
@@ -40,10 +43,10 @@ h1 {
 }
 
 #langtocvt {
-    font-size: 1.4em;
+    font-size: 1.1em;
 }
 
-@media (max-width: 800px) {
+@media (max-width: 3px) {
   body {
     background-color: #FF00FF;
   }
@@ -52,17 +55,20 @@ h1 {
         </style>
         <script>
 
+/*jslint browser: true, passfail: true */
+
 function advanceOnReturn(ev) {
-    if (ev.keyCode == 13) {
+    "use strict";
+    if (ev.keyCode === 13) {
         ev.stopPropagation();
-        document.forms.frmLang.submit();
-        return false;
-    } else {
+        window.document.forms.frmLang.submit();
         return false;
     }
+    return false;
 }
 
 function showcodes() {
+    "use strict";
     document.getElementById("thetable").style.display = "block";
     document.getElementById("showcodelnk").style.display = "none";
 }
@@ -111,107 +117,90 @@ func ShowLangTextForm(w http.ResponseWriter, errorList map[string]string, userIn
 	}
 	fmt.Fprint(w, `
             Text:<br /> 
-            <textarea name="langtocvt" id="langtocvt" type="text" cols="80" rows="5" onkeypress="advanceOnReturn(event);" />`+htmlize(userInput["langtocvt"])+`</textarea>
+            <div id="txtplace">
+            <input name="langtocvt" id="langtocvt" type="text" onkeypress="advanceOnReturn(event);" value="`+htmlize(userInput["langtocvt"])+`" />
+            </div>
             <br />
             <a id="showcodelnk" href="javascript:showcodes();">Show codes</a>
             <div id="thetable" style="display: none;">
 
-
 <table>
 
-<tr><td align="right"> <span class="gives">&#224;</span> </td><td> <span class="utyp">`+"``"+`a</span> </td></tr>
-<tr><td align="right"> <span class="gives">&#224;</span> </td><td> <span class="utyp">,,a</span> </td></tr>
+<tr><td align="right"> <span class="gives">&#224;</span> </td><td> <span class="utyp">`+"``"+`a &nbsp; ,,a</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#225;</span> </td><td> <span class="utyp">''a</span> </td></tr>
-<tr><td align="right"> <span class="gives">&#226;</span> </td><td> <span class="utyp">^^a</span> </td></tr>
-<tr><td align="right"> <span class="gives">&#226;</span> </td><td> <span class="utyp">&lt;&lt;a</span> </td></tr>
+<tr><td align="right"> <span class="gives">&#226;</span> </td><td> <span class="utyp">^^a &nbsp; &lt;&lt;a</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#227;</span> </td><td> <span class="utyp">~~a</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#228;</span> </td><td> <span class="utyp">""a</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#229;</span> </td><td> <span class="utyp">oOoa</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#230;</span> </td><td> <span class="utyp">aaee</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#231;</span> </td><td> <span class="utyp">c//</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#240;</span> </td><td> <span class="utyp">--d--</span> </td></tr>
-<tr><td align="right"> <span class="gives">&#232;</span> </td><td> <span class="utyp">`+"``"+`e</span> </td></tr>
-<tr><td align="right"> <span class="gives">&#232;</span> </td><td> <span class="utyp">,,e</span> </td></tr>
+<tr><td align="right"> <span class="gives">&#232;</span> </td><td> <span class="utyp">`+"``"+`e &nbsp; ,,e</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#233;</span> </td><td> <span class="utyp">''e</span> </td></tr>
-<tr><td align="right"> <span class="gives">&#234;</span> </td><td> <span class="utyp">^^e</span> </td></tr>
-<tr><td align="right"> <span class="gives">&#234;</span> </td><td> <span class="utyp">&lt;&lt;e</span> </td></tr>
+<tr><td align="right"> <span class="gives">&#234;</span> </td><td> <span class="utyp">^^e &nbsp; &lt;&lt;e</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#235;</span> </td><td> <span class="utyp">""e</span> </td></tr>
-<tr><td align="right"> <span class="gives">&#236;</span> </td><td> <span class="utyp">`+"``"+`i</span> </td></tr>
-<tr><td align="right"> <span class="gives">&#236;</span> </td><td> <span class="utyp">,,i</span> </td></tr>
+<tr><td align="right"> <span class="gives">&#236;</span> </td><td> <span class="utyp">`+"``"+`i &nbsp; ,,i</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#237;</span> </td><td> <span class="utyp">''i</span> </td></tr>
-<tr><td align="right"> <span class="gives">&#238;</span> </td><td> <span class="utyp">^^i</span> </td></tr>
-<tr><td align="right"> <span class="gives">&#238;</span> </td><td> <span class="utyp">&lt;&lt;i</span> </td></tr>
+<tr><td align="right"> <span class="gives">&#238;</span> </td><td> <span class="utyp">^^i &nbsp; &lt;&lt;i</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#239;</span> </td><td> <span class="utyp">""i</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#241;</span> </td><td> <span class="utyp">~~n</span> </td></tr>
-<tr><td align="right"> <span class="gives">&#242;</span> </td><td> <span class="utyp">`+"``"+`o</span> </td></tr>
-<tr><td align="right"> <span class="gives">&#242;</span> </td><td> <span class="utyp">,,o</span> </td></tr>
+<tr><td align="right"> <span class="gives">&#242;</span> </td><td> <span class="utyp">`+"``"+`o &nbsp; ,,o</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#243;</span> </td><td> <span class="utyp">''o</span> </td></tr>
-<tr><td align="right"> <span class="gives">&#244;</span> </td><td> <span class="utyp">^^o</span> </td></tr>
-<tr><td align="right"> <span class="gives">&#244;</span> </td><td> <span class="utyp">&lt;&lt;o</span> </td></tr>
+<tr><td align="right"> <span class="gives">&#244;</span> </td><td> <span class="utyp">^^o &nbsp; &lt;&lt;o</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#245;</span> </td><td> <span class="utyp">~~o</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#246;</span> </td><td> <span class="utyp">""o</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#248;</span> </td><td> <span class="utyp">/o/</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#339;</span> </td><td> <span class="utyp">ooee</span> </td></tr>
-<tr><td align="right"> <span class="gives">&#249;</span> </td><td> <span class="utyp">`+"``"+`u</span> </td></tr>
-<tr><td align="right"> <span class="gives">&#249;</span> </td><td> <span class="utyp">,,u</span> </td></tr>
+<tr><td align="right"> <span class="gives">&#254;</span> </td><td> <span class="utyp">pppp</span> </td></tr>
+<tr><td align="right"> <span class="gives">&#249;</span> </td><td> <span class="utyp">`+"``"+`u &nbsp; ,,u</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#250;</span> </td><td> <span class="utyp">''u</span> </td></tr>
-<tr><td align="right"> <span class="gives">&#251;</span> </td><td> <span class="utyp">^^u</span> </td></tr>
-<tr><td align="right"> <span class="gives">&#251;</span> </td><td> <span class="utyp">&lt;&lt;u</span> </td></tr>
+<tr><td align="right"> <span class="gives">&#251;</span> </td><td> <span class="utyp">^^u &nbsp; &lt;&lt;u</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#252;</span> </td><td> <span class="utyp">""u</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#253;</span> </td><td> <span class="utyp">''y</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#255;</span> </td><td> <span class="utyp">""y</span> </td></tr>
 
-<tr><td align="right"> <span class="gives">&#192;</span> </td><td> <span class="utyp">`+"``"+`A</span> </td></tr>
-<tr><td align="right"> <span class="gives">&#192;</span> </td><td> <span class="utyp">,,A</span> </td></tr>
+<tr><td align="right"> <span class="gives">&#192;</span> </td><td> <span class="utyp">`+"``"+`A &nbsp; ,,A</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#193;</span> </td><td> <span class="utyp">''A</span> </td></tr>
-<tr><td align="right"> <span class="gives">&#194;</span> </td><td> <span class="utyp">^^A</span> </td></tr>
-<tr><td align="right"> <span class="gives">&#194;</span> </td><td> <span class="utyp">&lt;&lt;A</span> </td></tr>
+<tr><td align="right"> <span class="gives">&#194;</span> </td><td> <span class="utyp">^^A &nbsp; &lt;&lt;A</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#195;</span> </td><td> <span class="utyp">~~A</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#196;</span> </td><td> <span class="utyp">""A</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#197;</span> </td><td> <span class="utyp">oOoA</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#198;</span> </td><td> <span class="utyp">AAEE</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#199;</span> </td><td> <span class="utyp">C//</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#208;</span> </td><td> <span class="utyp">--D-</span> </td></tr>
-<tr><td align="right"> <span class="gives">&#200;</span> </td><td> <span class="utyp">`+"``"+`E</span> </td></tr>
-<tr><td align="right"> <span class="gives">&#200;</span> </td><td> <span class="utyp">,,E</span> </td></tr>
+<tr><td align="right"> <span class="gives">&#200;</span> </td><td> <span class="utyp">`+"``"+`E &nbsp; ,,E</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#201;</span> </td><td> <span class="utyp">''E</span> </td></tr>
-<tr><td align="right"> <span class="gives">&#202;</span> </td><td> <span class="utyp">^^E</span> </td></tr>
-<tr><td align="right"> <span class="gives">&#202;</span> </td><td> <span class="utyp">&lt;&lt;E</span> </td></tr>
+<tr><td align="right"> <span class="gives">&#202;</span> </td><td> <span class="utyp">^^E &nbsp; &lt;&lt;E</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#203;</span> </td><td> <span class="utyp">""E</span> </td></tr>
-<tr><td align="right"> <span class="gives">&#204;</span> </td><td> <span class="utyp">`+"``"+`I</span> </td></tr>
-<tr><td align="right"> <span class="gives">&#204;</span> </td><td> <span class="utyp">,,I</span> </td></tr>
+<tr><td align="right"> <span class="gives">&#204;</span> </td><td> <span class="utyp">`+"``"+`I &nbsp; ,,I</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#205;</span> </td><td> <span class="utyp">''I</span> </td></tr>
-<tr><td align="right"> <span class="gives">&#206;</span> </td><td> <span class="utyp">^^I</span> </td></tr>
-<tr><td align="right"> <span class="gives">&#206;</span> </td><td> <span class="utyp">&lt;&lt;I</span> </td></tr>
+<tr><td align="right"> <span class="gives">&#206;</span> </td><td> <span class="utyp">^^I &nbsp; &lt;&lt;I</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#207;</span> </td><td> <span class="utyp">""I</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#209;</span> </td><td> <span class="utyp">~~N</span> </td></tr>
-<tr><td align="right"> <span class="gives">&#210;</span> </td><td> <span class="utyp">`+"``"+`O</span> </td></tr>
-<tr><td align="right"> <span class="gives">&#210;</span> </td><td> <span class="utyp">,,O</span> </td></tr>
+<tr><td align="right"> <span class="gives">&#210;</span> </td><td> <span class="utyp">`+"``"+`O &nbsp; ,,O</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#211;</span> </td><td> <span class="utyp">''O</span> </td></tr>
-<tr><td align="right"> <span class="gives">&#212;</span> </td><td> <span class="utyp">^^O</span> </td></tr>
-<tr><td align="right"> <span class="gives">&#212;</span> </td><td> <span class="utyp">&lt;&lt;O</span> </td></tr>
+<tr><td align="right"> <span class="gives">&#212;</span> </td><td> <span class="utyp">^^O &nbsp; &lt;&lt;O</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#213;</span> </td><td> <span class="utyp">~~O</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#214;</span> </td><td> <span class="utyp">""O</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#216;</span> </td><td> <span class="utyp">/O/</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#338;</span> </td><td> <span class="utyp">OOEE</span> </td></tr>
-<tr><td align="right"> <span class="gives">&#217;</span> </td><td> <span class="utyp">`+"``"+`U</span> </td></tr>
-<tr><td align="right"> <span class="gives">&#217;</span> </td><td> <span class="utyp">,,U</span> </td></tr>
+<tr><td align="right"> <span class="gives">&#222;</span> </td><td> <span class="utyp">PPPP</span> </td></tr>
+<tr><td align="right"> <span class="gives">&#223;</span> </td><td> <span class="utyp">ssss</span> </td></tr>
+<tr><td align="right"> <span class="gives">&#217;</span> </td><td> <span class="utyp">`+"``"+`U &nbsp; ,,U</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#218;</span> </td><td> <span class="utyp">''U</span> </td></tr>
-<tr><td align="right"> <span class="gives">&#219;</span> </td><td> <span class="utyp">^^U</span> </td></tr>
-<tr><td align="right"> <span class="gives">&#219;</span> </td><td> <span class="utyp">&lt;&lt;U</span> </td></tr>
+<tr><td align="right"> <span class="gives">&#219;</span> </td><td> <span class="utyp">^^U &nbsp; &lt;&lt;U</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#220;</span> </td><td> <span class="utyp">""U</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#221;</span> </td><td> <span class="utyp">''Y</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#376;</span> </td><td> <span class="utyp">""Y</span> </td></tr>
-<tr><td align="right"> <span class="gives">&#222;</span> </td><td> <span class="utyp">PPPP</span> </td></tr>
-<tr><td align="right"> <span class="gives">&#223;</span> </td><td> <span class="utyp">ssss</span> </td></tr>
 
-<tr><td align="right"> <span class="gives">&#254;</span> </td><td> <span class="utyp">pppp</span> </td></tr>
 
+<tr><td align="right"> <span class="gives">&#171;</span> </td><td> <span class="utyp">&lt;&lt;&lt;</span> </td></tr>
+<tr><td align="right"> <span class="gives">&#187;</span> </td><td> <span class="utyp">&gt;&gt;&gt;</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#161;</span> </td><td> <span class="utyp">!!!</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#191;</span> </td><td> <span class="utyp">???</span> </td></tr>
 
-<tr><td align="right"> <span class="gives">&#352;</span> </td><td> <span class="utyp">^vSv^</span> </td></tr>
-<tr><td align="right"> <span class="gives">&#353;</span> </td><td> <span class="utyp">^vsv^</span> </td></tr>
+<tr><td align="right"> <span class="gives">&#352;</span> </td><td> <span class="utyp">^vSv</span> </td></tr>
+<tr><td align="right"> <span class="gives">&#353;</span> </td><td> <span class="utyp">^vsv</span> </td></tr>
 
 <tr><td align="right"> <span class="gives">&#215;</span> </td><td> <span class="utyp">\times</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#247;</span> </td><td> <span class="utyp">\div</span> </td></tr>
@@ -282,7 +271,6 @@ func ShowLangTextForm(w http.ResponseWriter, errorList map[string]string, userIn
 <tr><td align="right"> <span class="gives">&#168;</span> </td><td> <span class="utyp">\umlaut</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#169;</span> </td><td> <span class="utyp">\copy</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#170;</span> </td><td> <span class="utyp">\ordf</span> </td></tr>
-<tr><td align="right"> <span class="gives">&#171;</span> </td><td> <span class="utyp">&lt;&lt;&lt;</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#172;</span> </td><td> <span class="utyp">\not</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#173;</span> </td><td> <span class="utyp">\shy</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#174;</span> </td><td> <span class="utyp">\reg</span> </td></tr>
@@ -298,7 +286,6 @@ func ShowLangTextForm(w http.ResponseWriter, errorList map[string]string, userIn
 <tr><td align="right"> <span class="gives">&#184;</span> </td><td> <span class="utyp">\cdil</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#185;</span> </td><td> <span class="utyp">\sup1</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#186;</span> </td><td> <span class="utyp">\ordm</span> </td></tr>
-<tr><td align="right"> <span class="gives">&#187;</span> </td><td> <span class="utyp">&gt;&gt;&gt;</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#188;</span> </td><td> <span class="utyp">\frac14</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#189;</span> </td><td> <span class="utyp">\frac12</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#190;</span> </td><td> <span class="utyp">\frac34</span> </td></tr>
@@ -399,4 +386,5 @@ func ShowLangTextForm(w http.ResponseWriter, errorList map[string]string, userIn
 
 `)
 	// <input name="submit" id="submit" type="submit" /><br />
+	// <textarea name="langtocvt" id="langtocvt" type="text" cols="80" rows="5" onkeypress="advanceOnReturn(event);" />`+htmlize(userInput["langtocvt"])+`</textarea>
 }
