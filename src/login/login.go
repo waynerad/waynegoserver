@@ -26,7 +26,31 @@ func getDoctype() string {
 	return `<!DOCTYPE html>
 <html>
 <head>
-<meta charset=utf-8 />
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta http-equiv="X-UA-Compatible" content="ie=edge" />
+`
+}
+
+func getStyle() string {
+	return `<style>
+body {
+    font-size: 1.1em;
+    font-family: helvetica;
+}
+#header {
+    background-color: #FFEFE0;
+}
+#footer {
+    background-color: #FFEFE0;
+}
+
+h1 {
+    color: #550000;
+}
+
+</style>
+
 `
 }
 
@@ -404,7 +428,7 @@ func editAccount(w http.ResponseWriter, r *http.Request, operation string, newAc
 			}
 			fmt.Fprintln(w, "</ul>")
 		}
-		fmt.Fprint(w, getDoctype())
+		fmt.Fprint(w, getDoctype()+getStyle())
 		fmt.Fprint(w, "<title>")
 		if userid == 0 {
 			fmt.Fprint(w, "Add")
@@ -446,7 +470,7 @@ func editAccount(w http.ResponseWriter, r *http.Request, operation string, newAc
 </table>
 <p><input name="submit" id="submit" type="submit" />
 </form>
-</body></html`)
+</body></html>`)
 		// <tr><td> Salt </td><td> <input name="salt" id="salt" type="text" value="`+html.EscapeString(uiFrm.salt)+`" style="width:400px;" /> </td></tr>
 	}
 }
@@ -455,7 +479,7 @@ func listAccounts(w http.ResponseWriter, r *http.Request, operation string) {
 	var sql string
 	header := w.Header()
 	header.Set("Content-Type", "text/html; charset=utf-8")
-	fmt.Fprint(w, getDoctype())
+	fmt.Fprint(w, getDoctype()+getStyle())
 	fmt.Fprint(w, `<title>List Of Accounts</title>
 </head>
 <body>
@@ -674,7 +698,7 @@ func doLogin(w http.ResponseWriter, r *http.Request, operation string) {
 	if showform {
 		header := w.Header()
 		header.Set("Content-Type", "text/html; charset=utf-8")
-		fmt.Fprint(w, getDoctype())
+		fmt.Fprint(w, getDoctype()+getStyle())
 		fmt.Fprint(w, `<title>Login</title>
 </head><body>
   <section>
@@ -708,7 +732,7 @@ func deleteAccount(w http.ResponseWriter, r *http.Request, operation string) {
 }
 
 func showPrograms(w http.ResponseWriter) {
-	fmt.Fprint(w, getDoctype())
+	fmt.Fprint(w, getDoctype()+getStyle())
 	fmt.Fprint(w, `<title> Programs on this server</title>
 </head><body>
   <section>
@@ -718,6 +742,7 @@ func showPrograms(w http.ResponseWriter) {
         <li><a href="../links/add">Links</a></li>
         <li><a href="../calcron/list">Calcron Chimes</a></li>
         <li><a href="../fitb/listtopics">FITB</a></li>
+        <li><a href="../waynetype/waynetype">WayneType</a></li>
         <li><a href="../georand/list">Georand</a></li>
         <li><a href="../umt/umt">UMT</a></li>
         <li><a href="../nback/nback.html">NBACK</a></li>
@@ -730,7 +755,7 @@ func showPrograms(w http.ResponseWriter) {
 }
 
 func showLogoutAll(w http.ResponseWriter) {
-	fmt.Fprint(w, getDoctype())
+	fmt.Fprint(w, getDoctype()+getStyle())
 	db := accessdb.GetDbConnection()
 	stmt, err := db.Prepare("TRUNCATE FROM login_session;")
 	if err != nil {
