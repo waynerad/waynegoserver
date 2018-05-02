@@ -21,17 +21,39 @@ func getDoctype() string {
 	return `<!DOCTYPE html>
 <html>
 <head>
-<meta charset=utf-8 />
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta http-equiv="X-UA-Compatible" content="ie=edge" />
 `
 }
 
 func getStyle() string {
 	return `
 <style>
+
 body {
-	font-family: "Trebuchet MS", "Helvetica", "Arial",  "Verdana", "sans-serif";
-	font-size: 80%;
+    font-size: 1.1em;
+    font-family: helvetica;
 }
+#header {
+    background-color: #FFEFE0;
+}
+#footer {
+    background-color: #FFEFE0;
+}
+
+h1 {
+    color: #550000;
+}
+
+.infield {
+    font-size: 1.1em;
+}
+
+.biginput {
+    font-size: 1.1em;
+}
+
 </style>
 `
 }
@@ -255,7 +277,7 @@ func showEditTopicPage(w http.ResponseWriter, r *http.Request, op string, userid
 <tr><td align="right"> Name: </td><td> <input class="biginput" name="name" id="name" type="text" value="`+html.EscapeString(ui.name)+`" /> </td></tr>
 <tr><td align="right"> Description: </td><td> <input class="biginput" name="description" id="description" type="text" value="`+html.EscapeString(ui.description)+`" /> </td></tr>
 <tr><td align="right"> Introduction (HTML): </td><td> <input class="biginput" name="introduction" id="introduction" type="text" value="`+html.EscapeString(ui.introduction)+`" /> </td></tr>
-<tr><td colspan="2" align="center"> <input type="submit"> </td></tr>
+<tr><td colspan="2" align="center"> <input class="infield" type="submit"> </td></tr>
 </table>
 </form>
   </section>
@@ -681,7 +703,7 @@ func showEditChapterPage(w http.ResponseWriter, r *http.Request, op string, user
 		fmt.Fprint(w, `
 <table border="0" cellpadding="4">
 <tr><td align="right"> Name: </td><td> <input class="biginput" name="name" id="name" type="text" value="`+html.EscapeString(ui.name)+`" /> </td></tr>
-<tr><td colspan="2" align="center"> <input type="submit"> </td></tr>
+<tr><td colspan="2" align="center"> <input class="infield" type="submit"> </td></tr>
 </table>
 </form>
   </section>
@@ -1367,7 +1389,7 @@ func showBulkEditQuestionsPage(w http.ResponseWriter, r *http.Request, op string
 		lstChapt = 0
 		for count, currentQuest := range allQuests {
 			fmt.Fprint(w, `
-<tr><td> <input type="hidden" name="id`+intToStr(count)+`" id="id" value="`+uint64ToStr(currentQuest.idQuestion)+`" /><input type="text" name="seq`+intToStr(count)+`" id="seq`+intToStr(count)+`" value="`+int64ToStr(currentQuest.seqNum)+`" /> </td><td> <select name="chapter`+intToStr(count)+`" id="chapter`+intToStr(count)+`">
+<tr><td> <input type="hidden" name="id`+intToStr(count)+`" id="id" value="`+uint64ToStr(currentQuest.idQuestion)+`" /><input class="infield" type="text" name="seq`+intToStr(count)+`" id="seq`+intToStr(count)+`" value="`+int64ToStr(currentQuest.seqNum)+`" /> </td><td> <select name="chapter`+intToStr(count)+`" id="chapter`+intToStr(count)+`">
 `)
 			for _, currentChapt := range allChapters {
 				fmt.Fprint(w, `<option value="`+uint64ToStr(currentChapt.idChapter)+`"`)
@@ -1376,7 +1398,7 @@ func showBulkEditQuestionsPage(w http.ResponseWriter, r *http.Request, op string
 				}
 				fmt.Fprint(w, `>`+htmlize(currentChapt.name)+`</option>`)
 			}
-			fmt.Fprint(w, `</select> </td><td> <input type="text" name="quest`+intToStr(count)+`" id="quest`+intToStr(count)+`" value="`+htmlize(currentQuest.theFitbStr)+`" /> </td><td align="right"> `+floatToStr(currentQuest.lnum)+` </td></tr>
+			fmt.Fprint(w, `</select> </td><td> <input class="infield" type="text" name="quest`+intToStr(count)+`" id="quest`+intToStr(count)+`" value="`+htmlize(currentQuest.theFitbStr)+`" /> </td><td align="right"> `+floatToStr(currentQuest.lnum)+` </td></tr>
 `)
 			last = count // to get this var out of the loop
 			if currentQuest.seqNum > maxSeq {
@@ -1389,7 +1411,7 @@ func showBulkEditQuestionsPage(w http.ResponseWriter, r *http.Request, op string
 			count := last + i
 			currentSeqNum := maxSeq + (10 * int64(i+1))
 			fmt.Fprint(w, `
-<tr><td> <input type="hidden" name="id`+intToStr(count)+`" id="id" value="0" /><input type="text" name="seq`+intToStr(count)+`" id="seq`+intToStr(count)+`" value="`+int64ToStr(currentSeqNum)+`" /> </td><td> <select name="chapter`+intToStr(count)+`" id="chapter`+intToStr(count)+`">
+<tr><td> <input type="hidden" name="id`+intToStr(count)+`" id="id" value="0" /><input class="infield" type="text" name="seq`+intToStr(count)+`" id="seq`+intToStr(count)+`" value="`+int64ToStr(currentSeqNum)+`" /> </td><td> <select name="chapter`+intToStr(count)+`" id="chapter`+intToStr(count)+`">
 `)
 			for _, currentChapt := range allChapters {
 				fmt.Fprint(w, `<option value="`+uint64ToStr(currentChapt.idChapter)+`"`)
@@ -1398,11 +1420,11 @@ func showBulkEditQuestionsPage(w http.ResponseWriter, r *http.Request, op string
 				}
 				fmt.Fprint(w, `>`+htmlize(currentChapt.name)+`</option>`)
 			}
-			fmt.Fprint(w, `</select> </td><td> <input type="text" name="quest`+intToStr(count)+`" id="quest`+intToStr(count)+`" value="" /> </td><td> &nbsp; </td> </tr>
+			fmt.Fprint(w, `</select> </td><td> <input class="infield" type="text" name="quest`+intToStr(count)+`" id="quest`+intToStr(count)+`" value="" /> </td><td> &nbsp; </td> </tr>
 `)
 		}
 		fmt.Fprint(w, `
-<tr><td colspan="3" align="center"> <input type="submit"> </td></tr>
+<tr><td colspan="3" align="center"> <input class="infield" type="submit"> </td></tr>
 </table>
 </form>
   </section>
@@ -1789,7 +1811,7 @@ func showAddBulkQuestionsPage(w http.ResponseWriter, r *http.Request, op string,
 		fmt.Fprint(w, `
 </select></p>
 <p><textarea name="bulkadditions" id="bulkadditions" rows="50" cols="80"></textarea></p>
-<p><input type="submit" /></p>
+<p><input class="infield" type="submit" /></p>
 </form>
   </section>
 </body>
@@ -2013,7 +2035,7 @@ func showEditQuestionPage(w http.ResponseWriter, r *http.Request, op string, use
 </table>
 `)
 		fmt.Fprint(w, `
-<tr><td colspan="2" align="center"> <input type="submit"> </td></tr>
+<tr><td colspan="2" align="center"> <input class="infield" type="submit"> </td></tr>
 </table>
 </form>
   </section>
@@ -2207,7 +2229,7 @@ func showDeleteQuestionPage(w http.ResponseWriter, r *http.Request, op string, u
 	<p>`+htmlize(theFitbStr)+`</p>
 `)
 		fmt.Fprint(w, `
-<tr><td colspan="2" align="center"> <input type="submit" value="Delete"> </td></tr>
+<tr><td colspan="2" align="center"> <input class="infield" type="submit" value="Delete"> </td></tr>
 </table>
 </form>
   </section>
@@ -2470,7 +2492,7 @@ func showInitializePage(w http.ResponseWriter, r *http.Request, op string, useri
 <input type="hidden" name="questionjct" value="0" />
 <input type="hidden" name="response0" value="" />
 <p>`+topicIntroduction+`</p>
-<p><input type="submit" value="`+buttonFace+`" />
+<p><input class="infield" type="submit" value="`+buttonFace+`" />
 </form>
   </section>
 </body>
@@ -2621,13 +2643,22 @@ func getCountFromSQLForUserTopicAndTime(db mysql.Conn, sql string, userid uint64
 }
 
 func genProgressMessage(db mysql.Conn, userid uint64, topicid uint64, currentTime uint64) string {
-	sql := "SELECT COUNT(*) FROM fitb_user_question_jct WHERE (id_user = ?) AND (id_topic = ?) AND (ask_time_gmt < 1474838209);" // the time code here is the moment the program first went live
-	notStarted := getCountFromSQLForUserTopicAndTime(db, sql, userid, topicid, currentTime, false)
-	sql = "SELECT COUNT(*) FROM fitb_user_question_jct WHERE (id_user = ?) AND (id_topic = ?) AND (ask_time_gmt > 1474838209) AND (ask_time_gmt < ?);"
-	needToBeReviewed := getCountFromSQLForUserTopicAndTime(db, sql, userid, topicid, currentTime, true)
-	sql = "SELECT COUNT(*) FROM fitb_user_question_jct WHERE (id_user = ?) AND (id_topic = ?) AND (ask_time_gmt > ?);"
-	learned := getCountFromSQLForUserTopicAndTime(db, sql, userid, topicid, currentTime, true)
-	return intToStr(learned) + " learned, " + intToStr(needToBeReviewed) + " need to be reviewed, " + intToStr(notStarted) + " not started.<br />" + floatToStr(float64(learned*100)/float64(learned+needToBeReviewed)) + "% of started entries learned, " + floatToStr(float64(learned*100)/float64(learned+needToBeReviewed+notStarted)) + "% of total entries learned."
+	original := false
+	if original {
+		sql := "SELECT COUNT(*) FROM fitb_user_question_jct WHERE (id_user = ?) AND (id_topic = ?) AND (ask_time_gmt < 1474838209);" // the time code here is the moment the program first went live
+		notStarted := getCountFromSQLForUserTopicAndTime(db, sql, userid, topicid, currentTime, false)
+		sql = "SELECT COUNT(*) FROM fitb_user_question_jct WHERE (id_user = ?) AND (id_topic = ?) AND (ask_time_gmt > 1474838209) AND (ask_time_gmt < ?);"
+		needToBeReviewed := getCountFromSQLForUserTopicAndTime(db, sql, userid, topicid, currentTime, true)
+		sql = "SELECT COUNT(*) FROM fitb_user_question_jct WHERE (id_user = ?) AND (id_topic = ?) AND (ask_time_gmt > ?);"
+		learned := getCountFromSQLForUserTopicAndTime(db, sql, userid, topicid, currentTime, true)
+		return intToStr(learned) + " learned, " + intToStr(needToBeReviewed) + " need to be reviewed, " + intToStr(notStarted) + " not started.<br />" + floatToStr(float64(learned*100)/float64(learned+needToBeReviewed)) + "% of started entries learned, " + floatToStr(float64(learned*100)/float64(learned+needToBeReviewed+notStarted)) + "% of total entries learned."
+	} else {
+		sql := "SELECT COUNT(*) FROM fitb_user_question_jct WHERE (id_user = ?) AND (id_topic = ?) AND (ask_time_gmt < ?);"
+		notLearned := getCountFromSQLForUserTopicAndTime(db, sql, userid, topicid, currentTime, true)
+		sql = "SELECT COUNT(*) FROM fitb_user_question_jct WHERE (id_user = ?) AND (id_topic = ?) AND (ask_time_gmt > ?);"
+		learned := getCountFromSQLForUserTopicAndTime(db, sql, userid, topicid, currentTime, true)
+		return floatToStr(float64(learned*100)/float64(learned+notLearned)) + "%"
+	}
 }
 
 func showAskQuestionPage(w http.ResponseWriter, r *http.Request, op string, userid uint64, userName string) {
@@ -2848,7 +2879,7 @@ func showAskQuestionPage(w http.ResponseWriter, r *http.Request, op string, user
     <p>Come back in `+inEnglish+`.</p>
 <form action="quiz" name="frmQuiz" id="frmQuiz" method="post">
 <input type="hidden" name="topic" value="`+uint64ToStr(topicid)+`" />
-<input type="submit" value="Resume" />
+<input class="infield" type="submit" value="Resume" />
 </form>
   </section>
 </body>
@@ -2905,7 +2936,7 @@ function advanceOnReturn(ev, num) {
 						responseMap[idx] = ""
 					}
 					ixAsStr := intToStr(idx)
-					io.WriteString(w, `<input name="response`+ixAsStr+`" id="response`+ixAsStr+`" value="`+responseMap[idx]+`" onkeypress="advanceOnReturn(event, `+ixAsStr+`);" />`)
+					io.WriteString(w, `<input class="infield" name="response`+ixAsStr+`" id="response`+ixAsStr+`" value="`+responseMap[idx]+`" onkeypress="advanceOnReturn(event, `+ixAsStr+`);" />`)
 				}
 				inClear = !inClear
 			}
