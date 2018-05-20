@@ -1740,6 +1740,10 @@ function chimesConvertOurStringToTimeCode(datestr) {
 function chimesExecParseAndSet() {
     "use strict";
     var datestr, thetime, addMinutes;
+    if (!gChimesData.hasOwnProperty("globalCtx")) {
+        console.log("point 1744");
+        gChimesData = {SAMPLERATE: 44100, TAU: Math.PI * 2, LOG2: Math.log(2), globalCtx: chimesGetAudioContext(), cachedNotes: {}, timerGoing: false, lastXl: 0, lastMoment: 0, lastSecs: 0 };
+    }
     datestr = document.getElementById("as_text").value;
     // thetime = Date.parse(datestr) + `+timeZoneClientSideAdjustNum+`;
     thetime = chimesConvertOurStringToTimeCode(datestr) + `+timeZoneClientSideAdjustNum+`;
@@ -1775,16 +1779,12 @@ function chimesExecUseTimeNow() {
 
 // main
 
-gChimesData = {SAMPLERATE: 44100, TAU: Math.PI * 2, LOG2: Math.log(2), globalCtx: chimesGetAudioContext(), cachedNotes: {}, timerGoing: false, lastXl: 0, lastMoment: 0, lastSecs: 0 };
+// gChimesData = {SAMPLERATE: 44100, TAU: Math.PI * 2, LOG2: Math.log(2), globalCtx: chimesGetAudioContext(), cachedNotes: {}, timerGoing: false, lastXl: 0, lastMoment: 0, lastSecs: 0 };
+gChimesData = {}
 
 jQuery(function () {
     "use strict";
-    // var curtim;
-    // curtim = new Date(); // year, month [, day, hour, minute, second, millisecond]);
-    // curtim.setTime(curtim.getTime() - `+timeZoneClientSideAdjustNum+`);
-    // document.getElementById("next_event").value = curtim.getTime();
-    // document.getElementById("as_text").value = curtim.toISOString();
-    chimesExecParseAndSet();
+    // chimesExecParseAndSet();
 });
 
 </script>
