@@ -368,15 +368,16 @@ func showTopicPickListPage(w http.ResponseWriter, r *http.Request, op string, us
 		idTopic uint64
 		name    string
 	}
+	currentTime := uint64(time.Now().Unix())
 	header := w.Header()
 	header.Set("Content-Type", "text/html; charset=utf-8")
 	fmt.Fprint(w, getDoctype())
-	fmt.Fprint(w, `<title>Pick Topic</title>
+	fmt.Fprint(w, `<title>Your topics</title>
 `+getStyle()+`
 </head>
 <body>
   <section>
-    <h1>Pick Topic</h1>
+    <h1>Your topics</h1>
 `)
 	db := accessdb.GetDbConnection()
 	defer db.Close()
@@ -385,7 +386,8 @@ func showTopicPickListPage(w http.ResponseWriter, r *http.Request, op string, us
 		fmt.Fprintln(w, err)
 		return
 	}
-	sql = "SELECT id_topic, name FROM fitb_topic WHERE (id_user = ?) ORDER BY id_topic ;"
+	// sql = "SELECT id_topic, name FROM fitb_topic WHERE (id_user = ?) ORDER BY id_topic ;"
+	sql = "SELECT fitb_topic.id_topic, fitb_topic.name FROM fitb_user_topic_jct, fitb_topic WHERE (fitb_user_topic_jct.id_user = ?) AND (fitb_user_topic_jct.id_topic = fitb_topic.id_topic) ORDER BY fitb_topic.id_topic;"
 	sel, err := db.Prepare(sql)
 	if err != nil {
 		fmt.Println(err)
@@ -406,16 +408,18 @@ func showTopicPickListPage(w http.ResponseWriter, r *http.Request, op string, us
 			fmt.Fprint(w, `<form><table border="0" > <tr> <th> Name </th></tr>`)
 			started = true
 		}
+		count++
 		backgroundColor := " style=\"background-color: #FFFFFF;\""
 		if (count & 1) == 1 {
 			backgroundColor = " style=\"background-color: #E8F0E8;\""
 		}
-		fmt.Fprint(w, "<tr "+backgroundColor+"><td> <a href="+`"practice?topic=`+uint64ToStr(topic.idTopic)+`">`+html.EscapeString(topic.name)+"</a> </td>")
+		progress := genProgressMessage(db, userid, topic.idTopic, currentTime)
+		fmt.Fprint(w, "<tr "+backgroundColor+"><td> <a href="+`"initialize?topic=`+uint64ToStr(topic.idTopic)+`">`+html.EscapeString(topic.name)+"</a> </td><td> "+progress+" </td>")
 		fmt.Fprint(w, `</tr>
 `)
 	}
 	if started {
-		fmt.Fprint(w, `</table>
+		fmt.Fprint(w, `</table border="1">
 `)
 	}
 	fmt.Fprint(w, `
@@ -1150,6 +1154,18 @@ func calculateLnum(str string) float64 {
 			if char == 192 {
 				// capital A`
 				l = 351 // lower case + 200 for the shift
+			}
+			if char == 252 {
+				// "u  (umlauted u) (for Spanish)
+				l = 204.605511 // lower case + 200 for the shift
+			}
+			if char == 243 {
+				// 'o  (accented o) (for Spanish)
+				l = 201.692021 // lower case + 200 for the shift
+			}
+			if char == 237 {
+				// 'i  (accented i) (for Spanish)
+				l = 201.823428 // lower case + 200 for the shift
 			}
 			if inAnswer {
 				if l == 0.0 {
@@ -2657,6 +2673,9 @@ func genProgressMessage(db mysql.Conn, userid uint64, topicid uint64, currentTim
 		notLearned := getCountFromSQLForUserTopicAndTime(db, sql, userid, topicid, currentTime, true)
 		sql = "SELECT COUNT(*) FROM fitb_user_question_jct WHERE (id_user = ?) AND (id_topic = ?) AND (ask_time_gmt > ?);"
 		learned := getCountFromSQLForUserTopicAndTime(db, sql, userid, topicid, currentTime, true)
+		if (learned + notLearned) == 0 {
+			return ""
+		}
 		return floatToStr(float64(learned*100)/float64(learned+notLearned)) + "%"
 	}
 }
@@ -2984,7 +3003,6 @@ func Handler(w http.ResponseWriter, r *http.Request, op string, userid uint64, u
 		if userid == 1 {
 			showAddBulkQuestionsPage(w, r, op, userid, userName)
 		}
-
 	case op == "editquestion":
 		if userid == 1 {
 			showEditQuestionPage(w, r, op, userid, userName)
