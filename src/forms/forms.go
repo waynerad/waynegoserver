@@ -47,7 +47,7 @@ func GetUserInput(r *http.Request) map[string]string {
 	return rv
 }
 
-func HandleForm(formObject SimpleWebForm, w http.ResponseWriter, r *http.Request, op string, userInfo *login.UserInformationRecord) {
+func HandleStandaloneForm(formObject SimpleWebForm, w http.ResponseWriter, r *http.Request, op string, userInfo *login.UserInformationRecord, redirectTarget string) {
 	showform := false
 	errorList := make(map[string]string)
 	errorOccurred := false
@@ -83,6 +83,7 @@ func HandleForm(formObject SimpleWebForm, w http.ResponseWriter, r *http.Request
 			showform = true
 		} else {
 			_ = formObject.SaveForm(dbConn, userInfo, userInput, alreadyProcessed)
+			http.Redirect(w, r, redirectTarget, 302)
 		}
 	}
 	if showform {
