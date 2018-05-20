@@ -258,7 +258,7 @@ func constructReplaceMap() []replaceEntry {
 	replaceMap[197] = mkReplaceEntry(backslash+"weierp", 8472)
 	replaceMap[198] = mkReplaceEntry(backslash+"real", 8476)
 	replaceMap[199] = mkReplaceEntry(backslash+"trade", 8482)
-	replaceMap[200] = mkReplaceEntry(backslash+"alefsym", 8501)
+	replaceMap[200] = mkReplaceEntry(backslash+"aleph", 8501)
 
 	replaceMap[201] = mkReplaceEntry(backslash+"leftarrow", 8592)
 	replaceMap[202] = mkReplaceEntry(backslash+"uparrow", 8593)
@@ -317,11 +317,11 @@ func constructReplaceMap() []replaceEntry {
 	replaceMap[253] = mkReplaceEntry(backslash+"rfloor", 8971)
 	replaceMap[254] = mkReplaceEntry(backslash+"lang", 9001)
 	replaceMap[255] = mkReplaceEntry(backslash+"rang", 9002)
-	replaceMap[256] = mkReplaceEntry(backslash+"diamond", 9674)
-	replaceMap[257] = mkReplaceEntry(backslash+"spadessuit", 9824)
-	replaceMap[258] = mkReplaceEntry(backslash+"clubssuit", 9827)
-	replaceMap[259] = mkReplaceEntry(backslash+"heartssuit", 9829)
-	replaceMap[260] = mkReplaceEntry(backslash+"diamondssuit", 9830)
+	replaceMap[256] = mkReplaceEntry(backslash+"Diamond", 9674)
+	replaceMap[257] = mkReplaceEntry(backslash+"spadesuit", 9824)
+	replaceMap[258] = mkReplaceEntry(backslash+"clubsuit", 9827)
+	replaceMap[259] = mkReplaceEntry(backslash+"heartsuit", 9829)
+	replaceMap[260] = mkReplaceEntry(backslash+"diamondsuit", 9830)
 	replaceMap[261] = mkReplaceEntry("'''", 0) // special entry to solve L'''e problem
 	return replaceMap
 }
@@ -443,7 +443,7 @@ func makeReplaceTableForUi() string {
 
 func showLangTextForm(w http.ResponseWriter, r *http.Request, op string, userInfo *login.UserInformationRecord, errorList map[string]string, userInput map[string]string, theTable string) {
 	displayInfo := make(map[string]string)
-	displayInfo["hTitle"] = "Lang Type"
+	displayInfo["hTitle"] = "WayneType"
 	displayInfo["hUserName"] = htmlize(userInfo.UserName)
 	displayInfo["kn"] = "0"
 	langtextui.ShowHeadHeader(w, displayInfo)
@@ -491,16 +491,14 @@ func (self *taskEditForm) SaveForm(db mysql.Conn, userInfo *login.UserInformatio
 func showLangTextPage(w http.ResponseWriter, r *http.Request, op string, userInfo *login.UserInformationRecord) {
 	var formObject taskEditForm
 	formObject.objectName = "Task Edit Form"
-	forms.HandleForm(&formObject, w, r, op, userInfo)
+	forms.HandleStandaloneForm(&formObject, w, r, op, userInfo, "http://www.yahoo.com/") // redirect should never happen
 }
 
 func Handler(w http.ResponseWriter, r *http.Request, op string, userInfo *login.UserInformationRecord) {
 	fmt.Println("op is", op)
 	switch {
 	case op == "waynetype":
-		if userInfo.UserId != 0 {
-			showLangTextPage(w, r, op, userInfo)
-		}
+		showLangTextPage(w, r, op, userInfo)
 	default:
 		filename := "/home/ec2-user/wayneserver/staticappcontent/langtext/" + op
 		static.OutputStaticFileWithContentType(w, filename)
