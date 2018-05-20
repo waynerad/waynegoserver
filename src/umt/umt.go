@@ -98,7 +98,7 @@ func mainPage(w http.ResponseWriter, r *http.Request, op string, userid uint64) 
 <script src="mt19937class.js" ></script>
 <script>
 
-// (C) 2011-2016 Wayne Radinsky
+// (C) 2011-2018 Wayne Radinsky
 
 /*jslint browser: true, devel: true, passfail: true */
 /*global MersenneTwister19937 */
@@ -214,7 +214,8 @@ function umtGetAudioContext() {
 }
 
 // WAD has been modified to detect this global variable, and if it exists, use it instead of instantiating its own audio context
-globalAudioContext = umtGetAudioContext();
+// globalAudioContext = umtGetAudioContext();
+globalAudioContext = false; // We had to change this because Chrome will not let us instantiate an AudioContext any more unless in response to a user action
 
 </script>
 <script src="wad.js"></script>
@@ -3364,6 +3365,10 @@ function umtExecTimerPulse() {
 function umtExecAutomaticStart() {
     "use strict";
     var tab;
+    if (typeof globalAudioContext !== 'object') {
+        globalAudioContext = umtGetAudioContext();
+        gUmt.globalCtx = globalAudioContext;
+    }
     if (gUmt.noReenterCompose === false) {
         gUmt.noReenterCompose = true;
         if (gUmt.UIParams.playAllTabs) {
@@ -5364,11 +5369,12 @@ function umtLoadParamset(paramsetid) {
 // main
 
 // calibration and centernote need to be the same
+// globalCtx: umtGetAudioContext(),
 gUmt = {
     TAU: Math.PI * 2,
     LOG2: Math.log(2),
     calibration: 440,
-    globalCtx: umtGetAudioContext(),
+    globalCtx: false,
     globalRng: umtGetRando(0),
     cachedNotes: {},
     cachedWads: {},
