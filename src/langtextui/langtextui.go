@@ -73,6 +73,14 @@ function showcodes() {
     document.getElementById("showcodelnk").style.display = "none";
 }
 
+function flipToMultiLine() {
+    "use strict";
+    var content;
+    content = document.getElementById("langtocvt").value;
+    document.getElementById("txtplace").innerHTML = '<input id="multiline" name="multiline" value="1" type="hidden" /><textarea name="langtocvt" id="langtocvt" type="text" cols="120" rows="20" /></textarea><br /><input name="submit" id="submit" type="submit" />';
+    document.getElementById("langtocvt").value = content;
+}
+
         </script>
 `)
 }
@@ -81,7 +89,13 @@ func ShowBodyHeader(w http.ResponseWriter, displayInfo map[string]string) {
 	fmt.Fprint(w, `
     <body onload="document.getElementById('langtocvt').focus();">
         <div id="header">
-            Hello `+displayInfo["hUserName"]+`!<br />
+`)
+	if displayInfo["hUserName"] != "" {
+		fmt.Fprint(w, "Hello "+displayInfo["hUserName"]+"!<br />")
+	} else {
+		fmt.Fprint(w, "&nbsp;")
+	}
+	fmt.Fprint(w, `
         </div>
 `)
 	// <a href="logout.php?kn=`+displayInfo["kn"]+`" class="btn btn-default">Logout</a><br /><br />
@@ -101,8 +115,13 @@ func htmlize(z string) string {
 }
 
 func ShowLangTextForm(w http.ResponseWriter, errorList map[string]string, userInput map[string]string, displayInfo map[string]string, theTable string) {
+	singleLine := true
+	_, ok := userInput["multiline"]
+	if ok {
+		singleLine = false
+	}
 	fmt.Fprint(w, `
-        <form name="frmLang" id="frmLang" action="waynetype" method="post" onsubmit="return false;">
+        <form name="frmLang" id="frmLang" action="waynetype" method="post" noonsubmit="return false;">
             <h1>Waynetype</h1>
 `)
 	if len(errorList) > 1 {
@@ -118,7 +137,21 @@ func ShowLangTextForm(w http.ResponseWriter, errorList map[string]string, userIn
 	fmt.Fprint(w, `
             Text:<br /> 
             <div id="txtplace">
-            <input name="langtocvt" id="langtocvt" type="text" onkeypress="advanceOnReturn(event);" value="`+htmlize(userInput["langtocvt"])+`" />
+`)
+	if singleLine {
+		fmt.Fprint(w, `<table><tr><td align="right">
+                <input name="langtocvt" id="langtocvt" type="text" onkeypress="advanceOnReturn(event);" value="`+htmlize(userInput["langtocvt"])+`" /><br />
+                <a id="mlflip" href="javascript:flipToMultiLine();">Multi-line</a>
+</td></tr></table>
+`)
+	} else {
+		fmt.Fprint(w, `
+                <input id="multiline" name="multiline" value="1" type="hidden" />
+                <textarea name="langtocvt" id="langtocvt" type="text" cols="120" rows="20" />`+htmlize(userInput["langtocvt"])+`</textarea><br />
+                <input name="submit" id="submit" type="submit" />
+`)
+	}
+	fmt.Fprint(w, `
             </div>
             <br />
             <a id="showcodelnk" href="javascript:showcodes();">Show codes</a>
@@ -193,7 +226,6 @@ func ShowLangTextForm(w http.ResponseWriter, errorList map[string]string, userIn
 <tr><td align="right"> <span class="gives">&#221;</span> </td><td> <span class="utyp">''Y</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#376;</span> </td><td> <span class="utyp">""Y</span> </td></tr>
 
-
 <tr><td align="right"> <span class="gives">&#171;</span> </td><td> <span class="utyp">&lt;&lt;&lt;</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#187;</span> </td><td> <span class="utyp">&gt;&gt;&gt;</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#161;</span> </td><td> <span class="utyp">!!!</span> </td></tr>
@@ -260,8 +292,6 @@ func ShowLangTextForm(w http.ResponseWriter, errorList map[string]string, userIn
 <tr><td align="right"> <span class="gives">&#978;</span> </td><td> <span class="utyp">\upsih</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#982;</span> </td><td> <span class="utyp">\piv</span> </td></tr>
 
-
-
 <tr><td align="right"> <span class="gives">&#162;</span> </td><td> <span class="utyp">\cent</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#163;</span> </td><td> <span class="utyp">\pound</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#164;</span> </td><td> <span class="utyp">\curren</span> </td></tr>
@@ -290,7 +320,6 @@ func ShowLangTextForm(w http.ResponseWriter, errorList map[string]string, userIn
 <tr><td align="right"> <span class="gives">&#189;</span> </td><td> <span class="utyp">\frac12</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#190;</span> </td><td> <span class="utyp">\frac34</span> </td></tr>
 
-
 <tr><td align="right"> <span class="gives">&#8211;</span> </td><td> <span class="utyp">\ndash</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#8212;</span> </td><td> <span class="utyp">\mdash</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#8213;</span> </td><td> <span class="utyp">\horbar</span> </td></tr>
@@ -316,7 +345,7 @@ func ShowLangTextForm(w http.ResponseWriter, errorList map[string]string, userIn
 <tr><td align="right"> <span class="gives">&#8472;</span> </td><td> <span class="utyp">\weierp</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#8476;</span> </td><td> <span class="utyp">\real</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#8482;</span> </td><td> <span class="utyp">\trade</span> </td></tr>
-<tr><td align="right"> <span class="gives">&#8501;</span> </td><td> <span class="utyp">\alefsym</span> </td></tr>
+<tr><td align="right"> <span class="gives">&#8501;</span> </td><td> <span class="utyp">\aleph</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#8592;</span> </td><td> <span class="utyp">\leftarrow</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#8593;</span> </td><td> <span class="utyp">\uparrow</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#8594;</span> </td><td> <span class="utyp">\rightarrow</span> </td></tr>
@@ -372,11 +401,11 @@ func ShowLangTextForm(w http.ResponseWriter, errorList map[string]string, userIn
 <tr><td align="right"> <span class="gives">&#8971;</span> </td><td> <span class="utyp">\rfloor</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#9001;</span> </td><td> <span class="utyp">\lang</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#9002;</span> </td><td> <span class="utyp">\rang</span> </td></tr>
-<tr><td align="right"> <span class="gives">&#9674;</span> </td><td> <span class="utyp">\diamond</span> </td></tr>
-<tr><td align="right"> <span class="gives">&#9824;</span> </td><td> <span class="utyp">\spadessuit</span> </td></tr>
-<tr><td align="right"> <span class="gives">&#9827;</span> </td><td> <span class="utyp">\clubssuit</span> </td></tr>
-<tr><td align="right"> <span class="gives">&#9829;</span> </td><td> <span class="utyp">\heartssuit</span> </td></tr>
-<tr><td align="right"> <span class="gives">&#9830;</span> </td><td> <span class="utyp">\diamondssuit</span> </td></tr>
+<tr><td align="right"> <span class="gives">&#9674;</span> </td><td> <span class="utyp">\Diamond</span> </td></tr>
+<tr><td align="right"> <span class="gives">&#9824;</span> </td><td> <span class="utyp">\spadesuit</span> </td></tr>
+<tr><td align="right"> <span class="gives">&#9827;</span> </td><td> <span class="utyp">\clubsuit</span> </td></tr>
+<tr><td align="right"> <span class="gives">&#9829;</span> </td><td> <span class="utyp">\heartsuit</span> </td></tr>
+<tr><td align="right"> <span class="gives">&#9830;</span> </td><td> <span class="utyp">\diamondsuit</span> </td></tr>
 </table>
 
 `+theTable+`
