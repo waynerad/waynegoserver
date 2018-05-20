@@ -6,6 +6,10 @@ import (
 	"net/http"
 )
 
+func htmlize(z string) string {
+	return html.EscapeString(z)
+}
+
 func ShowHeadHeader(w http.ResponseWriter, displayInfo map[string]string) {
 	header := w.Header()
 	header.Set("Content-Type", "text/html; charset=utf-8")
@@ -19,6 +23,25 @@ func ShowHeadHeader(w http.ResponseWriter, displayInfo map[string]string) {
         <title>`+displayInfo["hTitle"]+`</title>
         <style>
 
+body {
+    font-size: 1.1em;
+    font-family: helvetica;
+}
+#header {
+    background-color: #FFEFE0;
+}
+#footer {
+    background-color: #FFEFE0;
+}
+
+h1 {
+    color: #550000;
+}
+
+.infield {
+    font-size: 1.1em;
+}
+
         </style>
 `)
 }
@@ -26,9 +49,14 @@ func ShowHeadHeader(w http.ResponseWriter, displayInfo map[string]string) {
 func ShowBodyHeader(w http.ResponseWriter, displayInfo map[string]string) {
 	fmt.Fprint(w, `
     <body>
-
-Hello `+displayInfo["hUserName"]+`!<br />
-<a href="logout.php?kn=`+displayInfo["kn"]+`" class="btn btn-default">Logout</a><br /><br />
+        <div id="header">
+            <p><a href="list">List</a>
+                <a href="list?edit=1">Edit</a>
+                <a href="add">Add</a>
+                &middot; `+displayInfo["hUserName"]+` &middot;
+                <a href="logout.php?kn=`+displayInfo["kn"]+`" class="btn btn-default">Logout</a><br />
+            </p>
+        </div>
 `)
 }
 
@@ -39,10 +67,6 @@ func ShowFooter(w http.ResponseWriter, displayInfo map[string]string) {
         </div>
     </body>
 </html>`)
-}
-
-func htmlize(z string) string {
-	return html.EscapeString(z)
 }
 
 func ShowTaskEditForm(w http.ResponseWriter, errorList map[string]string, userInput map[string]string, displayInfo map[string]string) {
@@ -78,10 +102,10 @@ Taks = `+htmlize(userInput["task"])+`
 	fmt.Fprint(w, `
     <div class="row">
         <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12">
-            Title:
+            Name:
         </div>
         <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12">
-            <input name="name" id="name" type="text" value="`+htmlize(userInput["title"])+`" />
+            <input name="name" id="name" type="text" value="`+htmlize(userInput["name"])+`" />
         </div>
     </div>
     <div class="row">
