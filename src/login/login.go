@@ -742,6 +742,7 @@ func showPrograms(w http.ResponseWriter) {
         <li><a href="../links/add">Links</a></li>
         <li><a href="../calcron/list">Calcron Chimes</a></li>
         <li><a href="../fitb/listtopics">FITB</a></li>
+        <li><a href="../streak/tasklist">Streaks</a></li>
         <li><a href="../waynetype/waynetype">WayneType</a></li>
         <li><a href="../georand/list">Georand</a></li>
         <li><a href="../umt/umt">UMT</a></li>
