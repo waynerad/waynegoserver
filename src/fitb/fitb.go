@@ -2307,7 +2307,8 @@ func showRenumberPage(w http.ResponseWriter, r *http.Request, op string, userid 
 			}
 			var questionList []uint64
 			questionList = make([]uint64, 0)
-			sql = "SELECT id_question FROM fitb_question WHERE id_topic = ? ORDER BY lnum;"
+			// sql = "SELECT id_question FROM fitb_question WHERE id_topic = ? ORDER BY id_chapter, lnum;"
+			sql = "SELECT fitb_question.id_question FROM fitb_chapter, fitb_question WHERE (fitb_chapter.id_chapter = fitb_question.id_chapter) AND (fitb_question.id_topic = ?) ORDER BY fitb_chapter.sequence_num, fitb_question.lnum;"
 			sel, err = db.Prepare(sql)
 			if err != nil {
 				fmt.Println(err)
