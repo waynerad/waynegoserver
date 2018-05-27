@@ -16,6 +16,10 @@ func uintToStr(ii uint64) string {
 	return strconv.FormatUint(ii, 10)
 }
 
+func intToStr(ii int) string {
+	return strconv.FormatInt(int64(ii), 10)
+}
+
 func ShowHeadHeader(w http.ResponseWriter, displayInfo map[string]string) {
 	header := w.Header()
 	header.Set("Content-Type", "text/html; charset=utf-8")
@@ -107,6 +111,30 @@ func ShowFooter(w http.ResponseWriter, displayInfo map[string]string) {
 </html>`)
 }
 
+func showErrorList(w http.ResponseWriter, errorList map[string]string) {
+	if len(errorList) == 0 {
+		return
+	}
+	fmt.Fprintln(w, `
+<div class="errorsection">
+    <div class="errtitle">
+        <h1><font color="red">Error occurred</font></h1>
+    </div>
+    <div class="errlist">
+`)
+	for _, errMsg := range errorList {
+		fmt.Fprintln(w, `
+        <div class="errrow">
+            <font color="red">* `+htmlize(errMsg)+`</font>
+        </div>
+`)
+	}
+	fmt.Fprintln(w, `
+    </div>
+</div>
+`)
+}
+
 func ShowTaskEditForm(w http.ResponseWriter, errorList map[string]string, userInput map[string]string, displayInfo map[string]string) {
 	// Taks = `+htmlize(userInput["task"])+`
 	fmt.Fprint(w, `
@@ -115,27 +143,8 @@ func ShowTaskEditForm(w http.ResponseWriter, errorList map[string]string, userIn
 <div class="titlesection">
     <h1>Edit Streak Task</h1>
 </div>
-<div class="errorsection">
 `)
-	if len(errorList) > 0 {
-		fmt.Fprintln(w, `
-    <div class="errtitle">
-        <h1><font color="red">Error occurred</font></h1>
-    </div>
-    <div class="errlist">
-`)
-		for _, errMsg := range errorList {
-			fmt.Fprintln(w, `
-        <div class="errrow">
-            <font color="red">* `+htmlize(errMsg)+`</font>
-        </div>
-`)
-		}
-		fmt.Fprintln(w, `
-    </div>
-</div>
-`)
-	}
+	showErrorList(w, errorList)
 	fmt.Fprint(w, `
 <div class="ourform">
     <div class="ourlabel">
@@ -177,6 +186,7 @@ func ShowStreakTaskList(w http.ResponseWriter, dbDataList streak.TaskListData) {
 `)
 			started = true
 		}
+		count++
 		backgroundColor := " style=\"background-color: #FFFFFF;\""
 		if (count & 1) == 1 {
 			backgroundColor = " style=\"background-color: #E8F0E8;\""
@@ -185,8 +195,8 @@ func ShowStreakTaskList(w http.ResponseWriter, dbDataList streak.TaskListData) {
 		idStr := uintToStr(task.IdTask)
 
 		fmt.Fprint(w, "<tr "+backgroundColor+">")
-		fmt.Fprint(w, "<tr "+backgroundColor+"><td> "+htmlize(task.Name)+" </td><td> "+`<a href="taskedit?task=`+idStr+`">Edit</a> </td>
-	`)
+		fmt.Fprint(w, "<tr "+backgroundColor+"><td> "+htmlize(task.Name)+" </td><td> "+intToStr(task.CycleDays)+"</td><td> "+intToStr(task.CurrentStreakLen)+"</td><td> "+uintToStr(task.TimeRemaining)+" </td><td> "+`<a href="taskedit?task=`+idStr+`">Edit</a> </td><td> <a href="timecheck?task=`+idStr+`">Time Check!</a> </td>
+`)
 		fmt.Fprint(w, `</tr>
 `)
 	}
@@ -199,4 +209,65 @@ func ShowStreakTaskList(w http.ResponseWriter, dbDataList streak.TaskListData) {
   </section>
 </body>
 </html>`)
+}
+
+func ShowTimeCheckForm(w http.ResponseWriter, errorList map[string]string, userInput map[string]string, displayInfo streak.TaskDisplayData) {
+	// Taks = `+htmlize(userInput["task"])+`
+	fmt.Fprint(w, `
+<form action="timecheck" method="post">
+<input type="hidden" name="task" value="`+htmlize(userInput["task"])+`" />
+<div class="titlesection">
+    <h1>Time Check!</h1>
+</div>
+`)
+	showErrorList(w, errorList)
+	fmt.Fprint(w, `
+<div class="ourform">
+
+    <div class="ourlabel">
+        Name:
+    </div>
+    <div class="ourinput">
+	`+htmlize(displayInfo.Name)+`
+    </div>
+
+    <div class="ourlabel">
+        Description:
+    </div>
+    <div class="ourinput">
+	`+htmlize(displayInfo.Description)+`
+    </div>
+
+    <div class="ourlabel">
+        Cycle Days:
+    </div>
+    <div class="ourinput">
+	`+htmlize(intToStr(displayInfo.CycleDays))+`
+    </div>
+
+    <div class="ourlabel">
+        Current Streak:
+    </div>
+    <div class="ourinput">
+	`+htmlize(intToStr(displayInfo.CycleDays))+` days
+    </div>
+
+    <div class="ourlabel">
+        Time Remaining:
+    </div>
+    <div class="ourinput">
+	`+htmlize(uintToStr(displayInfo.TimeRemaining))+`
+    </div>
+
+    <div class="ourlabel">
+        Time code: 
+    </div>
+    <div class="ourinput">
+        <input class="infield" name="current_time" id="current_time" type="text" value="`+htmlize(userInput["current_time"])+`" />
+    </div>
+    <div class="oursubmit">
+        <input type="submit">
+    </div>
+</div>
+`)
 }
