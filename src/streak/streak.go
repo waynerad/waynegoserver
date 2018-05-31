@@ -6,7 +6,7 @@ type TaskDisplayData struct {
 	Description      string
 	CycleDays        int
 	CurrentStreakLen int
-	TimeRemaining    uint64
+	TimeRemaining    string
 }
 
 type TaskListData []TaskDisplayData

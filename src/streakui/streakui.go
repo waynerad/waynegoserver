@@ -93,8 +93,9 @@ func ShowBodyHeader(w http.ResponseWriter, displayInfo map[string]string) {
 	fmt.Fprint(w, `
     <body>
         <div id="header">
-            <p><a href="tasklist">List</a>
-                <a href="taskedit?task=0">Add</a>
+            <p>
+                <a href="tasklist">List</a>
+                <a href="tasklist?edit=1">Edit</a>
                 &middot; `+displayInfo["hUserName"]+`
             </p>
         </div>
@@ -172,7 +173,7 @@ func ShowTaskEditForm(w http.ResponseWriter, errorList map[string]string, userIn
 `)
 }
 
-func ShowStreakTaskList(w http.ResponseWriter, dbDataList streak.TaskListData) {
+func ShowStreakTaskList(w http.ResponseWriter, dbDataList streak.TaskListData, editmode bool) {
 	fmt.Fprint(w, `
 <body>
   <section>
@@ -195,8 +196,12 @@ func ShowStreakTaskList(w http.ResponseWriter, dbDataList streak.TaskListData) {
 		idStr := uintToStr(task.IdTask)
 
 		fmt.Fprint(w, "<tr "+backgroundColor+">")
-		fmt.Fprint(w, "<tr "+backgroundColor+"><td> "+htmlize(task.Name)+" </td><td> "+intToStr(task.CycleDays)+"</td><td> "+intToStr(task.CurrentStreakLen)+"</td><td> "+uintToStr(task.TimeRemaining)+" </td><td> "+`<a href="taskedit?task=`+idStr+`">Edit</a> </td><td> <a href="timecheck?task=`+idStr+`">Time Check!</a> </td>
+		fmt.Fprint(w, "<tr "+backgroundColor+"><td> "+htmlize(task.Name)+" </td><td> "+intToStr(task.CycleDays)+"</td><td> "+intToStr(task.CurrentStreakLen)+"</td><td> "+task.TimeRemaining+` </td><td> <a href="markdone?task=`+idStr+`">Mark Done!</a> </td>
 `)
+		if editmode {
+			fmt.Fprint(w, `<td> <a href="taskedit?task=`+idStr+`">Edit</a> </td><td> <a href="taskdelete?task=`+idStr+`">Delete</a> </td>
+`)
+		}
 		fmt.Fprint(w, `</tr>
 `)
 	}
@@ -204,66 +209,56 @@ func ShowStreakTaskList(w http.ResponseWriter, dbDataList streak.TaskListData) {
 		fmt.Fprint(w, `</table>
 `)
 	}
-	fmt.Fprint(w, `
+	if editmode {
+		fmt.Fprint(w, `
         <p> <a href="taskedit?task=0">Add Streak</a> </p>
+`)
+	}
+	fmt.Fprint(w, `
   </section>
-</body>
-</html>`)
+`)
 }
 
-func ShowTimeCheckForm(w http.ResponseWriter, errorList map[string]string, userInput map[string]string, displayInfo streak.TaskDisplayData) {
-	// Taks = `+htmlize(userInput["task"])+`
+func ShowMarkDoneForm(w http.ResponseWriter, errorList map[string]string, userInput map[string]string, displayInfo streak.TaskDisplayData) {
 	fmt.Fprint(w, `
-<form action="timecheck" method="post">
+<form action="markdone" method="post">
 <input type="hidden" name="task" value="`+htmlize(userInput["task"])+`" />
 <div class="titlesection">
-    <h1>Time Check!</h1>
+    <h1>Mark Done!</h1>
 </div>
 `)
 	showErrorList(w, errorList)
 	fmt.Fprint(w, `
 <div class="ourform">
-
     <div class="ourlabel">
         Name:
     </div>
     <div class="ourinput">
 	`+htmlize(displayInfo.Name)+`
     </div>
-
     <div class="ourlabel">
         Description:
     </div>
     <div class="ourinput">
 	`+htmlize(displayInfo.Description)+`
     </div>
-
     <div class="ourlabel">
         Cycle Days:
     </div>
     <div class="ourinput">
 	`+htmlize(intToStr(displayInfo.CycleDays))+`
     </div>
-
     <div class="ourlabel">
         Current Streak:
     </div>
     <div class="ourinput">
 	`+htmlize(intToStr(displayInfo.CycleDays))+` days
     </div>
-
     <div class="ourlabel">
         Time Remaining:
     </div>
     <div class="ourinput">
-	`+htmlize(uintToStr(displayInfo.TimeRemaining))+`
-    </div>
-
-    <div class="ourlabel">
-        Time code: 
-    </div>
-    <div class="ourinput">
-        <input class="infield" name="current_time" id="current_time" type="text" value="`+htmlize(userInput["current_time"])+`" />
+	`+htmlize(displayInfo.TimeRemaining)+`
     </div>
     <div class="oursubmit">
         <input type="submit">

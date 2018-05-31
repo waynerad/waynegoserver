@@ -14,6 +14,7 @@ import (
 	"streakui"
 	"strings"
 	"time"
+	"wutil"
 )
 
 //	"accessdb"
@@ -118,8 +119,9 @@ func getTimeZoneOffset(db mysql.Conn, userid uint64) int64 {
 }
 
 func calculateDayNumber(timeCode uint64, timeZoneOffset int64, cycleDays int) (uint64, uint64) {
-	ourConstant := 270000 // this magic constant a) makes the day division 3:00am, and b) makes the 7-day cycles line up with human weeks
-	adjTime := uint64((int64(timeCode) - timeZoneOffset) + int64(ourConstant))
+	// ourConstant := 270000 // this magic constant a) makes the day division 3:00am, and b) makes the 7-day cycles line up with human weeks
+	ourConstant := 334800 // this magic constant a) makes the day division 3:00am, and b) makes the 7-day cycles line up with human weeks
+	adjTime := uint64((int64(timeCode) + timeZoneOffset) + int64(ourConstant))
 	adjDay := adjTime / uint64(cycleDays*86400) // note: integer division!
 	boundary := (adjDay + 1) * uint64(cycleDays*86400)
 	timeRemaining := boundary - adjTime
@@ -162,6 +164,51 @@ func calculateCurrentStreakLen(db mysql.Conn, idTask uint64, cycleDays int, curr
 	return streakCount, timeRemaining
 }
 
+func convertTimeRemainingToEnglish(interval uint64) string {
+	if interval <= 0 {
+		return "Done!"
+	}
+	return wutil.TimeIntervalSecondsToEnglish(int(interval))
+}
+
+func recalculateDayNumbers(db mysql.Conn, userid uint64, taskid uint64, timeZoneOffset int64, cycleDays int) {
+	type updateInfo struct {
+		idDayTask uint64
+		dayNum    uint64
+	}
+	var updateEntry updateInfo
+	var updateList []updateInfo
+
+	sql := "SELECT id_day_task, actual_time_gmt FROM streak_day WHERE (id_task = ?) ORDER BY day_num;"
+	sel, err := db.Prepare(sql)
+	if err != nil {
+		fmt.Println(err)
+		panic("Prepare failed")
+	}
+	sel.Bind(taskid)
+	rows, _, err := sel.Exec()
+	if err != nil {
+		fmt.Println(err)
+		panic("Bind/Exec failed")
+	}
+	var actualTimeGmt uint64
+	for _, row := range rows {
+		updateEntry.idDayTask = row.Uint64(0)
+		actualTimeGmt = row.Uint64(1)
+		updateEntry.dayNum, _ = calculateDayNumber(actualTimeGmt, timeZoneOffset, cycleDays)
+		updateList = append(updateList, updateEntry)
+	}
+	for _, updateItem := range updateList {
+		stmt, err := db.Prepare("UPDATE streak_day SET day_num = ?  WHERE (id_day_task = ?) AND (id_task = ?) AND (id_user = ?);")
+		if err != nil {
+			fmt.Println(err)
+			panic("Prepare failed")
+		}
+		stmt.Bind(updateItem.dayNum, updateItem.idDayTask, taskid, userid)
+		_, _, err = stmt.Exec()
+	}
+}
+
 ////////////////////////////////////////////////////////////////
 // New Form object system
 ////////////////////////////////////////////////////////////////
@@ -183,8 +230,9 @@ func getStreakTaskListDBData(db mysql.Conn, userInfo *login.UserInformationRecor
 	theList := make(streak.TaskListData, 0)
 	currentTime := uint64(time.Now().Unix())
 	timeZoneOffset := getTimeZoneOffset(db, userInfo.UserId)
+	var interval uint64
 
-	sql = "SELECT id_task, name, description, cycle_days FROM streak_task WHERE (id_user = ?) ORDER BY id_task;"
+	sql = "SELECT id_task, name, description, cycle_days FROM streak_task WHERE (id_user = ?) ORDER BY seq_num, id_task;"
 	sel, err := db.Prepare(sql)
 	if err != nil {
 		fmt.Println(err)
@@ -201,7 +249,8 @@ func getStreakTaskListDBData(db mysql.Conn, userInfo *login.UserInformationRecor
 		currentEntry.Name = row.Str(1)
 		currentEntry.Description = row.Str(2)
 		currentEntry.CycleDays = row.Int(3)
-		currentEntry.CurrentStreakLen, currentEntry.TimeRemaining = calculateCurrentStreakLen(db, currentEntry.IdTask, currentEntry.CycleDays, currentTime, timeZoneOffset)
+		currentEntry.CurrentStreakLen, interval = calculateCurrentStreakLen(db, currentEntry.IdTask, currentEntry.CycleDays, currentTime, timeZoneOffset)
+		currentEntry.TimeRemaining = convertTimeRemainingToEnglish(interval)
 		theList = append(theList, currentEntry)
 	}
 	return theList
@@ -212,18 +261,25 @@ type taskListForm struct {
 }
 
 func (self *taskListForm) GetDefaults(db mysql.Conn, userInfo *login.UserInformationRecord, userInput map[string]string) map[string]string {
+	_, editmode := userInput["edit"]
+	if editmode {
+		rv := make(map[string]string)
+		rv["edit"] = "1"
+		return rv
+	}
 	return nil
 }
 
 func (self *taskListForm) GetDBDataAndShowForm(db mysql.Conn, w http.ResponseWriter, r *http.Request, op string, userInfo *login.UserInformationRecord, errorList map[string]string, userInput map[string]string) {
 	dbDataList := getStreakTaskListDBData(db, userInfo)
+	_, editmode := userInput["edit"]
 	displayInfo := make(map[string]string)
 	displayInfo["hTitle"] = "Streak Task List"
 	displayInfo["hUserName"] = htmlize(userInfo.UserName)
 	displayInfo["kn"] = "0"
 	streakui.ShowHeadHeader(w, displayInfo)
 	streakui.ShowBodyHeader(w, displayInfo)
-	streakui.ShowStreakTaskList(w, dbDataList)
+	streakui.ShowStreakTaskList(w, dbDataList, editmode)
 	streakui.ShowFooter(w, displayInfo)
 }
 
@@ -238,17 +294,6 @@ func (self *taskListForm) SaveForm(db mysql.Conn, userInfo *login.UserInformatio
 // ----------------------------------------------------------------
 // Streak Task Edit page
 // ----------------------------------------------------------------
-
-func showTaskEditForm(w http.ResponseWriter, r *http.Request, op string, userInfo *login.UserInformationRecord, errorList map[string]string, userInput map[string]string) {
-	displayInfo := make(map[string]string)
-	displayInfo["hTitle"] = "Edit Streak Task"
-	displayInfo["hUserName"] = htmlize(userInfo.UserName)
-	displayInfo["kn"] = "0"
-	streakui.ShowHeadHeader(w, displayInfo)
-	streakui.ShowBodyHeader(w, displayInfo)
-	streakui.ShowTaskEditForm(w, errorList, userInput, displayInfo)
-	streakui.ShowFooter(w, displayInfo)
-}
 
 type taskEditForm struct {
 	objectName string
@@ -292,7 +337,14 @@ func (self *taskEditForm) GetDefaults(db mysql.Conn, userInfo *login.UserInforma
 }
 
 func (self *taskEditForm) GetDBDataAndShowForm(db mysql.Conn, w http.ResponseWriter, r *http.Request, op string, userInfo *login.UserInformationRecord, errorList map[string]string, userInput map[string]string) {
-	showTaskEditForm(w, r, op, userInfo, errorList, userInput)
+	displayInfo := make(map[string]string)
+	displayInfo["hTitle"] = "Edit Streak Task"
+	displayInfo["hUserName"] = htmlize(userInfo.UserName)
+	displayInfo["kn"] = "0"
+	streakui.ShowHeadHeader(w, displayInfo)
+	streakui.ShowBodyHeader(w, displayInfo)
+	streakui.ShowTaskEditForm(w, errorList, userInput, displayInfo)
+	streakui.ShowFooter(w, displayInfo)
 }
 
 func (self *taskEditForm) CheckForErrors(db mysql.Conn, userInput map[string]string) (map[string]string, map[string]string) {
@@ -347,7 +399,6 @@ func (self *taskEditForm) SaveForm(db mysql.Conn, userInfo *login.UserInformatio
 			alreadyExists = true
 		}
 	}
-	fmt.Println("Save: streakTaskRecord", streakTaskRecord)
 	if alreadyExists {
 		stmt, err := db.Prepare("UPDATE streak_task SET name = ?, description = ?, cycle_days = ?  WHERE (id_task = ?) AND (id_user = ?);")
 		if err != nil {
@@ -356,6 +407,8 @@ func (self *taskEditForm) SaveForm(db mysql.Conn, userInfo *login.UserInformatio
 		}
 		stmt.Bind(streakTaskRecord.name, streakTaskRecord.description, streakTaskRecord.cycleDays, streakTaskRecord.taskId, userInfo.UserId)
 		_, _, err = stmt.Exec()
+		timeZoneOffset := getTimeZoneOffset(db, userInfo.UserId)
+		recalculateDayNumbers(db, userInfo.UserId, streakTaskRecord.taskId, timeZoneOffset, streakTaskRecord.cycleDays)
 	} else {
 		stmt, err := db.Prepare("INSERT INTO streak_task (id_user, name, description, cycle_days) VALUES (?, ?, ?, ?);")
 		if err != nil {
@@ -381,30 +434,28 @@ func (self *taskEditForm) SaveForm(db mysql.Conn, userInfo *login.UserInformatio
 // Streak Time Check page
 // ----------------------------------------------------------------
 
-type timeCheckForm struct {
+type markDoneForm struct {
 	objectName string
 }
 
-func (self *timeCheckForm) GetDefaults(db mysql.Conn, userInfo *login.UserInformationRecord, userInput map[string]string) map[string]string {
+func (self *markDoneForm) GetDefaults(db mysql.Conn, userInfo *login.UserInformationRecord, userInput map[string]string) map[string]string {
 	rv := make(map[string]string)
 	taskid := strToUint64(userInput["task"])
-	currentTime := uint64(time.Now().Unix())
 	rv["task"] = uint64ToStr(taskid)
-	rv["current_time"] = uint64ToStr(currentTime)
 	return rv
 }
 
-func (self *timeCheckForm) GetDBDataAndShowForm(db mysql.Conn, w http.ResponseWriter, r *http.Request, op string, userInfo *login.UserInformationRecord, errorList map[string]string, userInput map[string]string) {
+func (self *markDoneForm) GetDBDataAndShowForm(db mysql.Conn, w http.ResponseWriter, r *http.Request, op string, userInfo *login.UserInformationRecord, errorList map[string]string, userInput map[string]string) {
 	displayInfo := make(map[string]string)
-	displayInfo["hTitle"] = "Time Check"
+	displayInfo["hTitle"] = "Mark Done"
 	displayInfo["hUserName"] = htmlize(userInfo.UserName)
 	displayInfo["kn"] = "0"
-	displayInfo["name"] = "[name here]"
 
 	taskId := strToUint64(userInput["task"])
 	currentTime := uint64(time.Now().Unix())
 	timeZoneOffset := getTimeZoneOffset(db, userInfo.UserId)
 	var currentEntry streak.TaskDisplayData
+	var interval uint64
 
 	sql := "SELECT id_task, name, description, cycle_days FROM streak_task WHERE (id_task = ?) AND (id_user = ?);"
 	sel, err := db.Prepare(sql)
@@ -423,22 +474,23 @@ func (self *timeCheckForm) GetDBDataAndShowForm(db mysql.Conn, w http.ResponseWr
 		currentEntry.Name = row.Str(1)
 		currentEntry.Description = row.Str(2)
 		currentEntry.CycleDays = row.Int(3)
-		currentEntry.CurrentStreakLen, currentEntry.TimeRemaining = calculateCurrentStreakLen(db, currentEntry.IdTask, currentEntry.CycleDays, currentTime, timeZoneOffset)
+		currentEntry.CurrentStreakLen, interval = calculateCurrentStreakLen(db, currentEntry.IdTask, currentEntry.CycleDays, currentTime, timeZoneOffset)
+		currentEntry.TimeRemaining = convertTimeRemainingToEnglish(interval)
 	}
 
 	streakui.ShowHeadHeader(w, displayInfo)
 	streakui.ShowBodyHeader(w, displayInfo)
-	streakui.ShowTimeCheckForm(w, errorList, userInput, currentEntry)
+	streakui.ShowMarkDoneForm(w, errorList, userInput, currentEntry)
 	streakui.ShowFooter(w, displayInfo)
 }
 
-func (self *timeCheckForm) CheckForErrors(db mysql.Conn, userInput map[string]string) (map[string]string, map[string]string) {
+func (self *markDoneForm) CheckForErrors(db mysql.Conn, userInput map[string]string) (map[string]string, map[string]string) {
 	fmt.Println("CheckForErrors: userInput", userInput)
 	errorList := make(map[string]string)
 	return errorList, nil
 }
 
-func (self *timeCheckForm) SaveForm(db mysql.Conn, userInfo *login.UserInformationRecord, userInput map[string]string, alreadyProcessed map[string]string) map[string]string {
+func (self *markDoneForm) SaveForm(db mysql.Conn, userInfo *login.UserInformationRecord, userInput map[string]string, alreadyProcessed map[string]string) map[string]string {
 	// mysql> DESCRIBE streak_day;
 	// +-----------------+---------------------+------+-----+---------+----------------+
 	// | Field           | Type                | Null | Key | Default | Extra          |
@@ -450,11 +502,8 @@ func (self *timeCheckForm) SaveForm(db mysql.Conn, userInfo *login.UserInformati
 	// | day_num         | bigint(20) unsigned | NO   |     | 0       |                |
 	// +-----------------+---------------------+------+-----+---------+----------------+
 
-	fmt.Println("debug SaveForm: userInfo", userInfo)
-	fmt.Println("debug SaveForm: userInput", userInput)
 	userid := userInfo.UserId
 	timeZoneOffset := getTimeZoneOffset(db, userid)
-	fmt.Println("debug timeZoneOffset", timeZoneOffset)
 	taskid := strToUint64(userInput["task"])
 
 	taskExists := false
@@ -478,7 +527,6 @@ func (self *timeCheckForm) SaveForm(db mysql.Conn, userInfo *login.UserInformati
 	if !taskExists {
 		panic("task Id does not exist")
 	}
-	fmt.Println("debug cycleDays =", cycleDays)
 
 	// var idDayTask uint64
 	var streakDay struct {
@@ -489,11 +537,6 @@ func (self *timeCheckForm) SaveForm(db mysql.Conn, userInfo *login.UserInformati
 	}
 
 	currentTime := uint64(time.Now().Unix())
-	_, ok := userInput["current_time"]
-	if ok {
-		fmt.Println("We are overriding with time code from the UI!!")
-		currentTime = strToUint64(userInput["current_time"])
-	}
 
 	dayNum, _ := calculateDayNumber(currentTime, timeZoneOffset, cycleDays)
 
@@ -557,9 +600,9 @@ func showTaskEditPage(w http.ResponseWriter, r *http.Request, op string, userInf
 	forms.HandleStandaloneForm(&formObject, w, r, op, userInfo, "tasklist")
 }
 
-func showTimeCheckPage(w http.ResponseWriter, r *http.Request, op string, userInfo *login.UserInformationRecord) {
-	var formObject timeCheckForm
-	formObject.objectName = "Time Check Form"
+func showMarkDonePage(w http.ResponseWriter, r *http.Request, op string, userInfo *login.UserInformationRecord) {
+	var formObject markDoneForm
+	formObject.objectName = "Mark Done Form"
 	forms.HandleStandaloneForm(&formObject, w, r, op, userInfo, "tasklist")
 }
 
@@ -575,9 +618,9 @@ func Handler(w http.ResponseWriter, r *http.Request, op string, userInfo *login.
 		if userInfo.UserId != 0 {
 			showTaskEditPage(w, r, op, userInfo)
 		}
-	case op == "timecheck":
+	case op == "markdone":
 		if userInfo.UserId != 0 {
-			showTimeCheckPage(w, r, op, userInfo)
+			showMarkDonePage(w, r, op, userInfo)
 		}
 	default:
 		filename := "/home/ec2-user/wayneserver/staticappcontent/streak/" + op
