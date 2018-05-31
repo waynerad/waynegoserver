@@ -437,13 +437,154 @@ func makeReplaceTableForUi() string {
 	return rv
 }
 
+func ProcessDvorakCharacterConversion(sometext string) string {
+	dvMap := make(map[rune]rune)
+
+	// this is the mapping from my Mac kepboard
+	// - `1234567890-=
+	// - `1234567890[]
+	// -
+	// - ~!@#$%^&*()_+
+	// - ~!@#$%^&*(){}
+	// -
+	// - qwertyuiop[]\
+	// - ',.pyfgcrl/=\
+	// - QWERTYUIOP{}|
+	// - "<>PYFGCRL?+|
+	// -
+	// - asdfghjkl;'
+	// - aoeuidhtns-
+	// - ASDFGHJKL:"
+	// - AOEUIDHTNS_
+	// -
+	// - zxcvbnm,./
+	// - ;qjkxbmwvz
+	// - ZXCVBNM<>?
+	// - :QJKXBMWVZ
+
+	dvMap[rune("-"[0])] = rune("["[0])
+	dvMap[rune("="[0])] = rune("]"[0])
+	dvMap[rune("_"[0])] = rune("{"[0])
+	dvMap[rune("+"[0])] = rune("}"[0])
+	dvMap[rune("q"[0])] = rune("'"[0])
+	dvMap[rune("w"[0])] = rune(","[0])
+	dvMap[rune("e"[0])] = rune("."[0])
+	dvMap[rune("r"[0])] = rune("p"[0])
+	dvMap[rune("t"[0])] = rune("y"[0])
+	dvMap[rune("y"[0])] = rune("f"[0])
+	dvMap[rune("u"[0])] = rune("g"[0])
+	dvMap[rune("i"[0])] = rune("c"[0])
+	dvMap[rune("o"[0])] = rune("r"[0])
+	dvMap[rune("p"[0])] = rune("l"[0])
+	dvMap[rune("["[0])] = rune("/"[0])
+	dvMap[rune("]"[0])] = rune("="[0])
+	dvMap[rune("Q"[0])] = rune(`"`[0])
+	dvMap[rune("W"[0])] = rune("<"[0])
+	dvMap[rune("E"[0])] = rune(">"[0])
+	dvMap[rune("R"[0])] = rune("P"[0])
+	dvMap[rune("T"[0])] = rune("Y"[0])
+	dvMap[rune("Y"[0])] = rune("F"[0])
+	dvMap[rune("U"[0])] = rune("G"[0])
+	dvMap[rune("I"[0])] = rune("C"[0])
+	dvMap[rune("O"[0])] = rune("R"[0])
+	dvMap[rune("P"[0])] = rune("L"[0])
+	dvMap[rune("{"[0])] = rune("?"[0])
+	dvMap[rune("}"[0])] = rune("+"[0])
+	dvMap[rune("s"[0])] = rune("o"[0])
+	dvMap[rune("d"[0])] = rune("e"[0])
+	dvMap[rune("f"[0])] = rune("u"[0])
+	dvMap[rune("g"[0])] = rune("i"[0])
+	dvMap[rune("h"[0])] = rune("d"[0])
+	dvMap[rune("j"[0])] = rune("h"[0])
+	dvMap[rune("k"[0])] = rune("t"[0])
+	dvMap[rune("l"[0])] = rune("n"[0])
+	dvMap[rune(";"[0])] = rune("s"[0])
+	dvMap[rune("'"[0])] = rune("-"[0])
+	dvMap[rune("S"[0])] = rune("O"[0])
+	dvMap[rune("D"[0])] = rune("E"[0])
+	dvMap[rune("F"[0])] = rune("U"[0])
+	dvMap[rune("G"[0])] = rune("I"[0])
+	dvMap[rune("H"[0])] = rune("D"[0])
+	dvMap[rune("J"[0])] = rune("H"[0])
+	dvMap[rune("K"[0])] = rune("T"[0])
+	dvMap[rune("L"[0])] = rune("N"[0])
+	dvMap[rune(":"[0])] = rune("S"[0])
+	dvMap[rune(`"`[0])] = rune("_"[0])
+	dvMap[rune("z"[0])] = rune(";"[0])
+	dvMap[rune("x"[0])] = rune("q"[0])
+	dvMap[rune("c"[0])] = rune("j"[0])
+	dvMap[rune("v"[0])] = rune("k"[0])
+	dvMap[rune("b"[0])] = rune("x"[0])
+	dvMap[rune("n"[0])] = rune("b"[0])
+	dvMap[rune(","[0])] = rune("w"[0])
+	dvMap[rune("."[0])] = rune("v"[0])
+	dvMap[rune("/"[0])] = rune("z"[0])
+	dvMap[rune("Z"[0])] = rune(":"[0])
+	dvMap[rune("X"[0])] = rune("Q"[0])
+	dvMap[rune("C"[0])] = rune("J"[0])
+	dvMap[rune("V"[0])] = rune("K"[0])
+	dvMap[rune("B"[0])] = rune("X"[0])
+	dvMap[rune("N"[0])] = rune("B"[0])
+	dvMap[rune("<"[0])] = rune("W"[0])
+	dvMap[rune(">"[0])] = rune("V"[0])
+	dvMap[rune("?"[0])] = rune("Z"[0])
+	rv := ""
+
+	for _, currentChar := range sometext {
+		_, exists := dvMap[currentChar]
+		if exists {
+			rv = rv + string(dvMap[currentChar])
+		} else {
+			rv = rv + string(currentChar)
+		}
+	}
+	return rv
+}
+
 // ----------------------------------------------------------------
 // Lang Type Page
 // ----------------------------------------------------------------
 
-func showLangTextForm(w http.ResponseWriter, r *http.Request, op string, userInfo *login.UserInformationRecord, errorList map[string]string, userInput map[string]string, theTable string) {
+type langTextForm struct {
+	objectName string
+}
+
+func (self *langTextForm) GetDefaults(db mysql.Conn, userInfo *login.UserInformationRecord, userInput map[string]string) map[string]string {
+	rv := make(map[string]string)
+	rv["langtocvt"] = ""
+	rv["dvorak"] = "0"
+	_, dvorak := userInput["dvorak"]
+	if dvorak {
+		rv["dvorak"] = userInput["dvorak"]
+	}
+	return rv
+}
+
+func (self *langTextForm) GetDBDataAndShowForm(db mysql.Conn, w http.ResponseWriter, r *http.Request, op string, userInfo *login.UserInformationRecord, errorList map[string]string, userInput map[string]string) {
+	// no DB data
+	// This is a hack -- we process right before we display because we stay on this form and give the user their input back to them -- processed
+	langtocvt := userInput["langtocvt"]
+	// fmt.Println("langtocvt is", langtocvt)
+	_, dvorak := userInput["dvorak"]
+	if dvorak {
+		if userInput["dvorak"] == "0" {
+			dvorak = false
+		}
+	}
+	processed := langtocvt
+	if dvorak {
+		processed = ProcessDvorakCharacterConversion(processed)
+	}
+	processed = ProcessInternationalLanguageCharacterConversion(processed)
+	// fmt.Println("new langtocvt is", processed)
+	userInput["langtocvt"] = processed
+	theTable := makeReplaceTableForUi()
 	displayInfo := make(map[string]string)
-	displayInfo["hTitle"] = "WayneType"
+	if dvorak {
+		displayInfo["hTitle"] = "WayneType - Dvorak Version"
+	} else {
+		displayInfo["hTitle"] = "WayneType"
+	}
 	displayInfo["hUserName"] = htmlize(userInfo.UserName)
 	displayInfo["kn"] = "0"
 	langtextui.ShowHeadHeader(w, displayInfo)
@@ -452,35 +593,13 @@ func showLangTextForm(w http.ResponseWriter, r *http.Request, op string, userInf
 	langtextui.ShowFooter(w, displayInfo)
 }
 
-type taskEditForm struct {
-	objectName string
-}
-
-func (self *taskEditForm) GetDefaults(db mysql.Conn, userInfo *login.UserInformationRecord, userInput map[string]string) map[string]string {
-	rv := make(map[string]string)
-	rv["langtocvt"] = ""
-	return rv
-}
-
-func (self *taskEditForm) GetDBDataAndShowForm(db mysql.Conn, w http.ResponseWriter, r *http.Request, op string, userInfo *login.UserInformationRecord, errorList map[string]string, userInput map[string]string) {
-	// no DB data
-	// This is a hack -- we process right before we display because we stay on this form and give the user their input back to them -- processed
-	langtocvt := userInput["langtocvt"]
-	// fmt.Println("langtocvt is", langtocvt)
-	processed := ProcessInternationalLanguageCharacterConversion(langtocvt)
-	// fmt.Println("new langtocvt is", processed)
-	userInput["langtocvt"] = processed
-	theTable := makeReplaceTableForUi()
-	showLangTextForm(w, r, op, userInfo, errorList, userInput, theTable)
-}
-
-func (self *taskEditForm) CheckForErrors(db mysql.Conn, userInput map[string]string) (map[string]string, map[string]string) {
+func (self *langTextForm) CheckForErrors(db mysql.Conn, userInput map[string]string) (map[string]string, map[string]string) {
 	errorList := make(map[string]string)
 	errorList["null"] = "null" // force an error so we stay on this page
 	return errorList, nil
 }
 
-func (self *taskEditForm) SaveForm(db mysql.Conn, userInfo *login.UserInformationRecord, userInput map[string]string, alreadyProcessed map[string]string) map[string]string {
+func (self *langTextForm) SaveForm(db mysql.Conn, userInfo *login.UserInformationRecord, userInput map[string]string, alreadyProcessed map[string]string) map[string]string {
 	return nil
 }
 
@@ -489,8 +608,8 @@ func (self *taskEditForm) SaveForm(db mysql.Conn, userInfo *login.UserInformatio
 // ----------------------------------------------------------------
 
 func showLangTextPage(w http.ResponseWriter, r *http.Request, op string, userInfo *login.UserInformationRecord) {
-	var formObject taskEditForm
-	formObject.objectName = "Task Edit Form"
+	var formObject langTextForm
+	formObject.objectName = "Lang Text Form"
 	forms.HandleStandaloneForm(&formObject, w, r, op, userInfo, "http://www.yahoo.com/") // redirect should never happen
 }
 

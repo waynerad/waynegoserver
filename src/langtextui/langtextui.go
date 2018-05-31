@@ -120,9 +120,20 @@ func ShowLangTextForm(w http.ResponseWriter, errorList map[string]string, userIn
 	if ok {
 		singleLine = false
 	}
+	_, dvorak := userInput["dvorak"]
+	if dvorak {
+		if userInput["dvorak"] == "0" {
+			dvorak = false
+		}
+	}
 	fmt.Fprint(w, `
         <form name="frmLang" id="frmLang" action="waynetype" method="post" noonsubmit="return false;">
-            <h1>Waynetype</h1>
+            <input name="dvorak" id="dvorak" type="hidden" value="`+htmlize(userInput["dvorak"])+`" /><br />
+            <h1>WayneType`)
+	if dvorak {
+		fmt.Fprint(w, " - Dvorak Version")
+	}
+	fmt.Fprint(w, `</h1>
 `)
 	if len(errorList) > 1 {
 		fmt.Fprintln(w, `
