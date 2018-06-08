@@ -10,7 +10,6 @@ import (
 
 func FigureOutContentTypeFromFilename(filename string) string {
 	if len(filename) > 3 {
-
 		if filename[len(filename)-4:] == ".pdf" {
 			return "application/pdf"
 		} else {
@@ -26,8 +25,11 @@ func FigureOutContentTypeFromFilename(filename string) string {
 						if filename[len(filename)-4:] == ".zip" {
 							return "application/zip"
 						} else {
-
-							return "text/html; charset=utf-8"
+							if filename[len(filename)-4:] == ".txt" {
+								return "text/plain"
+							} else {
+								return "text/html; charset=utf-8"
+							}
 						}
 					}
 				}
@@ -45,6 +47,7 @@ func OutputStaticFileWithContentType(w http.ResponseWriter, filename string) {
 		return
 	}
 	contentType := FigureOutContentTypeFromFilename(filename)
+	fmt.Println("MIME type:", contentType)
 	fh, err := os.Open(filename)
 	if err != nil {
 		w.WriteHeader(404)
