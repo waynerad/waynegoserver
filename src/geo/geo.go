@@ -1091,7 +1091,7 @@ func streetview(w http.ResponseWriter, r *http.Request, op string) {
   <section>
     <h1>Geo Rand Street View</h1>
 `)
-	type City struct {
+	type cityTyp struct {
 		name  string
 		lat1  float64
 		lat2  float64
@@ -1101,12 +1101,38 @@ func streetview(w http.ResponseWriter, r *http.Request, op string) {
 	now := time.Now()
 	asNumber := now.UnixNano()
 	rand.Seed(asNumber)
-	citiesList := []City{{"Tokyo", 35.5, 35.88, 139.5, 140.0}, {"Jakarta", -6.24, -6.12, 106.71, 106.92}, {"Seoul", 37.48, 37.64, 126.89, 127.20}, {"Mexico City", 19.29, 19.68, -99.23, -99.06}, {"New York", 40.57, 40.88, -74.20, -73.80}, {"Sao Paulo", -23.71, -23.45, -46.78, -46.41}, {"Osaka", 34.60, 34.81, 135.35, 135.64}, {"Los Angeles", 33.73, 34.10, -118.40, -117.77}, {"Dhaka", 23.68, 23.81, 90.36, 90.45}, {"Moscow", 55.70, 55.79, 37.53, 37.74}, {"Buenos Aires", -34.80, -34.49, -58.61, -58.25}, {"Bangkok", 13.61, 13.79, 100.47, 100.64}, {"London", 51.46, 51.53, -0.19, 0.01}, {"Johannesburg", -26.22, -26.18, 28.02, 28.06}, {"Rio de Janeiro", -22.93, -22.76, -43.43, -43.17}, {"Paris", 48.81, 48.88, 2.27, 2.40}, {"Lima", -12.10, -12.01, -77.06, -76.97}, {"Chicago", 41.80, 41.85, -87.63, -87.62}, {"Bogota", 4.56, 4.65, -74.16, -74.06}, {"Washington DC", 38.88, 38.92, -77.01, -76.98}, {"Ho Chi Minh City", 10.73, 10.80, 106.59, 106.70}, {"San Francisco", 37.739694, 37.803983, -122.446680, -122.385215}, {"Kuala Lumpur", 3.01, 3.32, 101.58, 101.77}, {"Sydney", -33.94, -33.87, 151.08, 151.24}, {"Denver", 39.565420, 39.918791, -105.150862, -104.755332}, {"Boulder", 39.969426, 40.051865, -105.290948, -105.225628}, {"Oaxaca", 17.04, 17.09, -96.75, -96.70}, {"Miami", 25.75, 26.33, -80.29, -80.18}, {"Hong Kong", 22.27, 22.33, 114.13, 114.22}, {"Taipei", 24.99, 25.07, 121.43, 121.56}, {"Toronto", 43.64, 43.67, -79.41, -79.35}, {"Madrid", 40.42, 40.47, -3.72, -3.60}, {"Boston", 42.33, 42.42, -71.12, -71.01}, {"Houston", 29.66, 29.80, -95.56, -95.23}, {"Detroit", 42.36, 42.62, -83.11, -82.88}, {"Atlanta", 33.72, 33.79, -84.42, -83.36}, {"St. Petersburg", 59.86, 60.01, 30.25, 30.43}, {"Milano", 45.43, 45.51, 9.13, 9.25}, {"Dortmund (Ruhrgebiet)", 51.48, 51.55, 7.41, 7.52}, {"Guadalajara", 20.66, 20.73, -103.42, -103.27}, {"Belo Horizonte", -19.95, -19.80, -44.03, -43.89}, {"Prague", 50.03, 50.11, 14.40, 14.53}, {"Krasnodar", 45.01, 45.07, 38.93, 39.03}, {"Kyiv", 50.39, 50.52, 30.38, 30.66}, {"Bucharest", 44.37, 44.48, 26.03, 26.19}, {"Budapest", 47.41, 47.56, 19.07, 19.23}, {"Sofia", 42.65, 42.73, 23.27, 23.41}, {"Tel Aviv", 32.06, 32.09, 34.77, 34.85}, {"Helsinki", 60.17, 60.20, 24.92, 24.96}, {"Stockholm", 59.30, 59.35, 17.99, 18.10}, {"Oslo", 59.92, 59.93, 10.70, 10.87}}
+	citiesList := []cityTyp{{"Tokyo", 35.5, 35.88, 139.5, 140.0}, {"Jakarta", -6.24, -6.12, 106.71, 106.92}, {"Seoul", 37.48, 37.64, 126.89, 127.20}, {"Mexico City", 19.29, 19.68, -99.23, -99.06}, {"New York", 40.57, 40.88, -74.20, -73.80}, {"Sao Paulo", -23.71, -23.45, -46.78, -46.41}, {"Osaka", 34.60, 34.81, 135.35, 135.64}, {"Los Angeles", 33.73, 34.10, -118.40, -117.77}, {"Dhaka", 23.68, 23.81, 90.36, 90.45}, {"Moscow", 55.70, 55.79, 37.53, 37.74}, {"Buenos Aires", -34.80, -34.49, -58.61, -58.25}, {"Bangkok", 13.61, 13.79, 100.47, 100.64}, {"London", 51.46, 51.53, -0.19, 0.01}, {"Johannesburg", -26.22, -26.18, 28.02, 28.06}, {"Rio de Janeiro", -22.93, -22.76, -43.43, -43.17}, {"Paris", 48.81, 48.88, 2.27, 2.40}, {"Lima", -12.10, -12.01, -77.06, -76.97}, {"Chicago", 41.80, 41.85, -87.63, -87.62}, {"Bogota", 4.56, 4.65, -74.16, -74.06}, {"Washington DC", 38.88, 38.92, -77.01, -76.98}, {"Ho Chi Minh City", 10.73, 10.80, 106.59, 106.70}, {"San Francisco", 37.739694, 37.803983, -122.446680, -122.385215}, {"Kuala Lumpur", 3.01, 3.32, 101.58, 101.77}, {"Sydney", -33.94, -33.87, 151.08, 151.24}, {"Denver", 39.565420, 39.918791, -105.150862, -104.755332}, {"Boulder", 39.969426, 40.051865, -105.290948, -105.225628}, {"Oaxaca", 17.04, 17.09, -96.75, -96.70}, {"Miami", 25.75, 26.33, -80.29, -80.18}, {"Hong Kong", 22.27, 22.33, 114.13, 114.22}, {"Taipei", 24.99, 25.07, 121.43, 121.56}, {"Toronto", 43.64, 43.67, -79.41, -79.35}, {"Madrid", 40.42, 40.47, -3.72, -3.60}, {"Boston", 42.33, 42.42, -71.12, -71.01}, {"Houston", 29.66, 29.80, -95.56, -95.23}, {"Detroit", 42.36, 42.62, -83.11, -82.88}, {"Atlanta", 33.72, 33.79, -84.42, -83.36}, {"St. Petersburg", 59.86, 60.01, 30.25, 30.43}, {"Milano", 45.43, 45.51, 9.13, 9.25}, {"Dortmund (Ruhrgebiet)", 51.48, 51.55, 7.41, 7.52}, {"Guadalajara", 20.66, 20.73, -103.42, -103.27}, {"Belo Horizonte", -19.95, -19.80, -44.03, -43.89}, {"Prague", 50.03, 50.11, 14.40, 14.53}, {"Krasnodar", 45.01, 45.07, 38.93, 39.03}, {"Kyiv", 50.39, 50.52, 30.38, 30.66}, {"Bucharest", 44.37, 44.48, 26.03, 26.19}, {"Budapest", 47.41, 47.56, 19.07, 19.23}, {"Sofia", 42.65, 42.73, 23.27, 23.41}, {"Tel Aviv", 32.06, 32.09, 34.77, 34.85}, {"Helsinki", 60.17, 60.20, 24.92, 24.96}, {"Stockholm", 59.30, 59.35, 17.99, 18.10}, {"Oslo", 59.92, 59.93, 10.70, 10.87}}
 	numCities := len(citiesList)
 	cityPick := int(math.Floor(rand.Float64() * float64(numCities)))
 	cityInfo := citiesList[cityPick]
 	y := (rand.Float64() * (cityInfo.lat2 - cityInfo.lat1)) + cityInfo.lat1
 	x := (rand.Float64() * (cityInfo.long2 - cityInfo.long1)) + cityInfo.long1
+	fmt.Fprintln(w, "<p>Cut & paste for Google Maps:</p>")
+	fmt.Fprintln(w, `<input class="infield" type="text" style="width:400px;" value="`+strconv.FormatFloat(y, 'f', -1, 64)+","+strconv.FormatFloat(x, 'f', -1, 64)+`" /></p>`)
+	fmt.Fprintln(w, "</body></html>")
+}
+
+func location(w http.ResponseWriter, r *http.Request, op string) {
+	fmt.Fprint(w, getDoctype()+getStyle())
+	fmt.Fprint(w, `<title>Geo Rand Place</title>
+</head>
+<body>
+  <section>
+    <h1>Geo Rand Place</h1>
+`)
+	type place struct {
+		name  string
+		lat1  float64
+		lat2  float64
+		long1 float64
+		long2 float64
+	}
+	locations := make(map[string]place)
+	locations["mountains"] = place{"mountains", 39.379275, 40.365755, -106.673316, -105.308265}
+	userAskedFor := "mountains"
+	locInfo := locations[userAskedFor]
+	y := (rand.Float64() * (locInfo.lat2 - locInfo.lat1)) + locInfo.lat1
+	x := (rand.Float64() * (locInfo.long2 - locInfo.long1)) + locInfo.long1
 	fmt.Fprintln(w, "<p>Cut & paste for Google Maps:</p>")
 	fmt.Fprintln(w, `<input class="infield" type="text" style="width:400px;" value="`+strconv.FormatFloat(y, 'f', -1, 64)+","+strconv.FormatFloat(x, 'f', -1, 64)+`" /></p>`)
 	fmt.Fprintln(w, "</body></html>")
@@ -1321,6 +1347,10 @@ func Handler(w http.ResponseWriter, r *http.Request, op string, userid uint64, u
 
 	case op == "list":
 		showList(w)
+
+	case op == "mountains":
+		location(w, r, op)
+
 	// case op == "colorado":
 	// colorado(w, r, op)
 	// case op == "denver":
