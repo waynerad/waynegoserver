@@ -758,7 +758,7 @@ func showPrograms(w http.ResponseWriter) {
 func showLogoutAll(w http.ResponseWriter) {
 	fmt.Fprint(w, getDoctype()+getStyle())
 	db := accessdb.GetDbConnection()
-	stmt, err := db.Prepare("TRUNCATE FROM login_session;")
+	stmt, err := db.Prepare("TRUNCATE login_session;")
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -774,7 +774,22 @@ func showLogoutAll(w http.ResponseWriter) {
  </body></html`)
 }
 
-func Handler(w http.ResponseWriter, r *http.Request, operation string, userid uint64, userName string) {
+func showTLSRequired(w http.ResponseWriter) {
+	fmt.Fprint(w, getDoctype()+getStyle())
+	fmt.Fprint(w, `<title> HTTPS required </title>
+</head><body>
+  <section>
+    <h1>HTTPS required</h1>
+    <p>HTTPS (secure http) is required for user account operations</p>
+  </section>
+ </body></html`)
+}
+
+func Handler(w http.ResponseWriter, r *http.Request, operation string, userid uint64, userName string, secure bool) {
+	if !secure {
+		showTLSRequired(w)
+		return
+	}
 	switch {
 	case operation == "register":
 		editAccount(w, r, operation, true)
