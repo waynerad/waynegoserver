@@ -7,6 +7,7 @@ type TaskDisplayData struct {
 	CycleDays        int
 	CurrentStreakLen int
 	TimeRemaining    string
+	ShowMarkDone     bool
 }
 
 type TaskListData []TaskDisplayData

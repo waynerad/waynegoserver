@@ -147,6 +147,8 @@ func calculateCurrentStreakLen(db mysql.Conn, idTask uint64, cycleDays int, curr
 	var dayNum uint64
 	streakCount := 0
 	keepGoing := true
+	var prevDayNum uint64
+	prevDayNum = 0
 	for _, row := range rows {
 		if keepGoing { // we need to find a way to break completely out of this loop w/out reading whole result set
 			dayNum = row.Uint64(0)
@@ -154,7 +156,9 @@ func calculateCurrentStreakLen(db mysql.Conn, idTask uint64, cycleDays int, curr
 				timeRemaining = 0
 			}
 			if dayNum >= limit {
-				streakCount++
+				if dayNum != prevDayNum {
+					streakCount++
+				}
 				limit = dayNum - 1
 			} else {
 				keepGoing = false
@@ -251,9 +255,22 @@ func getStreakTaskListDBData(db mysql.Conn, userInfo *login.UserInformationRecor
 		currentEntry.CycleDays = row.Int(3)
 		currentEntry.CurrentStreakLen, interval = calculateCurrentStreakLen(db, currentEntry.IdTask, currentEntry.CycleDays, currentTime, timeZoneOffset)
 		currentEntry.TimeRemaining = convertTimeRemainingToEnglish(interval)
+		currentEntry.ShowMarkDone = interval > 0
 		theList = append(theList, currentEntry)
 	}
 	return theList
+}
+
+func showTaskListPage(w http.ResponseWriter, userInfo *login.UserInformationRecord, userInput map[string]string, dbDataList streak.TaskListData) {
+	_, editmode := userInput["edit"]
+	displayInfo := make(map[string]string)
+	displayInfo["hTitle"] = "Streak Task List"
+	displayInfo["hUserName"] = htmlize(userInfo.UserName)
+	displayInfo["kn"] = "0"
+	streakui.ShowHeadHeader(w, displayInfo)
+	streakui.ShowBodyHeader(w, displayInfo)
+	streakui.ShowStreakTaskList(w, dbDataList, editmode)
+	streakui.ShowFooter(w, displayInfo)
 }
 
 type taskListForm struct {
@@ -272,15 +289,7 @@ func (self *taskListForm) GetDefaults(db mysql.Conn, userInfo *login.UserInforma
 
 func (self *taskListForm) GetDBDataAndShowForm(db mysql.Conn, w http.ResponseWriter, r *http.Request, op string, userInfo *login.UserInformationRecord, errorList map[string]string, userInput map[string]string) {
 	dbDataList := getStreakTaskListDBData(db, userInfo)
-	_, editmode := userInput["edit"]
-	displayInfo := make(map[string]string)
-	displayInfo["hTitle"] = "Streak Task List"
-	displayInfo["hUserName"] = htmlize(userInfo.UserName)
-	displayInfo["kn"] = "0"
-	streakui.ShowHeadHeader(w, displayInfo)
-	streakui.ShowBodyHeader(w, displayInfo)
-	streakui.ShowStreakTaskList(w, dbDataList, editmode)
-	streakui.ShowFooter(w, displayInfo)
+	showTaskListPage(w, userInfo, userInput, dbDataList)
 }
 
 func (self *taskListForm) CheckForErrors(db mysql.Conn, userInput map[string]string) (map[string]string, map[string]string) {
@@ -348,7 +357,6 @@ func (self *taskEditForm) GetDBDataAndShowForm(db mysql.Conn, w http.ResponseWri
 }
 
 func (self *taskEditForm) CheckForErrors(db mysql.Conn, userInput map[string]string) (map[string]string, map[string]string) {
-	fmt.Println("CheckForErrors: userInput", userInput)
 	errorList := make(map[string]string)
 	if userInput["name"] == "" {
 		errorList["name"] = "Please specify a name."
@@ -368,7 +376,6 @@ func (self *taskEditForm) CheckForErrors(db mysql.Conn, userInput map[string]str
 }
 
 func (self *taskEditForm) SaveForm(db mysql.Conn, userInfo *login.UserInformationRecord, userInput map[string]string, alreadyProcessed map[string]string) map[string]string {
-	fmt.Println("SaveForm: userInput", userInput)
 	var streakTaskRecord struct {
 		taskId      uint64
 		name        string
@@ -485,7 +492,6 @@ func (self *markDoneForm) GetDBDataAndShowForm(db mysql.Conn, w http.ResponseWri
 }
 
 func (self *markDoneForm) CheckForErrors(db mysql.Conn, userInput map[string]string) (map[string]string, map[string]string) {
-	fmt.Println("CheckForErrors: userInput", userInput)
 	errorList := make(map[string]string)
 	return errorList, nil
 }
@@ -588,19 +594,19 @@ func (self *markDoneForm) SaveForm(db mysql.Conn, userInfo *login.UserInformatio
 // End of streak time check page
 // ----------------------------------------------------------------
 
-func showTaskListPage(w http.ResponseWriter, r *http.Request, op string, userInfo *login.UserInformationRecord) {
+func doTaskListPage(w http.ResponseWriter, r *http.Request, op string, userInfo *login.UserInformationRecord) {
 	var formObject taskListForm
 	formObject.objectName = "Task List Form"
 	forms.HandleStandaloneForm(&formObject, w, r, op, userInfo, "http://www.yahoo.com/")
 }
 
-func showTaskEditPage(w http.ResponseWriter, r *http.Request, op string, userInfo *login.UserInformationRecord) {
+func doTaskEditPage(w http.ResponseWriter, r *http.Request, op string, userInfo *login.UserInformationRecord) {
 	var formObject taskEditForm
 	formObject.objectName = "Task Edit Form"
 	forms.HandleStandaloneForm(&formObject, w, r, op, userInfo, "tasklist")
 }
 
-func showMarkDonePage(w http.ResponseWriter, r *http.Request, op string, userInfo *login.UserInformationRecord) {
+func doMarkDonePage(w http.ResponseWriter, r *http.Request, op string, userInfo *login.UserInformationRecord) {
 	var formObject markDoneForm
 	formObject.objectName = "Mark Done Form"
 	forms.HandleStandaloneForm(&formObject, w, r, op, userInfo, "tasklist")
@@ -612,15 +618,15 @@ func Handler(w http.ResponseWriter, r *http.Request, op string, userInfo *login.
 	switch {
 	case op == "tasklist":
 		if userInfo.UserId != 0 {
-			showTaskListPage(w, r, op, userInfo)
+			doTaskListPage(w, r, op, userInfo)
 		}
 	case op == "taskedit":
 		if userInfo.UserId != 0 {
-			showTaskEditPage(w, r, op, userInfo)
+			doTaskEditPage(w, r, op, userInfo)
 		}
 	case op == "markdone":
 		if userInfo.UserId != 0 {
-			showMarkDonePage(w, r, op, userInfo)
+			doMarkDonePage(w, r, op, userInfo)
 		}
 	default:
 		filename := "/home/ec2-user/wayneserver/staticappcontent/streak/" + op
