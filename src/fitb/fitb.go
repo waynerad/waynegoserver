@@ -18,27 +18,28 @@ import (
 	"wutil"
 )
 
-func getDoctype() string {
-	return `<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<meta http-equiv="X-UA-Compatible" content="ie=edge" />
-`
-}
-
-func getStyle() string {
-	return `
-<style>
+func showFitbHeadHeader(w http.ResponseWriter, displayInfo map[string]string, defaultClose bool) {
+	header := w.Header()
+	header.Set("Content-Type", "text/html; charset=utf-8")
+	fmt.Fprint(w, `
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+        <title>`+displayInfo["hTitle"]+`</title>
+        <style>
 
 body {
     font-size: 1.1em;
     font-family: helvetica;
 }
+
 #header {
     background-color: #FFEFE0;
 }
+
 #footer {
     background-color: #FFEFE0;
 }
@@ -49,14 +50,40 @@ h1 {
 
 .infield {
     font-size: 1.1em;
+    width: 300px;
 }
 
 .biginput {
     font-size: 1.1em;
 }
 
-</style>
-`
+        </style>
+`)
+	if defaultClose {
+	fmt.Fprint(w, `
+    </head>
+    <body>
+`)
+	}
+}
+
+func showFitbBodyHeader(w http.ResponseWriter, displayInfo map[string]string) {
+	fmt.Fprint(w, `
+        <div id="header">
+            <p>
+                <a href="picktopic">My Topics</a>
+                &middot; `+displayInfo["hUserName"]+`
+            </p>
+        </div>
+`)
+}
+
+func showFitbFooter(w http.ResponseWriter) {
+	fmt.Fprint(w, `
+        <div id="footer">
+            <p>&nbsp;</p>
+        </div>
+`)
 }
 
 func uint64ToStr(z uint64) string {
@@ -254,18 +281,19 @@ func showEditTopicPage(w http.ResponseWriter, r *http.Request, op string, userid
 	if showform {
 		header := w.Header()
 		header.Set("Content-Type", "text/html; charset=utf-8")
-		fmt.Fprint(w, getDoctype())
-		db := accessdb.GetDbConnection()
-		defer db.Close()
-		fmt.Fprint(w, `<title>Topic Entry</title>
-`+getStyle()+`
-</head>
-<body>
+		displayInfo := make(map[string]string)
+		displayInfo["hUserName"] = userName
+		displayInfo["hTitle"] = "[Put Page Title Here (283)]"
+		showFitbHeadHeader(w, displayInfo, true)
+		showFitbBodyHeader(w, displayInfo)
+		fmt.Fprint(w, `
   <section>
     <h1>Topic Entry</h1>
 <form action="edittopic" method="post">
 <input type="hidden" name="topic" value="`+uint64ToStr(topicid)+`" />
 `)
+		db := accessdb.GetDbConnection()
+		defer db.Close()
 		if errorOccurred {
 			fmt.Fprintln(w, "<h2>Error occurred</h2><ul>")
 			for _, errMsg := range errorList {
@@ -282,8 +310,8 @@ func showEditTopicPage(w http.ResponseWriter, r *http.Request, op string, userid
 </table>
 </form>
   </section>
-</body>
-</html>`)
+`)
+		showFitbFooter(w)
 	}
 }
 
@@ -295,14 +323,19 @@ func showTopicListPage(w http.ResponseWriter, r *http.Request, op string, userid
 	}
 	header := w.Header()
 	header.Set("Content-Type", "text/html; charset=utf-8")
-	fmt.Fprint(w, getDoctype())
-	fmt.Fprint(w, `<title>List of Topics</title>
-`+getStyle()+`
+
+	displayInfo := make(map[string]string)
+	displayInfo["hUserName"] = userName
+	displayInfo["hTitle"] = "[Put Page Title Here (326)]"
+	showFitbHeadHeader(w, displayInfo, false)
+	fmt.Fprint(w, `
 <link rel="stylesheet" href="jquery-ui.css" />
 <script src="jquery-1.9.1.js"></script>
 <script src="jquery-ui.js"></script>
 </head>
 <body>
+')
+		showFitbBodyHeader(w , displayInfo )
   <section>
     <h1>List of Topics</h1>
 `)
@@ -351,8 +384,8 @@ func showTopicListPage(w http.ResponseWriter, r *http.Request, op string, userid
 	fmt.Fprint(w, `
         <p> <a href="edittopic?topic=0">Add Topic</a> </p>
   </section>
-</body>
-</html>`)
+`)
+	showFitbFooter(w)
 }
 
 func showTopicPickListPage(w http.ResponseWriter, r *http.Request, op string, userid uint64, userName string) {
@@ -372,13 +405,15 @@ func showTopicPickListPage(w http.ResponseWriter, r *http.Request, op string, us
 	currentTime := uint64(time.Now().Unix())
 	header := w.Header()
 	header.Set("Content-Type", "text/html; charset=utf-8")
-	fmt.Fprint(w, getDoctype())
-	fmt.Fprint(w, `<title>Your topics</title>
-`+getStyle()+`
-</head>
-<body>
+
+	displayInfo := make(map[string]string)
+	displayInfo["hUserName"] = userName
+	displayInfo["hTitle"] = "My Topics"
+	showFitbHeadHeader(w, displayInfo, true)
+	showFitbBodyHeader(w, displayInfo)
+	fmt.Fprint(w, `
   <section>
-    <h1>Your topics</h1>
+    <h1>My Topics</h1>
 `)
 	db := accessdb.GetDbConnection()
 	defer db.Close()
@@ -425,8 +460,8 @@ func showTopicPickListPage(w http.ResponseWriter, r *http.Request, op string, us
 	}
 	fmt.Fprint(w, `
   </section>
-</body>
-</html>`)
+`)
+	showFitbFooter(w)
 }
 
 func showPracticePage(w http.ResponseWriter, r *http.Request, op string, userid uint64, userName string) {
@@ -473,18 +508,21 @@ func showPracticePage(w http.ResponseWriter, r *http.Request, op string, userid 
 	}
 	header := w.Header()
 	header.Set("Content-Type", "text/html; charset=utf-8")
-	fmt.Fprint(w, getDoctype())
+
+	displayInfo := make(map[string]string)
+	displayInfo["hUserName"] = userName
+	displayInfo["hTitle"] = "[Put Page Title Here (509)]"
+	showFitbHeadHeader(w, displayInfo, true)
+	showFitbBodyHeader(w, displayInfo)
+
 	db := accessdb.GetDbConnection()
 	defer db.Close()
-	fmt.Fprint(w, `<title>Practice</title>
-`+getStyle()+`
-</head>
-<body>
+	fmt.Fprint(w, `
   <section>
     <h1>Practice: `+html.EscapeString(ui.name)+`</h1>
   </section>
-</body>
-</html>`)
+`)
+	showFitbFooter(w)
 }
 
 func showEditChapterPage(w http.ResponseWriter, r *http.Request, op string, userid uint64, userName string) {
@@ -685,13 +723,17 @@ func showEditChapterPage(w http.ResponseWriter, r *http.Request, op string, user
 	if showform {
 		header := w.Header()
 		header.Set("Content-Type", "text/html; charset=utf-8")
-		fmt.Fprint(w, getDoctype())
+
+		displayInfo := make(map[string]string)
+		displayInfo["hUserName"] = userName
+		displayInfo["hTitle"] = "[Put Page Title Here (724)]"
+		showFitbHeadHeader(w, displayInfo, true)
+		showFitbBodyHeader(w, displayInfo)
+
 		db := accessdb.GetDbConnection()
 		defer db.Close()
-		fmt.Fprint(w, `<title>Chapter Entry</title>
-`+getStyle()+`
-</head>
-<body>
+
+		fmt.Fprint(w, `
   <section>
     <h1>Chapter Entry</h1>
 <form action="editchapter" method="post">
@@ -712,8 +754,8 @@ func showEditChapterPage(w http.ResponseWriter, r *http.Request, op string, user
 </table>
 </form>
   </section>
-</body>
-</html>`)
+`)
+		showFitbFooter(w)
 	}
 }
 
@@ -755,11 +797,14 @@ func showChapterListPage(w http.ResponseWriter, r *http.Request, op string, user
 	}
 	header := w.Header()
 	header.Set("Content-Type", "text/html; charset=utf-8")
-	fmt.Fprint(w, getDoctype())
-	fmt.Fprint(w, `<title>Chapters of `+html.EscapeString(topicName)+`</title>
-`+getStyle()+`
-</head>
-<body>
+
+	displayInfo := make(map[string]string)
+	displayInfo["hUserName"] = userName
+	displayInfo["hTitle"] = "[Put Page Title Here (798)]"
+	showFitbHeadHeader(w, displayInfo, true)
+	showFitbBodyHeader(w, displayInfo)
+
+	fmt.Fprint(w, `
   <section>
     <h1>Chapters of `+html.EscapeString(topicName)+`</h1>
 `)
@@ -800,8 +845,8 @@ func showChapterListPage(w http.ResponseWriter, r *http.Request, op string, user
 	fmt.Fprint(w, `
   <p><a href="editchapter?topic=`+uint64ToStr(topicid)+`&chapter=0">New</a></p>
   </section>
-</body>
-</html>`)
+`)
+	showFitbFooter(w)
 }
 
 func calculateLnum(str string) float64 {
@@ -1352,7 +1397,13 @@ func showBulkEditQuestionsPage(w http.ResponseWriter, r *http.Request, op string
 	if showform {
 		header := w.Header()
 		header.Set("Content-Type", "text/html; charset=utf-8")
-		fmt.Fprint(w, getDoctype())
+
+		displayInfo := make(map[string]string)
+		displayInfo["hUserName"] = userName
+		displayInfo["hTitle"] = "[Put Page Title Here (1398)]"
+		showFitbHeadHeader(w, displayInfo, true)
+		showFitbBodyHeader(w, displayInfo)
+
 		db := accessdb.GetDbConnection()
 		defer db.Close()
 		type chapterType struct {
@@ -1379,10 +1430,7 @@ func showBulkEditQuestionsPage(w http.ResponseWriter, r *http.Request, op string
 			currentChap.name = row.Str(1)
 			allChapters = append(allChapters, currentChap)
 		}
-		fmt.Fprint(w, `<title>List questions for topic: `+topicName+`</title>
-`+getStyle()+`
-</head>
-<body>
+		fmt.Fprint(w, `
   <section>
     <h1>List questions for topic: `+topicName+`</h1>
 <form action="bulkeditquestions" method="post">
@@ -1445,8 +1493,8 @@ func showBulkEditQuestionsPage(w http.ResponseWriter, r *http.Request, op string
 </table>
 </form>
   </section>
-</body>
-</html>`)
+`)
+		showFitbFooter(w)
 	}
 }
 
@@ -1530,7 +1578,13 @@ func showListQuestionsPage(w http.ResponseWriter, r *http.Request, op string, us
 	if showform {
 		header := w.Header()
 		header.Set("Content-Type", "text/html; charset=utf-8")
-		fmt.Fprint(w, getDoctype())
+
+		displayInfo := make(map[string]string)
+		displayInfo["hUserName"] = userName
+		displayInfo["hTitle"] = "[Put Page Title Here (1579)] Edit questions for topic: " + htmlize(topicName)
+		showFitbHeadHeader(w, displayInfo, true)
+		showFitbBodyHeader(w, displayInfo)
+
 		db := accessdb.GetDbConnection()
 		defer db.Close()
 		type chapterType struct {
@@ -1558,10 +1612,7 @@ func showListQuestionsPage(w http.ResponseWriter, r *http.Request, op string, us
 			currentChap.name = row.Str(1)
 			allChapters[currentChap.idChapter] = currentChap.name
 		}
-		fmt.Fprint(w, `<title>Edit questions for topic: `+topicName+`</title>
-`+getStyle()+`
-</head>
-<body>
+		fmt.Fprintln(w, `
   <section>
     <h1>Edit questions for topic: `+topicName+`</h1>
 <form action="listquestions" method="post">
@@ -1588,8 +1639,8 @@ func showListQuestionsPage(w http.ResponseWriter, r *http.Request, op string, us
 </table>
 </form>
   </section>
-</body>
-</html>`)
+`)
+		showFitbFooter(w)
 	}
 }
 
@@ -1767,7 +1818,12 @@ func showAddBulkQuestionsPage(w http.ResponseWriter, r *http.Request, op string,
 	if showform {
 		header := w.Header()
 		header.Set("Content-Type", "text/html; charset=utf-8")
-		fmt.Fprint(w, getDoctype())
+
+		displayInfo := make(map[string]string)
+		displayInfo["hUserName"] = userName
+		displayInfo["hTitle"] = "[Put Page Title Here (1819)]"
+		showFitbHeadHeader(w, displayInfo, true)
+		showFitbBodyHeader(w, displayInfo)
 		db := accessdb.GetDbConnection()
 		defer db.Close()
 		type chapterType struct {
@@ -1799,10 +1855,7 @@ func showAddBulkQuestionsPage(w http.ResponseWriter, r *http.Request, op string,
 				maxChapter = currentChap.idChapter
 			}
 		}
-		fmt.Fprint(w, `<title>Bulk add questions for topic: `+topicName+`</title>
-`+getStyle()+`
-</head>
-<body>
+		fmt.Fprint(w, `
   <section>
     <h1>Bulk add questions for topic: `+topicName+`</h1>
 <form action="bulkaddquestions" method="post">
@@ -1831,8 +1884,8 @@ func showAddBulkQuestionsPage(w http.ResponseWriter, r *http.Request, op string,
 <p><input class="infield" type="submit" /></p>
 </form>
   </section>
-</body>
-</html>`)
+`)
+		showFitbFooter(w)
 	}
 }
 
@@ -1992,7 +2045,13 @@ func showEditQuestionPage(w http.ResponseWriter, r *http.Request, op string, use
 	if showform {
 		header := w.Header()
 		header.Set("Content-Type", "text/html; charset=utf-8")
-		fmt.Fprint(w, getDoctype())
+
+		displayInfo := make(map[string]string)
+		displayInfo["hUserName"] = userName
+		displayInfo["hTitle"] = "[Put Page Title Here (2046)]"
+		showFitbHeadHeader(w, displayInfo, true)
+		showFitbBodyHeader(w, displayInfo)
+
 		db := accessdb.GetDbConnection()
 		defer db.Close()
 		type chapterType struct {
@@ -2019,10 +2078,7 @@ func showEditQuestionPage(w http.ResponseWriter, r *http.Request, op string, use
 			currentChap.name = row.Str(1)
 			allChapters = append(allChapters, currentChap)
 		}
-		fmt.Fprint(w, `<title>Edit questions for topic: `+topicName+`</title>
-`+getStyle()+`
-</head>
-<body>
+		fmt.Fprint(w, `
   <section>
     <h1>Edit questions for topic: `+topicName+`</h1>
 <form action="editquestion" method="post">
@@ -2056,8 +2112,8 @@ func showEditQuestionPage(w http.ResponseWriter, r *http.Request, op string, use
 </table>
 </form>
   </section>
-</body>
-</html>`)
+`)
+		showFitbFooter(w)
 	}
 }
 
@@ -2197,7 +2253,13 @@ func showDeleteQuestionPage(w http.ResponseWriter, r *http.Request, op string, u
 	if showform {
 		header := w.Header()
 		header.Set("Content-Type", "text/html; charset=utf-8")
-		fmt.Fprint(w, getDoctype())
+
+		displayInfo := make(map[string]string)
+		displayInfo["hUserName"] = userName
+		displayInfo["hTitle"] = "[Put Page Title Here (2255)]"
+		showFitbHeadHeader(w, displayInfo, true)
+		showFitbBodyHeader(w, displayInfo)
+
 		db := accessdb.GetDbConnection()
 		defer db.Close()
 		type chapterType struct {
@@ -2224,10 +2286,7 @@ func showDeleteQuestionPage(w http.ResponseWriter, r *http.Request, op string, u
 			currentChap.name = row.Str(1)
 			allChapters = append(allChapters, currentChap)
 		}
-		fmt.Fprint(w, `<title>Delete question for topic: `+topicName+`</title>
-`+getStyle()+`
-</head>
-<body>
+		fmt.Fprint(w, `
   <section>
     <h1>Delete question for topic: `+topicName+`</h1>
 <form action="deletequestion" method="post">
@@ -2250,8 +2309,8 @@ func showDeleteQuestionPage(w http.ResponseWriter, r *http.Request, op string, u
 </table>
 </form>
   </section>
-</body>
-</html>`)
+`)
+		showFitbFooter(w)
 	}
 }
 
@@ -2345,13 +2404,16 @@ func showRenumberPage(w http.ResponseWriter, r *http.Request, op string, userid 
 	}
 	header := w.Header()
 	header.Set("Content-Type", "text/html; charset=utf-8")
-	fmt.Fprint(w, getDoctype())
+
+	displayInfo := make(map[string]string)
+	displayInfo["hUserName"] = userName
+	displayInfo["hTitle"] = "[Put Page Title Here (2405)]"
+	showFitbHeadHeader(w, displayInfo, true)
+	showFitbBodyHeader(w, displayInfo)
+
 	db := accessdb.GetDbConnection()
 	defer db.Close()
-	fmt.Fprint(w, `<title>Renumber Topic</title>
-`+getStyle()+`
-</head>
-<body>
+	fmt.Fprint(w, `
   <section>
     <h1>Renumber Topic</h1>
 <form action="renumbertopic" method="post">
@@ -2363,8 +2425,8 @@ func showRenumberPage(w http.ResponseWriter, r *http.Request, op string, userid 
 </form>
 <p>Done</p>
   </section>
-</body>
-</html>`)
+`)
+	showFitbFooter(w)
 }
 
 func initialize(db mysql.Conn, userid uint64, topicid uint64) {
@@ -2487,7 +2549,13 @@ func showInitializePage(w http.ResponseWriter, r *http.Request, op string, useri
 	}
 	header := w.Header()
 	header.Set("Content-Type", "text/html; charset=utf-8")
-	fmt.Fprint(w, getDoctype())
+
+	displayInfo := make(map[string]string)
+	displayInfo["hUserName"] = userName
+	displayInfo["hTitle"] = "[Put Page Title Here (2550)]"
+	showFitbHeadHeader(w, displayInfo, true)
+	showFitbBodyHeader(w, displayInfo)
+
 	db := accessdb.GetDbConnection()
 	defer db.Close()
 	var title string
@@ -2499,10 +2567,7 @@ func showInitializePage(w http.ResponseWriter, r *http.Request, op string, useri
 		title = "Resume: " + htmlize(topicName)
 		buttonFace = "Resume!"
 	}
-	fmt.Fprint(w, `<title>`+title+`</title>
-`+getStyle()+`
-</head>
-<body>
+	fmt.Fprint(w, `
   <section>
     <h1>`+title+`</h1>
 <form action="quiz" method="post">
@@ -2513,8 +2578,8 @@ func showInitializePage(w http.ResponseWriter, r *http.Request, op string, useri
 <p><input class="infield" type="submit" value="`+buttonFace+`" />
 </form>
   </section>
-</body>
-</html>`)
+`)
+	showFitbFooter(w)
 }
 
 func followJctToQuestionInfo(db mysql.Conn, questionjctid uint64, userid uint64) (uint64, uint64, uint64, uint64, float64, float64, string, string) {
@@ -2841,16 +2906,24 @@ func showAskQuestionPage(w http.ResponseWriter, r *http.Request, op string, user
 	} else {
 		header := w.Header()
 		header.Set("Content-Type", "text/html; charset=utf-8")
-		fmt.Fprint(w, getDoctype())
-		var title string
-		title = topicName
+
+		title := "Topic: " + topicName
+
+		displayInfo := make(map[string]string)
+		displayInfo["hUserName"] = userName
+		displayInfo["hTitle"] = "Topic: " + htmlize(title)
+		showFitbHeadHeader(w, displayInfo, false)
+
 		if takeABreakMode {
 			timeInterval := int(askTimeGmt - currentTime)
 			inEnglish := wutil.TimeIntervalSecondsToEnglish(timeInterval)
-			fmt.Fprint(w, `<title>`+title+`</title>
-`+getStyle()+`
+			showFitbBodyHeader(w, displayInfo)
+			fmt.Fprint(w, `
 </head>
-<body onload="document.getElementById('response1').focus();">
+<body>
+`)
+			fmt.Fprint(w, `
+
   <section>
     <p>`+progressMessage+`</p>
     <h1>`+title+`</h1>
@@ -2861,8 +2934,8 @@ func showAskQuestionPage(w http.ResponseWriter, r *http.Request, op string, user
 <input class="infield" type="submit" value="Resume" />
 </form>
   </section>
-</body>
-</html>`)
+`)
+			showFitbFooter(w)
 		} else {
 			fitbList := strings.Split(theFitbStr, "_")
 			retElemNumber := 0
@@ -2873,8 +2946,7 @@ func showAskQuestionPage(w http.ResponseWriter, r *http.Request, op string, user
 				}
 				inBlank = !inBlank
 			}
-			fmt.Fprint(w, `<title>`+title+`</title>
-`+getStyle()+`
+			fmt.Fprint(w, `
 <script>
 
 function advanceOnReturn(ev, num) {
@@ -2895,6 +2967,9 @@ function advanceOnReturn(ev, num) {
 </script>
 </head>
 <body onload="document.getElementById('response1').focus();">
+`)
+			showFitbBodyHeader(w, displayInfo)
+			fmt.Fprint(w, `
   <section>
     <p>`+progressMessage+`</p>
     <h1>`+title+`</h1>
@@ -2922,8 +2997,8 @@ function advanceOnReturn(ev, num) {
 			fmt.Fprint(w, `
 </form>
   </section>
-</body>
-</html>`)
+`)
+			showFitbFooter(w)
 		}
 	}
 }
