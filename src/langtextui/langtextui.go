@@ -170,8 +170,8 @@ func ShowLangTextForm(w http.ResponseWriter, errorList map[string]string, userIn
 
 <table>
 
-<tr><td align="right"> <span class="gives">&#224;</span> </td><td> <span class="utyp">`+"``"+`a &nbsp; ,,a</span> </td></tr>
-<tr><td align="right"> <span class="gives">&#225;</span> </td><td> <span class="utyp">''a</span> </td></tr>
+<tr><td align="right"> <span class="gives">&#225;</span> </td><td> <span class="utyp">''a &nbsp; ,,a</span> </td></tr>
+<tr><td align="right"> <span class="gives">&#224;</span> </td><td> <span class="utyp">`+"``"+`a &nbsp; ..a</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#226;</span> </td><td> <span class="utyp">^^a &nbsp; &lt;&lt;a</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#227;</span> </td><td> <span class="utyp">~~a</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#228;</span> </td><td> <span class="utyp">""a</span> </td></tr>
@@ -179,32 +179,32 @@ func ShowLangTextForm(w http.ResponseWriter, errorList map[string]string, userIn
 <tr><td align="right"> <span class="gives">&#230;</span> </td><td> <span class="utyp">aaee</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#231;</span> </td><td> <span class="utyp">c//</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#240;</span> </td><td> <span class="utyp">--d--</span> </td></tr>
-<tr><td align="right"> <span class="gives">&#232;</span> </td><td> <span class="utyp">`+"``"+`e &nbsp; ,,e</span> </td></tr>
-<tr><td align="right"> <span class="gives">&#233;</span> </td><td> <span class="utyp">''e</span> </td></tr>
+<tr><td align="right"> <span class="gives">&#233;</span> </td><td> <span class="utyp">''e &nbsp; ,,e</span> </td></tr>
+<tr><td align="right"> <span class="gives">&#232;</span> </td><td> <span class="utyp">`+"``"+`e &nbsp; ..e</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#234;</span> </td><td> <span class="utyp">^^e &nbsp; &lt;&lt;e</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#235;</span> </td><td> <span class="utyp">""e</span> </td></tr>
-<tr><td align="right"> <span class="gives">&#236;</span> </td><td> <span class="utyp">`+"``"+`i &nbsp; ,,i</span> </td></tr>
-<tr><td align="right"> <span class="gives">&#237;</span> </td><td> <span class="utyp">''i</span> </td></tr>
+<tr><td align="right"> <span class="gives">&#237;</span> </td><td> <span class="utyp">''i &nbsp; ,,i</span> </td></tr>
+<tr><td align="right"> <span class="gives">&#236;</span> </td><td> <span class="utyp">`+"``"+`i &nbsp; ..i</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#238;</span> </td><td> <span class="utyp">^^i &nbsp; &lt;&lt;i</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#239;</span> </td><td> <span class="utyp">""i</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#241;</span> </td><td> <span class="utyp">~~n</span> </td></tr>
-<tr><td align="right"> <span class="gives">&#242;</span> </td><td> <span class="utyp">`+"``"+`o &nbsp; ,,o</span> </td></tr>
-<tr><td align="right"> <span class="gives">&#243;</span> </td><td> <span class="utyp">''o</span> </td></tr>
+<tr><td align="right"> <span class="gives">&#243;</span> </td><td> <span class="utyp">''o &nbsp; ,,o</span> </td></tr>
+<tr><td align="right"> <span class="gives">&#242;</span> </td><td> <span class="utyp">`+"``"+`o &nbsp; ..o</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#244;</span> </td><td> <span class="utyp">^^o &nbsp; &lt;&lt;o</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#245;</span> </td><td> <span class="utyp">~~o</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#246;</span> </td><td> <span class="utyp">""o</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#248;</span> </td><td> <span class="utyp">/o/</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#339;</span> </td><td> <span class="utyp">ooee</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#254;</span> </td><td> <span class="utyp">pppp</span> </td></tr>
-<tr><td align="right"> <span class="gives">&#249;</span> </td><td> <span class="utyp">`+"``"+`u &nbsp; ,,u</span> </td></tr>
-<tr><td align="right"> <span class="gives">&#250;</span> </td><td> <span class="utyp">''u</span> </td></tr>
+<tr><td align="right"> <span class="gives">&#250;</span> </td><td> <span class="utyp">''u &nbsp; ,,u</span> </td></tr>
+<tr><td align="right"> <span class="gives">&#249;</span> </td><td> <span class="utyp">`+"``"+`u &nbsp; ..u</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#251;</span> </td><td> <span class="utyp">^^u &nbsp; &lt;&lt;u</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#252;</span> </td><td> <span class="utyp">""u</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#253;</span> </td><td> <span class="utyp">''y</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#255;</span> </td><td> <span class="utyp">""y</span> </td></tr>
 
-<tr><td align="right"> <span class="gives">&#192;</span> </td><td> <span class="utyp">`+"``"+`A &nbsp; ,,A</span> </td></tr>
-<tr><td align="right"> <span class="gives">&#193;</span> </td><td> <span class="utyp">''A</span> </td></tr>
+<tr><td align="right"> <span class="gives">&#193;</span> </td><td> <span class="utyp">''A &nbsp; ,,A</span> </td></tr>
+<tr><td align="right"> <span class="gives">&#192;</span> </td><td> <span class="utyp">`+"``"+`A &nbsp; ..A</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#194;</span> </td><td> <span class="utyp">^^A &nbsp; &lt;&lt;A</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#195;</span> </td><td> <span class="utyp">~~A</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#196;</span> </td><td> <span class="utyp">""A</span> </td></tr>
@@ -212,17 +212,17 @@ func ShowLangTextForm(w http.ResponseWriter, errorList map[string]string, userIn
 <tr><td align="right"> <span class="gives">&#198;</span> </td><td> <span class="utyp">AAEE</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#199;</span> </td><td> <span class="utyp">C//</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#208;</span> </td><td> <span class="utyp">--D-</span> </td></tr>
-<tr><td align="right"> <span class="gives">&#200;</span> </td><td> <span class="utyp">`+"``"+`E &nbsp; ,,E</span> </td></tr>
-<tr><td align="right"> <span class="gives">&#201;</span> </td><td> <span class="utyp">''E</span> </td></tr>
+<tr><td align="right"> <span class="gives">&#201;</span> </td><td> <span class="utyp">''E &nbsp; ,,E</span> </td></tr>
+<tr><td align="right"> <span class="gives">&#200;</span> </td><td> <span class="utyp">`+"``"+`E &nbsp; ..E</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#202;</span> </td><td> <span class="utyp">^^E &nbsp; &lt;&lt;E</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#203;</span> </td><td> <span class="utyp">""E</span> </td></tr>
-<tr><td align="right"> <span class="gives">&#204;</span> </td><td> <span class="utyp">`+"``"+`I &nbsp; ,,I</span> </td></tr>
-<tr><td align="right"> <span class="gives">&#205;</span> </td><td> <span class="utyp">''I</span> </td></tr>
+<tr><td align="right"> <span class="gives">&#205;</span> </td><td> <span class="utyp">''I &nbsp; ,,I</span> </td></tr>
+<tr><td align="right"> <span class="gives">&#204;</span> </td><td> <span class="utyp">`+"``"+`I &nbsp; ..I</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#206;</span> </td><td> <span class="utyp">^^I &nbsp; &lt;&lt;I</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#207;</span> </td><td> <span class="utyp">""I</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#209;</span> </td><td> <span class="utyp">~~N</span> </td></tr>
-<tr><td align="right"> <span class="gives">&#210;</span> </td><td> <span class="utyp">`+"``"+`O &nbsp; ,,O</span> </td></tr>
-<tr><td align="right"> <span class="gives">&#211;</span> </td><td> <span class="utyp">''O</span> </td></tr>
+<tr><td align="right"> <span class="gives">&#211;</span> </td><td> <span class="utyp">''O &nbsp; ,,O</span> </td></tr>
+<tr><td align="right"> <span class="gives">&#210;</span> </td><td> <span class="utyp">`+"``"+`O &nbsp; ..O</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#212;</span> </td><td> <span class="utyp">^^O &nbsp; &lt;&lt;O</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#213;</span> </td><td> <span class="utyp">~~O</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#214;</span> </td><td> <span class="utyp">""O</span> </td></tr>
@@ -230,8 +230,8 @@ func ShowLangTextForm(w http.ResponseWriter, errorList map[string]string, userIn
 <tr><td align="right"> <span class="gives">&#338;</span> </td><td> <span class="utyp">OOEE</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#222;</span> </td><td> <span class="utyp">PPPP</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#223;</span> </td><td> <span class="utyp">ssss</span> </td></tr>
-<tr><td align="right"> <span class="gives">&#217;</span> </td><td> <span class="utyp">`+"``"+`U &nbsp; ,,U</span> </td></tr>
-<tr><td align="right"> <span class="gives">&#218;</span> </td><td> <span class="utyp">''U</span> </td></tr>
+<tr><td align="right"> <span class="gives">&#218;</span> </td><td> <span class="utyp">''U &nbsp; ,,U</span> </td></tr>
+<tr><td align="right"> <span class="gives">&#217;</span> </td><td> <span class="utyp">`+"``"+`U &nbsp; ..U</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#219;</span> </td><td> <span class="utyp">^^U &nbsp; &lt;&lt;U</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#220;</span> </td><td> <span class="utyp">""U</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#221;</span> </td><td> <span class="utyp">''Y</span> </td></tr>
