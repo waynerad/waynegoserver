@@ -285,7 +285,7 @@ func showListPage(w http.ResponseWriter, r *http.Request, op string, userid uint
 		fmt.Println(err)
 		panic("Prepare failed")
 	}
-	number := 1000
+	number := 100
 	getform := r.Form
 	_, ok := getform["number"]
 	if ok {
