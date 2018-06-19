@@ -336,7 +336,7 @@ func showListPage(w http.ResponseWriter, r *http.Request, op string, userid uint
 	}
 	if count == number {
 		number *= 10
-		fmt.Fprint(w, `<p><a href="list?number=`+intToStr(number)+`">More</a></p>`)
+		fmt.Fprint(w, `<p><a href="list?number=`+intToStr(number)+`">Show More</a></p>`)
 	}
 	fmt.Fprint(w, `
   </section>
