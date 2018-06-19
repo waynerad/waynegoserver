@@ -60,7 +60,7 @@ h1 {
         </style>
 `)
 	if defaultClose {
-	fmt.Fprint(w, `
+		fmt.Fprint(w, `
     </head>
     <body>
 `)
@@ -326,7 +326,7 @@ func showTopicListPage(w http.ResponseWriter, r *http.Request, op string, userid
 
 	displayInfo := make(map[string]string)
 	displayInfo["hUserName"] = userName
-	displayInfo["hTitle"] = "[Put Page Title Here (326)]"
+	displayInfo["hTitle"] = "List of Topics"
 	showFitbHeadHeader(w, displayInfo, false)
 	fmt.Fprint(w, `
 <link rel="stylesheet" href="jquery-ui.css" />
@@ -334,8 +334,9 @@ func showTopicListPage(w http.ResponseWriter, r *http.Request, op string, userid
 <script src="jquery-ui.js"></script>
 </head>
 <body>
-')
-		showFitbBodyHeader(w , displayInfo )
+`)
+	showFitbBodyHeader(w, displayInfo)
+	fmt.Fprint(w, `
   <section>
     <h1>List of Topics</h1>
 `)
@@ -726,7 +727,7 @@ func showEditChapterPage(w http.ResponseWriter, r *http.Request, op string, user
 
 		displayInfo := make(map[string]string)
 		displayInfo["hUserName"] = userName
-		displayInfo["hTitle"] = "[Put Page Title Here (724)]"
+		displayInfo["hTitle"] = "Chapter Entry"
 		showFitbHeadHeader(w, displayInfo, true)
 		showFitbBodyHeader(w, displayInfo)
 
@@ -800,7 +801,7 @@ func showChapterListPage(w http.ResponseWriter, r *http.Request, op string, user
 
 	displayInfo := make(map[string]string)
 	displayInfo["hUserName"] = userName
-	displayInfo["hTitle"] = "[Put Page Title Here (798)]"
+	displayInfo["hTitle"] = "Chapters of " + html.EscapeString(topicName)
 	showFitbHeadHeader(w, displayInfo, true)
 	showFitbBodyHeader(w, displayInfo)
 
@@ -880,7 +881,7 @@ func calculateLnum(str string) float64 {
 	inAnswer := false
 	var rv float64
 	fmt.Println(str)
-	for _, char := range str {
+	for idx, char := range str {
 		// fmt.Println("    ", char) // uncomment this line to debug bad character issues.
 		if char == rune("_"[0]) {
 			inAnswer = !inAnswer
@@ -1213,9 +1214,33 @@ func calculateLnum(str string) float64 {
 				// 'i  (accented i) (for Spanish)
 				l = 201.823428 // lower case + 200 for the shift
 			}
+			if char == 239 {
+				// "i  (umlauted i) (for French believe it or not)
+				l = 201.823428 // lower case + 200 for the umlaut
+			}
+			if char == 249 {
+				// `u  (back accented u) (for French)
+				l = 204.605511 // lower case + 200 for accent
+			}
+			if char == 37 {
+				// % symbol
+				l = 300
+			}
+			if char == 251 {
+				// ^u
+				l = 204.605511 // lower case + 200 for caret
+			}
+			if char == 238 {
+				// ^i
+				l = 201.823428 // lower case + 200 for the caret
+			}
+			if char == 199 {
+				// C//
+				l = 204.56578 // upper case + 200 for the diatric
+			}
 			if inAnswer {
 				if l == 0.0 {
-					panic("Encountered uncountable character in input(1038)")
+					panic("Encountered uncountable character in input: character '" + string(char) + "' value " + intToStr(int(char)) + " position " + intToStr(idx))
 				}
 				rv = rv + math.Log(l) + 5.0 // makes e 5.0
 			}
@@ -1581,7 +1606,7 @@ func showListQuestionsPage(w http.ResponseWriter, r *http.Request, op string, us
 
 		displayInfo := make(map[string]string)
 		displayInfo["hUserName"] = userName
-		displayInfo["hTitle"] = "[Put Page Title Here (1579)] Edit questions for topic: " + htmlize(topicName)
+		displayInfo["hTitle"] = "Edit questions for topic: " + htmlize(topicName)
 		showFitbHeadHeader(w, displayInfo, true)
 		showFitbBodyHeader(w, displayInfo)
 
@@ -1821,7 +1846,7 @@ func showAddBulkQuestionsPage(w http.ResponseWriter, r *http.Request, op string,
 
 		displayInfo := make(map[string]string)
 		displayInfo["hUserName"] = userName
-		displayInfo["hTitle"] = "[Put Page Title Here (1819)]"
+		displayInfo["hTitle"] = "Bulk add questions for topic: " + htmlize(topicName)
 		showFitbHeadHeader(w, displayInfo, true)
 		showFitbBodyHeader(w, displayInfo)
 		db := accessdb.GetDbConnection()
@@ -1857,7 +1882,7 @@ func showAddBulkQuestionsPage(w http.ResponseWriter, r *http.Request, op string,
 		}
 		fmt.Fprint(w, `
   <section>
-    <h1>Bulk add questions for topic: `+topicName+`</h1>
+    <h1>Bulk add questions for topic: `+htmlize(topicName)+`</h1>
 <form action="bulkaddquestions" method="post">
 <input type="hidden" name="topic" value="`+uint64ToStr(topicid)+`" />
 `)
@@ -2338,13 +2363,13 @@ func showRenumberPage(w http.ResponseWriter, r *http.Request, op string, userid 
 			var updateList []updateTyp
 			updateList = make([]updateTyp, 0)
 			sql := "SELECT id_question, the_fitb_str FROM fitb_question WHERE id_topic = ? ORDER BY id_question;"
-			sel, err := db.Prepare(sql)
+			sel1, err := db.Prepare(sql)
 			if err != nil {
 				fmt.Println(err)
 				panic("Prepare failed")
 			}
-			sel.Bind(topicid)
-			rows, _, err := sel.Exec()
+			sel1.Bind(topicid)
+			rows, _, err := sel1.Exec()
 			if err != nil {
 				fmt.Println(err)
 				panic("Bind/Exec failed")
@@ -2356,26 +2381,26 @@ func showRenumberPage(w http.ResponseWriter, r *http.Request, op string, userid 
 				x.lnum = calculateLnum(fitbStr)
 				updateList = append(updateList, x)
 			}
+			sql = "UPDATE fitb_question SET lnum = ? WHERE id_question = ?"
+			stmt1, err := db.Prepare(sql)
+			if err != nil {
+				panic("Prepare failed")
+			}
 			for _, updateInfo := range updateList {
-				sql = "UPDATE fitb_question SET lnum = ? WHERE id_question = ?"
-				stmt, err := db.Prepare(sql)
-				if err != nil {
-					panic("Prepare failed")
-				}
-				stmt.Bind(updateInfo.lnum, updateInfo.questionid)
-				_, _, err = stmt.Exec()
+				stmt1.Bind(updateInfo.lnum, updateInfo.questionid)
+				_, _, err = stmt1.Exec()
 			}
 			var questionList []uint64
 			questionList = make([]uint64, 0)
 			// sql = "SELECT id_question FROM fitb_question WHERE id_topic = ? ORDER BY id_chapter, lnum;"
 			sql = "SELECT fitb_question.id_question FROM fitb_chapter, fitb_question WHERE (fitb_chapter.id_chapter = fitb_question.id_chapter) AND (fitb_question.id_topic = ?) ORDER BY fitb_chapter.sequence_num, fitb_question.lnum;"
-			sel, err = db.Prepare(sql)
+			sel2, err := db.Prepare(sql)
 			if err != nil {
 				fmt.Println(err)
 				panic("Prepare failed")
 			}
-			sel.Bind(topicid)
-			rows, _, err = sel.Exec()
+			sel2.Bind(topicid)
+			rows, _, err = sel2.Exec()
 			if err != nil {
 				fmt.Println(err)
 				panic("Bind/Exec failed")
@@ -2386,16 +2411,16 @@ func showRenumberPage(w http.ResponseWriter, r *http.Request, op string, userid 
 			}
 			var seqNum int64
 			seqNum = 10
+			sql = "UPDATE fitb_question SET sequence_num = ? WHERE id_question = ?"
+			stmt2, err := db.Prepare(sql)
+			if err != nil {
+				fmt.Println(err)
+				panic("Prepare failed")
+			}
 			for _, questionid := range questionList {
 				seqNum = seqNum + 10
-				sql = "UPDATE fitb_question SET sequence_num = ? WHERE id_question = ?"
-				stmt, err := db.Prepare(sql)
-				if err != nil {
-					fmt.Println(err)
-					panic("Prepare failed")
-				}
-				stmt.Bind(seqNum, questionid)
-				_, _, err = stmt.Exec()
+				stmt2.Bind(seqNum, questionid)
+				_, _, err = stmt2.Exec()
 			}
 		}
 	}
