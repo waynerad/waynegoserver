@@ -2499,14 +2499,17 @@ func initialize(db mysql.Conn, userid uint64, topicid uint64) {
 			seqNumMap[questionid] = sequenceNum
 		}
 	}
+
+	sql = "INSERT INTO fitb_user_question_jct (id_user, id_question, id_topic, ask_time_gmt, time_interval, factorup, factordown) VALUES (?, ?, ?, ?, ?, ?, ?);"
+	stmt, err := db.Prepare(sql)
+	if err != nil {
+		fmt.Println(err)
+		panic("Prepare failed")
+	}
+	// defer stmt.Close();
+
 	for _, questionid := range questionList {
-		sql = "INSERT INTO fitb_user_question_jct (id_user, id_question, id_topic, ask_time_gmt, time_interval, factorup, factordown) VALUES (?, ?, ?, ?, ?, ?, ?);"
-		stmt, err := db.Prepare(sql)
-		if err != nil {
-			fmt.Println(err)
-			panic("Prepare failed")
-		}
-		// defer stmt.Close();
+
 		sequenceNum := seqNumMap[questionid]
 		askTime := 1 + sequenceNum                                    // This is so the sequence of first introduction is the same as the sequence_num bers in the database
 		stmt.Bind(userid, questionid, topicid, askTime, 10, 1.0, 1.0) // INITIAL REPETITIVENESS is set here
