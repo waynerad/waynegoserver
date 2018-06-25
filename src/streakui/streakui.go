@@ -192,7 +192,6 @@ func ShowStreakTaskList(w http.ResponseWriter, dbDataList streak.TaskListData, e
 		if (count & 1) == 1 {
 			backgroundColor = " style=\"background-color: #E8F0E8;\""
 		}
-
 		idStr := uintToStr(task.IdTask)
 		streakLenStr := ""
 		if task.CurrentStreakLen != 0 {
@@ -206,7 +205,7 @@ func ShowStreakTaskList(w http.ResponseWriter, dbDataList streak.TaskListData, e
 		} else {
 			markDone = "&nbsp;"
 		}
-		fmt.Fprint(w, `<tr "+backgroundColor+"><td align="center"> `+htmlize(task.Name)+` </td><td align="center"> `+intToStr(task.CycleDays)+`</td><td align="center"> `+streakLenStr+`</td><td align="center"> `+task.TimeRemaining+` </td><td> `+markDone+` </td>
+		fmt.Fprint(w, `<tr `+backgroundColor+`><td align="center"> <span title="`+htmlize(task.Description)+`">`+htmlize(task.Name)+`</span> </td><td align="center"> `+intToStr(task.CycleDays)+`</td><td align="center"> `+streakLenStr+`</td><td align="center"> `+task.TimeRemaining+` </td><td> `+markDone+` </td>
 `)
 		if editmode {
 			fmt.Fprint(w, `<td> <a href="taskedit?task=`+idStr+`">Edit</a> </td><td> <a href="taskdelete?task=`+idStr+`">Delete</a> </td>
@@ -262,7 +261,7 @@ func ShowMarkDoneForm(w http.ResponseWriter, errorList map[string]string, userIn
         Current Streak:
     </div>
     <div class="ourinput">
-	`+htmlize(intToStr(displayInfo.CycleDays))+` days
+	`+htmlize(intToStr(displayInfo.CurrentStreakLen))+` days
     </div>
     <div class="ourlabel">
         Time Remaining:
