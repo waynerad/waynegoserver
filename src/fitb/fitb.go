@@ -2733,6 +2733,15 @@ func genProgressMessage(db mysql.Conn, userid uint64, topicid uint64, currentTim
 	}
 }
 
+func calcFullAnswer(theFitbStr string) string {
+	fullAnswer := ""
+	fitbList := strings.Split(theFitbStr, "_")
+	for _, entry := range fitbList {
+		fullAnswer = fullAnswer + entry
+	}
+	return fullAnswer
+}
+
 func showAskQuestionPage(w http.ResponseWriter, r *http.Request, op string, userid uint64, userName string) {
 	var questionjctid uint64
 	var questionid uint64
@@ -2773,7 +2782,6 @@ func showAskQuestionPage(w http.ResponseWriter, r *http.Request, op string, user
 		alreadywrong = strToInt(theform["alreadywrong"][0])
 		allCorrect := true
 		questionid, topicid, askTimeGmt, timeInterval, factorup, factordown, theFitbStr, topicName = followJctToQuestionInfo(db, questionjctid, userid)
-		fmt.Println("debug", "questionid", questionid)
 		fitbList := strings.Split(theFitbStr, "_")
 		inBlank := false
 		for idx, entry := range fitbList {
@@ -2788,11 +2796,12 @@ func showAskQuestionPage(w http.ResponseWriter, r *http.Request, op string, user
 			}
 			inBlank = !inBlank
 		}
+
 		seedTime := time.Now()
 		seedUnix := seedTime.UnixNano()
 		rand.Seed(seedUnix)
 		if allCorrect {
-			correctMessage = `<p>You are correct!</p><font color="green"><b>` + fullAnswer + `</b></font></p><p> Next question:`
+			correctMessage = `<font color="green">Correct!</font> ` + fullAnswer + `</font><p><p>Next question:`
 			if alreadywrong == 0 {
 				// if they got it correct, we use the UP factor
 				// and increase it and set the DOWN factor to
@@ -2865,38 +2874,77 @@ func showAskQuestionPage(w http.ResponseWriter, r *http.Request, op string, user
 		// Ok, first we see if there are any questions already started that are ready to be asked
 		currentTime := uint64(time.Now().Unix())
 
-		sql := "SELECT id_uq_jct FROM fitb_user_question_jct WHERE (id_user = ?) AND (id_topic = ?) AND (ask_time_gmt > 1474838209) AND (ask_time_gmt <=?) ORDER BY ask_time_gmt LIMIT 1;" // the time code here is the moment the program first went live
-		sel, err := db.Prepare(sql)
+		sql := "SELECT fitb_user_question_jct.id_uq_jct, fitb_question.the_fitb_str FROM fitb_user_question_jct, fitb_question WHERE (fitb_user_question_jct.id_user = ?) AND (fitb_user_question_jct.id_topic = ?) AND (fitb_user_question_jct.ask_time_gmt > 1474838209) AND (fitb_user_question_jct.ask_time_gmt <= ?) AND (fitb_user_question_jct.id_question = fitb_question.id_question) ORDER BY fitb_user_question_jct.ask_time_gmt LIMIT ?, 1;" // the time code here is the moment the program first went live
+
+		selAlreadyAsked, err := db.Prepare(sql)
 		if err != nil {
 			fmt.Println(err)
 			panic("Prepare failed")
 		}
-		sel.Bind(userid, topicid, currentTime)
-		rows, _, err := sel.Exec()
-		if err != nil {
-			fmt.Println(err)
-			panic("Exec() failed")
-		}
-		for _, row := range rows {
-			questionjctid = row.Uint64(0)
-		}
 
-		// Now, if we didn't get anything from the last query, it means we are out of questions already asked, so we should retrieve a new question that has never been asked
-		if questionjctid == 0 {
-			sql := "SELECT id_uq_jct FROM fitb_user_question_jct WHERE (id_user = ?) AND (id_topic = ?) AND (ask_time_gmt < 1474838209) ORDER BY ask_time_gmt LIMIT 1;" // the time code here is the moment the program first went live
-			sel, err := db.Prepare(sql)
-			if err != nil {
-				fmt.Println(err)
-				panic("Prepare failed")
-			}
-			sel.Bind(userid, topicid)
-			rows, _, err := sel.Exec()
+		keepGoing := true
+		skipOffset := 0
+		contemplatingFitbStr := ""
+		for keepGoing {
+			keepGoing = false
+
+			selAlreadyAsked.Bind(userid, topicid, currentTime, skipOffset)
+			rows, _, err := selAlreadyAsked.Exec()
 			if err != nil {
 				fmt.Println(err)
 				panic("Exec() failed")
 			}
+			questionjctid = 0 // we have to explicitly set to zero so we can detect running off the end
 			for _, row := range rows {
 				questionjctid = row.Uint64(0)
+				contemplatingFitbStr = row.Str(1)
+
+			}
+
+			if calcFullAnswer(contemplatingFitbStr) == fullAnswer {
+				// if we're using the same punch-out sentence, skip and find something different
+				if questionjctid != 0 { // make sure we don't go into an endless loop when we go off the end
+					skipOffset++
+					keepGoing = true
+				}
+			}
+
+		}
+
+		// Now, if we didn't get anything from the last query, it means we are out of questions already asked, so we should retrieve a new question that has never been asked
+		if questionjctid == 0 {
+
+			// sql := "SELECT id_uq_jct FROM fitb_user_question_jct WHERE (id_user = ?) AND (id_topic = ?) AND (ask_time_gmt < 1474838209) ORDER BY ask_time_gmt LIMIT ?, 1;" // the time code here is the moment the program first went live
+			sql := "SELECT fitb_user_question_jct.id_uq_jct, fitb_question.the_fitb_str FROM fitb_user_question_jct, fitb_question WHERE (fitb_user_question_jct.id_user = ?) AND (fitb_user_question_jct.id_topic = ?) AND (fitb_user_question_jct.ask_time_gmt <= 1474838209) AND (fitb_user_question_jct.id_question = fitb_question.id_question) ORDER BY fitb_user_question_jct.ask_time_gmt LIMIT ?, 1;" // the time code here is the moment the program first went live
+			selNeverBeenAsked, err := db.Prepare(sql)
+			if err != nil {
+				fmt.Println(err)
+				panic("Prepare failed")
+			}
+
+			keepGoing = true
+			skipOffset = 0
+			for keepGoing {
+				keepGoing = false
+				selNeverBeenAsked.Bind(userid, topicid, skipOffset)
+				rows, _, err := selNeverBeenAsked.Exec()
+				if err != nil {
+					fmt.Println(err)
+					panic("Exec() failed")
+				}
+				questionjctid = 0 // we have to explicitly set to zero so we can detect running off the end
+				for _, row := range rows {
+					questionjctid = row.Uint64(0)
+					contemplatingFitbStr = row.Str(1)
+				}
+
+				if calcFullAnswer(contemplatingFitbStr) == fullAnswer {
+					// if we're using the same punch-out sentence, skip and find something different
+					if questionjctid != 0 { // make sure we don't go into an endless loop when we go off the end
+						skipOffset++
+						keepGoing = true
+					}
+				}
 			}
 		}
 	}
@@ -2919,14 +2967,12 @@ func showAskQuestionPage(w http.ResponseWriter, r *http.Request, op string, user
 			wouldBeQuestionjctid = row.Uint64(0)
 		}
 		questionid, topicid, askTimeGmt, timeInterval, factorup, factordown, theFitbStr, topicName = followJctToQuestionInfo(db, wouldBeQuestionjctid, userid)
-		fmt.Println("debug", "questionid", questionid)
 		takeABreakMode = true
 		if gotRight {
 			doBreakRedirect = true
 		}
 	} else {
 		questionid, topicid, askTimeGmt, timeInterval, factorup, factordown, theFitbStr, topicName = followJctToQuestionInfo(db, questionjctid, userid)
-		fmt.Println("debug", "questionid", questionid)
 	}
 	progressMessage := genProgressMessage(db, userid, topicid, currentTime)
 	if doBreakRedirect {
@@ -3005,6 +3051,7 @@ function advanceOnReturn(ev, num) {
 <form action="quiz" name="frmQuiz" id="frmQuiz" method="post" onsubmit="return false;">
 <input type="hidden" name="topic" value="`+uint64ToStr(topicid)+`" />
 <input type="hidden" name="questionjct" value="`+uint64ToStr(questionjctid)+`" />
+<input type="hidden" name="_questionid" value="`+uint64ToStr(questionid)+`" />
 <input type="hidden" name="alreadywrong" value="`+intToStr(alreadywrong)+`" />
 `)
 			inClear := true
