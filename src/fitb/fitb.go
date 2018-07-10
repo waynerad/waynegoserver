@@ -2801,7 +2801,8 @@ func showAskQuestionPage(w http.ResponseWriter, r *http.Request, op string, user
 		seedUnix := seedTime.UnixNano()
 		rand.Seed(seedUnix)
 		if allCorrect {
-			correctMessage = `<font color="green">Correct!</font> ` + fullAnswer + `</font><p><p>Next question:`
+			// Next question
+			correctMessage = `<font color="green">Correct!</font> ` + fullAnswer + `</font><p><p>`
 			if alreadywrong == 0 {
 				// if they got it correct, we use the UP factor
 				// and increase it and set the DOWN factor to
