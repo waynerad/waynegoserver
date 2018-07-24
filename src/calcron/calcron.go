@@ -57,6 +57,11 @@ h1 {
     font-size: 1.1em;
 }
 
+.dogo {
+    font-size: 1.1em;
+    background-color: #A0FFA0;
+}
+
 </style>
 
 `
@@ -760,6 +765,7 @@ func showEditPage(w http.ResponseWriter, r *http.Request, op string, userid uint
 		ui.second = strings.Trim(postform["second"][0], " \r\n\t")
 		if ui.title == "" {
 			errorList["title"] = "Please specify a title."
+			errorOccurred = true
 		}
 		if checkTimeFieldSyntaxError(ui.year) {
 			errorList["year"] = "Year is invalid"
@@ -1123,7 +1129,7 @@ func showListPage(w http.ResponseWriter, r *http.Request, op string, userid uint
 	header := w.Header()
 	header.Set("Content-Type", "text/html; charset=utf-8")
 	fmt.Fprint(w, getDoctype()+getStyle())
-	fmt.Fprint(w, `<title>List of Calcron Entries</title>
+	fmt.Fprint(w, `<title>List of Chimes Entries</title>
 <link rel="stylesheet" href="jquery-ui.css" />
 <script src="jquery-1.9.1.js"></script>
 <script src="jquery-ui.js"></script>
@@ -1174,7 +1180,7 @@ jQuery(function () {
 `)
 	showCalcronMenuBar(w, userName)
 	fmt.Fprint(w, `
-    <h1>List of Calcron Entries</h1>
+    <h1>List of Chimes Entries</h1>
 `)
 	err := r.ParseForm()
 	if err != nil {
@@ -1274,7 +1280,7 @@ jQuery(function () {
 			backgroundColor = " style=\"background-color: #E8F0E8;\""
 		}
 		if entry.currenttime == lastTime {
-			backgroundColor = " style=\"background-color: #FF8000;\""
+			backgroundColor = " style=\"background-color: #FFF0E0;\""
 		}
 		fmt.Fprint(w, "<tr "+backgroundColor+"><td> "+timeCodeToString(entry.currenttime, timeZoneOffset)+" </td>")
 		// if crossedNow {
@@ -1632,7 +1638,7 @@ function chimesAddFloatsToScale(originalScale) {
 
 function chimesDoTimerPulse() {
     "use strict";
-    var curtim, curdat, interval, xl, fromMoment, pitch, duration, amplitude, frequency, startTime, harmonizedInfo, harmOctave, harmNum, harmDnom, theScale, seconds, intText;
+    var curtim, curdat, interval, xl, countdown, fromMoment, pitch, duration, amplitude, frequency, startTime, harmonizedInfo, harmOctave, harmNum, harmDnom, theScale, seconds, intText;
     // console.log("timer pulse!");
     curdat = new Date();
     curtim = curdat.getTime();
@@ -1659,11 +1665,15 @@ function chimesDoTimerPulse() {
         xl = xl * 5.25;
         // document.getElementById("xl").value = xl;
         xl = Math.floor(xl);
+        document.getElementById("countdown").innerHTML = "";
     } else {
         xl = Math.log(interval) / gChimesData.LOG2;
         pitch = 9.0 - (xl / 4.25); // magic pitch constant (larger is higher)
         xl = xl * 5.25; // constant that determines how often the chimes happen (larger is slower)
         document.getElementById("xl").value = xl;
+        // countdown = (Math.floor((xl - Math.floor(xl)) * 100) / 10) + 1;
+        countdown = Math.floor((xl - Math.floor(xl)) * 10) + 1;
+        document.getElementById("countdown").innerHTML = countdown;
         xl = Math.floor(xl);
         if (xl !== gChimesData.lastXl) {
             fromMoment = gChimesData.globalCtx.currentTime;
@@ -1696,13 +1706,13 @@ function chimesDoTimerPulse() {
         if (xl < 40) {
             window.setTimeout(chimesDoTimerPulse, 20);
         } else {
-            if (xl < 70) {
+            if (xl < 75) {
                 window.setTimeout(chimesDoTimerPulse, 50);
             } else {
-                if (xl < 80) {
+                if (xl < 85) {
                     window.setTimeout(chimesDoTimerPulse, 100);
                 } else {
-                    if (xl < 100) {
+                    if (xl < 110) {
                         window.setTimeout(chimesDoTimerPulse, 1000);
                     } else {
                         if (interval < 0) {
@@ -1761,6 +1771,7 @@ function chimesExecParseAndSet() {
         gChimesData.timerGoing = true;
     }
     gChimesData.centernoteLog = (Math.log(432) / Math.log(2)) - 5;
+    document.getElementById("parse_and_set").className = "infield";
 }
 
 function chimesExecUseTimeNow() {
@@ -1820,13 +1831,15 @@ Time code:
 	fmt.Fprint(w, `" />
     <input class="infield" type="button" id="use_time_now" name="use_time_now" value="Use time now" />
 </td></tr><tr><td>
-    <input class="infield" type="textbox" id="next_event" name="next_event" value="" />
+    <input class="infield" type="hidden" id="next_event" name="next_event" value="" />
 Add minutes: <input class="infield" type="textbox" id="add_minutes" name="add_minutes" value="" />
 </td></tr><tr><td>
-    <input class="infield" type="button" id="parse_and_set" name="parse_and_set" value="Parse And Set Time" />
+    <input class="dogo" type="button" id="parse_and_set" name="parse_and_set" oldvalue="Parse And Set Time" value="Go" />
 <tr><td align="right"> <span id="interv_txt"></span>
 </td></tr><tr><td>
-    <input class="infield" type="textbox" id="xl" name="xl" value="" />
+    Next chime...
+    <input class="infield" type="hidden" id="xl" name="xl" value="" />
+    <span id="countdown"></span>
 </td></tr><tr><td>
     <input type="hidden" id="dismiss" name="dismiss" value="`+strconv.FormatUint(entry.id, 10)+`" />
     <input class="infield" type="submit" id="do_dis" name="do_dis" value="Dismiss" />
