@@ -1129,8 +1129,14 @@ func location(w http.ResponseWriter, r *http.Request, op string) {
 	}
 	locations := make(map[string]place)
 	locations["mountains"] = place{"mountains", 39.379275, 40.365755, -106.673316, -105.308265}
-	userAskedFor := "mountains"
-	locInfo := locations[userAskedFor]
+	locations["paris"] = place{"paris", 48.773713, 49.019732, 2.193168, 2.520012}
+	locations["mons"] = place{"mons", 50.446143, 50.458467, 3.943879, 3.959029}
+	locations["brussels"] = place{"brussels", 50.814578, 50.876946, 4.301278, 4.421844}
+	userAskedFor := op
+	locInfo, ok := locations[userAskedFor]
+	if !ok {
+		locInfo = locations["mountains"]
+	}
 	y := (rand.Float64() * (locInfo.lat2 - locInfo.lat1)) + locInfo.lat1
 	x := (rand.Float64() * (locInfo.long2 - locInfo.long1)) + locInfo.long1
 	fmt.Fprintln(w, "<p>Cut & paste for Google Maps:</p>")
@@ -1198,6 +1204,9 @@ func distance(w http.ResponseWriter, r *http.Request, op string, userid uint64) 
 		postform := r.Form
 		diststr := postform["distance"][0]
 		distval, err := strconv.ParseFloat(diststr, 64)
+		if err != nil {
+			distval = 0.0
+		}
 		// now we have our input, let's calculate
 		// centery := 39.690517 // the house is the centerpoint
 		// centerx := -104.917979
@@ -1349,6 +1358,12 @@ func Handler(w http.ResponseWriter, r *http.Request, op string, userid uint64, u
 		showList(w)
 
 	case op == "mountains":
+		location(w, r, op)
+	case op == "paris":
+		location(w, r, op)
+	case op == "mons":
+		location(w, r, op)
+	case op == "brussels":
 		location(w, r, op)
 
 	// case op == "colorado":
