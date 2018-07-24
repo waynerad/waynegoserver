@@ -11,3 +11,12 @@ type TaskDisplayData struct {
 }
 
 type TaskListData []TaskDisplayData
+
+type DayHistoryDisplayData struct {
+	ActualTimeGmt uint64
+	DayNum        uint64
+	Consecutive   int
+	Gap           int
+}
+
+type DayHistoryListData []DayHistoryDisplayData
