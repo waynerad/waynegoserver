@@ -229,14 +229,13 @@ func getStreakTaskListDBData(db mysql.Conn, userInfo *login.UserInformationRecor
 	// | id_task | bigint(20) unsigned | NO   | PRI | NULL    | auto_increment |
 	// | name    | varchar(255)        | NO   |     |         |                |
 	// +---------+---------------------+------+-----+---------+----------------+
-	var sql string
 	var currentEntry streak.TaskDisplayData
 	theList := make(streak.TaskListData, 0)
 	currentTime := uint64(time.Now().Unix())
 	timeZoneOffset := getTimeZoneOffset(db, userInfo.UserId)
 	var interval uint64
 
-	sql = "SELECT id_task, name, description, cycle_days FROM streak_task WHERE (id_user = ?) ORDER BY seq_num, id_task;"
+	sql := "SELECT id_task, name, description, cycle_days FROM streak_task WHERE (id_user = ?) ORDER BY seq_num, id_task;"
 	sel, err := db.Prepare(sql)
 	if err != nil {
 		fmt.Println(err)
@@ -267,10 +266,10 @@ func showTaskListPage(w http.ResponseWriter, userInfo *login.UserInformationReco
 	displayInfo["hTitle"] = "Streak Task List"
 	displayInfo["hUserName"] = htmlize(userInfo.UserName)
 	displayInfo["kn"] = "0"
-	streakui.ShowHeadHeader(w, displayInfo)
-	streakui.ShowBodyHeader(w, displayInfo)
+	streakui.ShowStreakHeadHeader(w, displayInfo)
+	streakui.ShowStreakBodyHeader(w, displayInfo)
 	streakui.ShowStreakTaskList(w, dbDataList, editmode)
-	streakui.ShowFooter(w, displayInfo)
+	streakui.ShowStreakFooter(w, displayInfo)
 }
 
 type taskListForm struct {
@@ -350,10 +349,10 @@ func (self *taskEditForm) GetDBDataAndShowForm(db mysql.Conn, w http.ResponseWri
 	displayInfo["hTitle"] = "Edit Streak Task"
 	displayInfo["hUserName"] = htmlize(userInfo.UserName)
 	displayInfo["kn"] = "0"
-	streakui.ShowHeadHeader(w, displayInfo)
-	streakui.ShowBodyHeader(w, displayInfo)
-	streakui.ShowTaskEditForm(w, errorList, userInput, displayInfo)
-	streakui.ShowFooter(w, displayInfo)
+	streakui.ShowStreakHeadHeader(w, displayInfo)
+	streakui.ShowStreakBodyHeader(w, displayInfo)
+	streakui.ShowStreakTaskEditForm(w, errorList, userInput, displayInfo)
+	streakui.ShowStreakFooter(w, displayInfo)
 }
 
 func (self *taskEditForm) CheckForErrors(db mysql.Conn, userInput map[string]string) (map[string]string, map[string]string) {
@@ -485,10 +484,10 @@ func (self *markDoneForm) GetDBDataAndShowForm(db mysql.Conn, w http.ResponseWri
 		currentEntry.TimeRemaining = convertTimeRemainingToEnglish(interval)
 	}
 
-	streakui.ShowHeadHeader(w, displayInfo)
-	streakui.ShowBodyHeader(w, displayInfo)
-	streakui.ShowMarkDoneForm(w, errorList, userInput, currentEntry)
-	streakui.ShowFooter(w, displayInfo)
+	streakui.ShowStreakHeadHeader(w, displayInfo)
+	streakui.ShowStreakBodyHeader(w, displayInfo)
+	streakui.ShowStreakMarkDoneForm(w, errorList, userInput, currentEntry)
+	streakui.ShowStreakFooter(w, displayInfo)
 }
 
 func (self *markDoneForm) CheckForErrors(db mysql.Conn, userInput map[string]string) (map[string]string, map[string]string) {
@@ -612,6 +611,112 @@ func doMarkDonePage(w http.ResponseWriter, r *http.Request, op string, userInfo 
 	forms.HandleStandaloneForm(&formObject, w, r, op, userInfo, "tasklist")
 }
 
+// ----------------------------------------------------------------
+// End of streak time check page
+// ----------------------------------------------------------------
+
+func getStreakHistoryDBData(db mysql.Conn, userInfo *login.UserInformationRecord, taskid uint64) streak.DayHistoryListData {
+	// mysql> DESCRIBE streak_day;
+	// +-----------------+---------------------+------+-----+---------+----------------+
+	// | Field           | Type                | Null | Key | Default | Extra          |
+	// +-----------------+---------------------+------+-----+---------+----------------+
+	// | id_day_task     | bigint(20) unsigned | NO   | PRI | NULL    | auto_increment |
+	// | id_user         | bigint(20) unsigned | NO   |     | 0       |                |
+	// | id_task         | bigint(20) unsigned | NO   | MUL | 0       |                |
+	// | actual_time_gmt | bigint(20) unsigned | NO   |     | 0       |                |
+	// | day_num         | bigint(20) unsigned | NO   |     | 0       |                |
+	// +-----------------+---------------------+------+-----+---------+----------------+
+	// 5 rows in set (0.00 sec)
+
+	var dayEntry streak.DayHistoryDisplayData
+	theList := make([]streak.DayHistoryDisplayData, 0)
+	// currentTime := uint64(time.Now().Unix())
+	// timeZoneOffset := getTimeZoneOffset(db, userInfo.UserId)
+
+	sql := "SELECT actual_time_gmt, day_num FROM streak_day WHERE id_task = ? ORDER BY day_num;"
+
+	sel, err := db.Prepare(sql)
+	if err != nil {
+		fmt.Println(err)
+		panic("Prepare failed")
+	}
+	sel.Bind(taskid)
+	rows, _, err := sel.Exec()
+	if err != nil {
+		fmt.Println(err)
+		panic("Bind/Exec failed")
+	}
+	var prevDayNum uint64
+	conseqCount := 0
+	for _, row := range rows {
+		dayEntry.ActualTimeGmt = row.Uint64(0)
+		dayEntry.DayNum = row.Uint64(1)
+
+		if dayEntry.DayNum == (prevDayNum + 1) {
+			dayEntry.Gap = 0
+			conseqCount++
+		} else {
+			dayEntry.Gap = int(dayEntry.DayNum - prevDayNum - 1)
+			conseqCount = 0
+		}
+		dayEntry.Consecutive = conseqCount
+		theList = append(theList, dayEntry)
+		prevDayNum = dayEntry.DayNum
+	}
+	return theList
+}
+
+func showStreakHistoryPage(w http.ResponseWriter, userInfo *login.UserInformationRecord, userInput map[string]string, dbDataList streak.DayHistoryListData) {
+	displayInfo := make(map[string]string)
+	displayInfo["hTitle"] = "Point 671"
+	displayInfo["hUserName"] = htmlize(userInfo.UserName)
+	displayInfo["kn"] = "0"
+	streakui.ShowStreakHeadHeader(w, displayInfo)
+	streakui.ShowStreakBodyHeader(w, displayInfo)
+	streakui.ShowStreakHistoryForm(w, dbDataList)
+	streakui.ShowStreakFooter(w, displayInfo)
+}
+
+// ----------------------------------------------------------------
+// Streak history page
+// ----------------------------------------------------------------
+
+type historyForm struct {
+	objectName string
+}
+
+func (self *historyForm) GetDefaults(db mysql.Conn, userInfo *login.UserInformationRecord, userInput map[string]string) map[string]string {
+	rv := make(map[string]string)
+	taskid := strToUint64(userInput["task"])
+	rv["task"] = uint64ToStr(taskid)
+	return rv
+}
+
+func (self *historyForm) GetDBDataAndShowForm(db mysql.Conn, w http.ResponseWriter, r *http.Request, op string, userInfo *login.UserInformationRecord, errorList map[string]string, userInput map[string]string) {
+	taskid := strToUint64(userInput["task"])
+	dbDataList := getStreakHistoryDBData(db, userInfo, taskid)
+	showStreakHistoryPage(w, userInfo, userInput, dbDataList)
+}
+
+func (self *historyForm) CheckForErrors(db mysql.Conn, userInput map[string]string) (map[string]string, map[string]string) {
+	errorList := make(map[string]string)
+	return errorList, nil
+}
+
+func (self *historyForm) SaveForm(db mysql.Conn, userInfo *login.UserInformationRecord, userInput map[string]string, alreadyProcessed map[string]string) map[string]string {
+	return nil
+}
+
+// ----------------------------------------------------------------
+// End of streak history page
+// ----------------------------------------------------------------
+
+func doHistoryPage(w http.ResponseWriter, r *http.Request, op string, userInfo *login.UserInformationRecord) {
+	var formObject historyForm
+	formObject.objectName = "History Form"
+	forms.HandleStandaloneForm(&formObject, w, r, op, userInfo, "tasklist")
+}
+
 // func Handler(w http.ResponseWriter, r *http.Request, op string, userid uint64, userName string) {
 func Handler(w http.ResponseWriter, r *http.Request, op string, userInfo *login.UserInformationRecord) {
 	fmt.Println("op is", op)
@@ -627,6 +732,10 @@ func Handler(w http.ResponseWriter, r *http.Request, op string, userInfo *login.
 	case op == "markdone":
 		if userInfo.UserId != 0 {
 			doMarkDonePage(w, r, op, userInfo)
+		}
+	case op == "history":
+		if userInfo.UserId != 0 {
+			doHistoryPage(w, r, op, userInfo)
 		}
 	default:
 		filename := "/home/ec2-user/wayneserver/staticappcontent/streak/" + op
