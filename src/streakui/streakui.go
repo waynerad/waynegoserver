@@ -20,7 +20,7 @@ func intToStr(ii int) string {
 	return strconv.FormatInt(int64(ii), 10)
 }
 
-func ShowHeadHeader(w http.ResponseWriter, displayInfo map[string]string) {
+func ShowStreakHeadHeader(w http.ResponseWriter, displayInfo map[string]string) {
 	header := w.Header()
 	header.Set("Content-Type", "text/html; charset=utf-8")
 	fmt.Fprint(w, `
@@ -89,7 +89,7 @@ h1 {
 `)
 }
 
-func ShowBodyHeader(w http.ResponseWriter, displayInfo map[string]string) {
+func ShowStreakBodyHeader(w http.ResponseWriter, displayInfo map[string]string) {
 	fmt.Fprint(w, `
     <body>
         <div id="header">
@@ -103,7 +103,7 @@ func ShowBodyHeader(w http.ResponseWriter, displayInfo map[string]string) {
 	// +` &middot; <a href="logout.php?kn=`+displayInfo["kn"]+`" class="btn btn-default">Logout</a><br />
 }
 
-func ShowFooter(w http.ResponseWriter, displayInfo map[string]string) {
+func ShowStreakFooter(w http.ResponseWriter, displayInfo map[string]string) {
 	fmt.Fprint(w, `
         <div id="footer">
             <p>&nbsp;</p>
@@ -136,7 +136,7 @@ func showErrorList(w http.ResponseWriter, errorList map[string]string) {
 `)
 }
 
-func ShowTaskEditForm(w http.ResponseWriter, errorList map[string]string, userInput map[string]string, displayInfo map[string]string) {
+func ShowStreakTaskEditForm(w http.ResponseWriter, errorList map[string]string, userInput map[string]string, displayInfo map[string]string) {
 	// Taks = `+htmlize(userInput["task"])+`
 	fmt.Fprint(w, `
 <form action="taskedit" method="post">
@@ -228,7 +228,7 @@ func ShowStreakTaskList(w http.ResponseWriter, dbDataList streak.TaskListData, e
 `)
 }
 
-func ShowMarkDoneForm(w http.ResponseWriter, errorList map[string]string, userInput map[string]string, displayInfo streak.TaskDisplayData) {
+func ShowStreakMarkDoneForm(w http.ResponseWriter, errorList map[string]string, userInput map[string]string, displayInfo streak.TaskDisplayData) {
 	fmt.Fprint(w, `
 <form action="markdone" method="post">
 <input type="hidden" name="task" value="`+htmlize(userInput["task"])+`" />
@@ -274,4 +274,32 @@ func ShowMarkDoneForm(w http.ResponseWriter, errorList map[string]string, userIn
     </div>
 </div>
 `)
+}
+
+func ShowStreakHistoryForm(w http.ResponseWriter, dbDataList streak.DayHistoryListData) {
+	fmt.Fprint(w, `
+<body>
+  <section>
+    <h1>Streak Day History</h1>
+`)
+	started := false
+	count := 0
+	for _, dayEntry := range dbDataList {
+		if count == 0 {
+			fmt.Fprint(w, `<form><table border="0" > <tr> <th> Actual Time </th><th> Day Num </th><th> Consecutive </th><th> Gap </th></tr>
+`)
+			started = true
+		}
+		count++
+		backgroundColor := " style=\"background-color: #FFFFFF;\""
+		if (count & 1) == 1 {
+			backgroundColor = " style=\"background-color: #E8F0E8;\""
+		}
+		fmt.Fprint(w, "<tr "+backgroundColor+">")
+		fmt.Fprint(w, "<td> "+uintToStr(dayEntry.ActualTimeGmt)+" </td><td> "+uintToStr(dayEntry.DayNum)+" </td><td> "+intToStr(dayEntry.Consecutive)+" </td><td> "+intToStr(dayEntry.Gap)+"</td>"+`
+`)
+	}
+	if started {
+		fmt.Fprint(w, "</table>")
+	}
 }
