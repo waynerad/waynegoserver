@@ -301,7 +301,7 @@ func ShowLangTextForm(w http.ResponseWriter, errorList map[string]string, userIn
 <tr><td align="right"> <span class="gives">&#969;</span> </td><td> <span class="utyp">\omega</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#970;</span> </td><td> <span class="utyp">\thetsym</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#978;</span> </td><td> <span class="utyp">\upsih</span> </td></tr>
-<tr><td align="right"> <span class="gives">&#982;</span> </td><td> <span class="utyp">\piv</span> </td></tr>
+<tr><td align="right"> <span class="gives">&#982;</span> </td><td> <span class="utyp">\pv</span> </td></tr>
 
 <tr><td align="right"> <span class="gives">&#162;</span> </td><td> <span class="utyp">\cent</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#163;</span> </td><td> <span class="utyp">\pound</span> </td></tr>
@@ -373,9 +373,9 @@ func ShowLangTextForm(w http.ResponseWriter, errorList map[string]string, userIn
 <tr><td align="right"> <span class="gives">&#8707;</span> </td><td> <span class="utyp">\exists</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#8709;</span> </td><td> <span class="utyp">\emptyset</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#8711;</span> </td><td> <span class="utyp">\nabla</span> </td></tr>
-<tr><td align="right"> <span class="gives">&#8712;</span> </td><td> <span class="utyp">\in</span> </td></tr>
-<tr><td align="right"> <span class="gives">&#8713;</span> </td><td> <span class="utyp">\notin</span> </td></tr>
-<tr><td align="right"> <span class="gives">&#8715;</span> </td><td> <span class="utyp">\ni</span> </td></tr>
+<tr><td align="right"> <span class="gives">&#8712;</span> </td><td> <span class="utyp">\inset</span> </td></tr>
+<tr><td align="right"> <span class="gives">&#8713;</span> </td><td> <span class="utyp">\noinset</span> </td></tr>
+<tr><td align="right"> <span class="gives">&#8715;</span> </td><td> <span class="utyp">\niset</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#8719;</span> </td><td> <span class="utyp">\prod</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#8721;</span> </td><td> <span class="utyp">\sum</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#8722;</span> </td><td> <span class="utyp">\minusminus</span> </td></tr>
