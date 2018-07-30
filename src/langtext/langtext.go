@@ -34,12 +34,41 @@ func mkReplaceEntry(srch string, replacement rune) replaceEntry {
 }
 
 func testReplaceMapCreatedCorrectly(replaceMap []replaceEntry, rpllen int) {
-	for i := 0; i < rpllen; i++ {
-		if replaceMap[i].match == nil {
-			fmt.Println("Match is nil for entry:", i)
+	for ii := 0; ii < rpllen; ii++ {
+		if replaceMap[ii].match == nil {
+			fmt.Println("Match is nil for entry:", ii)
 		}
-		if replaceMap[i].replacement == 0 {
-			fmt.Println("Replacement is 0 for entry:", i)
+		if replaceMap[ii].replacement == 0 {
+			fmt.Println("Replacement is 0 for entry:", ii)
+		}
+	}
+}
+
+func testReplaceMapDoesntHaveSubEntries(replaceMap []replaceEntry) {
+	// this is a really brute-force solution, but because the replace map
+	// is small enough and we only do this during testing, not in
+	// production, we can get away with it
+	rpllen := len(replaceMap)
+	for ii := 0; ii < rpllen-1; ii++ {
+		for jj := ii + 1; jj < rpllen; jj++ {
+			var aa int
+			var bb int
+			if len(replaceMap[ii].match) < len(replaceMap[jj].match) {
+				aa = ii
+				bb = jj
+			} else {
+				bb = ii
+				aa = jj
+			}
+			same := true
+			for kk := 0; kk < len(replaceMap[aa].match); kk++ {
+				if replaceMap[aa].match[kk] != replaceMap[bb].match[kk] {
+					same = false
+				}
+			}
+			if same {
+				fmt.Println("Subentry detected: ", ii, "and", jj)
+			}
 		}
 	}
 }
@@ -232,7 +261,7 @@ func constructReplaceMap() []replaceEntry {
 	replaceMap[181] = mkReplaceEntry(backslash+"omega", 969)
 	replaceMap[182] = mkReplaceEntry(backslash+"thetsym", 970)
 	replaceMap[183] = mkReplaceEntry(backslash+"upsih", 978)
-	replaceMap[184] = mkReplaceEntry(backslash+"piv", 982)
+	replaceMap[184] = mkReplaceEntry(backslash+"pv", 982)
 	replaceMap[185] = mkReplaceEntry(backslash+"ndash", 8211)
 	replaceMap[186] = mkReplaceEntry(backslash+"mdash", 8212)
 	replaceMap[187] = mkReplaceEntry(backslash+"horbar", 8213)
@@ -278,9 +307,9 @@ func constructReplaceMap() []replaceEntry {
 	replaceMap[224] = mkReplaceEntry(backslash+"exists", 8707)
 	replaceMap[225] = mkReplaceEntry(backslash+"emptyset", 8709)
 	replaceMap[226] = mkReplaceEntry(backslash+"nabla", 8711)
-	replaceMap[227] = mkReplaceEntry(backslash+"in", 8712)
-	replaceMap[228] = mkReplaceEntry(backslash+"notin", 8713)
-	replaceMap[229] = mkReplaceEntry(backslash+"ni", 8715)
+	replaceMap[227] = mkReplaceEntry(backslash+"inset", 8712)
+	replaceMap[228] = mkReplaceEntry(backslash+"noinset", 8713)
+	replaceMap[229] = mkReplaceEntry(backslash+"niset", 8715)
 	replaceMap[230] = mkReplaceEntry(backslash+"prod", 8719)
 	replaceMap[231] = mkReplaceEntry(backslash+"sum", 8721)
 	replaceMap[232] = mkReplaceEntry(backslash+"minusminus", 8722)
@@ -331,6 +360,7 @@ func ProcessInternationalLanguageCharacterConversion(sometext string) string {
 
 	rpllen := len(replaceMap)
 	// testReplaceMapCreatedCorrectly(replaceMap, rpllen)
+	// testReplaceMapDoesntHaveSubEntries(replaceMap)
 	tripleapostrophe := rpllen - 1
 
 	rv := ""
