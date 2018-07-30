@@ -367,7 +367,7 @@ func showMatchingArticles(db mysql.Conn, searchTerm string, fromEntry int, w htt
 	if searchTerm == strings.ToUpper(searchTerm) {
 		matchCase = true
 	}
-	sql := "SELECT url, title FROM hnfire_story WHERE (id_story > ?) AND (title LIKE ?);"
+	sql := "SELECT url, title FROM hnfire_story WHERE (id_story > ?) AND (title LIKE ?) ORDER BY id_story DESC;"
 	sel, err := db.Prepare(sql)
 	if err != nil {
 		fmt.Println(err)
@@ -424,7 +424,7 @@ func search(w http.ResponseWriter, r *http.Request, op string, userid uint64, us
 	}
 	fmt.Fprint(w, "<p>Last ID: "+intToStr(lastId)+"</p>")
 	fmt.Fprint(w, "<p>Displaying from: "+intToStr(fromEntry)+"</p>")
-	terms := [71]string{"emotion", "tensorflow", "keras", "pytorch", "deepmind", "deep learn", "neura", "neuro", "robo", "autonomous", "automate", "artificial", "algorithm", "machine learn", "reinforcement learn", "AI", "brain", "intelligence", "IQ", "xgboost", "data science", "nanometer", "moore", "google", "microsoft", "amazon", "facebook", "apple", "nvidia", "futur", "china", "chines", "snapchat", "evolution", "genetic", "dna", "crypt", "bill gates", "carmack", "elon musk", "golang", "python", "video game", "music", "porn", "police", "kill", "computer science", "startup", "silicon valley", "math", "emotion", "fermi", "female", "digital", "salary", "hire", "hiring", "dark", "paul graham", "jessica livingston", "sam altman", "damore", "privilege", "VR", "AR", "fast", "speed", "medical", "youtube", "Go"}
+	terms := [72]string{"emotion", "tensorflow", "keras", "pytorch", "deepmind", "deep learn", "neura", "neuro", "robo", "autonomous", "automate", "artificial", "algorithm", "machine learn", "reinforcement learn", "AI", "brain", "intelligence", "IQ", "xgboost", "data science", "nanometer", "moore", "google", "microsoft", "amazon", "facebook", "apple", "nvidia", "futur", "china", "chines", "france", "germany", "evolution", "genetic", "dna", "crypt", "bill gates", "carmack", "elon musk", "golang", "python", "video game", "music", "porn", "police", "kill", "computer science", "startup", "silicon valley", "math", "emotion", "fermi", "female", "digital", "salary", "hire", "hiring", "dark", "paul graham", "jessica livingston", "sam altman", "damore", "privilege", "VR", "AR", "fast", "speed", "medical", "youtube", "Go"}
 	for idx := 0; idx < len(terms); idx++ {
 		// fmt.Fprint(w, intToStr(idx)+": "+terms[idx]+"<br />")
 		fmt.Fprint(w, "<h1>"+terms[idx]+"</h1>")
