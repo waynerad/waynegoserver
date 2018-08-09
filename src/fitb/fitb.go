@@ -882,7 +882,7 @@ func calculateLnum(str string) float64 {
 	var rv float64
 	fmt.Println(str)
 	for idx, char := range str {
-		// fmt.Println("    ", char) // uncomment this line to debug bad character issues.
+		fmt.Println("    ", char) // uncomment this line to debug bad character issues.
 		if char == rune("_"[0]) {
 			inAnswer = !inAnswer
 		} else {
@@ -2982,11 +2982,11 @@ func showAskQuestionPage(w http.ResponseWriter, r *http.Request, op string, user
 		header := w.Header()
 		header.Set("Content-Type", "text/html; charset=utf-8")
 
-		title := "Topic: " + topicName
+		title := topicName
 
 		displayInfo := make(map[string]string)
 		displayInfo["hUserName"] = userName
-		displayInfo["hTitle"] = "Topic: " + htmlize(title)
+		displayInfo["hTitle"] = htmlize(title)
 		showFitbHeadHeader(w, displayInfo, false)
 
 		if takeABreakMode {
