@@ -127,6 +127,7 @@ func dumpRequestInfoToConsole(w http.ResponseWriter, r *http.Request, parseform 
 }
 
 func findTopHost(host string) (string, string, int) {
+	fmt.Println("ws-debug", "findTopHost", "host", host)
 	portNum := 80
 	// chop off port number, if there is one
 	colon := strings.Index(host, ":")
@@ -246,8 +247,14 @@ func (self wayneGoServerHandler) ServeHTTP(w http.ResponseWriter, r *http.Reques
 	header := w.Header()
 	header.Set("Server", "Wayneserver (Linux/CentOS)")
 	host := r.Host
-	// testFindTopHost()
-	subdomain, topHost, _ := findTopHost(host)
+	if host == "" {
+		// have no idea how it's possible for host to be empty
+		subdomain = ""
+		topHost = ""
+	} else {
+		// testFindTopHost()
+		subdomain, topHost, _ := findTopHost(host)
+	}
 	// By convention, we require all "secure" subdomain requests to have TLS turned on
 	secure := r.TLS != nil
 	if subdomain == "secure" {
