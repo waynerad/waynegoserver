@@ -1669,6 +1669,64 @@ func showListQuestionsPage(w http.ResponseWriter, r *http.Request, op string, us
 	}
 }
 
+func getOrCreateChapter(db mysql.Conn, chaptName string, userid uint64, topicid uint64) uint64 {
+	sql := "SELECT id_chapter FROM fitb_chapter WHERE (id_user = ?) AND (id_topic = ?) AND (name = ?);"
+	sel, err := db.Prepare(sql)
+	if err != nil {
+		fmt.Println(err)
+		panic("Prepare failed")
+	}
+	sel.Bind(userid, topicid, chaptName)
+	rows, _, err := sel.Exec()
+	if err != nil {
+		fmt.Println(err)
+		panic("Bind/Exec failed")
+	}
+	chapterExists := false
+	var chapterid uint64
+	for _, row := range rows {
+		chapterExists = true
+		chapterid = row.Uint64(0)
+	}
+	if !chapterExists {
+		stmt, err := db.Prepare("INSERT INTO fitb_chapter (id_topic, name) VALUES (?, ?);")
+		if err != nil {
+			fmt.Println(err)
+			panic("Prepare failed")
+		}
+		// defer stmt.Close();
+		stmt.Bind(topicid, chaptName)
+		_, _, err = stmt.Exec()
+		if err != nil {
+			fmt.Println(err)
+			panic("Exec failed")
+		}
+		// chapterid, err = res.LastInsertId()
+		// LastInsertId method doesn't exist because our version is too old. So we have to find our own ID with a stupid query
+		sql = "SELECT id_chapter FROM fitb_chapter WHERE (id_topic = ?) AND (name = ?);"
+		sel, err := db.Prepare(sql)
+		if err != nil {
+			fmt.Println(err)
+			panic("Prepare failed")
+		}
+		sel.Bind(userid, topicid, chaptName)
+		rows, _, err := sel.Exec()
+		if err != nil {
+			fmt.Println(err)
+			panic("Bind/Exec failed")
+		}
+		chapterid = 0
+		for _, row := range rows {
+			chapterid = row.Uint64(0)
+		}
+		if chapterid == 0 {
+			// this should be impossible
+			panic("Retrieval of chapter ID failed")
+		}
+	}
+	return chapterid
+}
+
 func showAddBulkQuestionsPage(w http.ResponseWriter, r *http.Request, op string, userid uint64, userName string) {
 	showform := false
 	errorList := make(map[string]string)
@@ -1792,6 +1850,12 @@ func showAddBulkQuestionsPage(w http.ResponseWriter, r *http.Request, op string,
 			for _, entry := range bulkAddSlice {
 				trEnt := trim(entry)
 				if len(trEnt) > 0 {
+					if len(trEnt) > 8 {
+						if trEnt[0:9] == "#chapter " {
+							chaptName := trEnt[9:]
+							chapterid = getOrCreateChapter(db, chaptName, userid, topicid)
+						}
+					}
 					if trEnt[0:1] == "#" {
 						trEnt = "" // if it's a comment, throw it away
 					}
