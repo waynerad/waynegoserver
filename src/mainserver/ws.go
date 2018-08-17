@@ -247,13 +247,12 @@ func (self wayneGoServerHandler) ServeHTTP(w http.ResponseWriter, r *http.Reques
 	header := w.Header()
 	header.Set("Server", "Wayneserver (Linux/CentOS)")
 	host := r.Host
-	if host == "" {
-		// have no idea how it's possible for host to be empty
-		subdomain = ""
-		topHost = ""
-	} else {
+	subdomain := ""
+	topHost := ""
+	// have no idea how it's possible for host to be empty
+	if host != "" {
 		// testFindTopHost()
-		subdomain, topHost, _ := findTopHost(host)
+		subdomain, topHost, _ = findTopHost(host)
 	}
 	// By convention, we require all "secure" subdomain requests to have TLS turned on
 	secure := r.TLS != nil
