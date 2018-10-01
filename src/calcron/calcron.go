@@ -55,6 +55,11 @@ h1 {
 
 .biginput {
     font-size: 1.1em;
+    width: 400px;
+}
+
+.smallinput {
+    font-size: 1.1em;
 }
 
 .dogo {
@@ -929,7 +934,7 @@ func showEditPage(w http.ResponseWriter, r *http.Request, op string, userid uint
 		fmt.Fprint(w, getDoctype()+getStyle())
 		db := accessdb.GetDbConnection()
 		defer db.Close()
-		fmt.Fprint(w, `<title>CalCron Entry</title>
+		fmt.Fprint(w, `<title>Chimes Entry</title>
 
 <script>
 
@@ -1014,7 +1019,7 @@ function ctstr(anyparameter) {
 `)
 		showCalcronMenuBar(w, userName)
 		fmt.Fprint(w, `
-    <h1>CalCron Entry</h1>
+    <h1>Chimes Entry</h1>
 
 <form action="edit" method="post">
 <input class="infield" type="hidden" name="entry" value="`+strconv.FormatUint(entryid, 10)+`" />
@@ -1030,21 +1035,21 @@ function ctstr(anyparameter) {
 
 <table border="0" cellpadding="4">
 <tr><td align="right"> Title: </td><td> <input class="biginput" name="title" id="title" type="text" value="`+html.EscapeString(ui.title)+`" /> </td></tr>
-<tr><td align="right"> Description: </td><td> <input class="biginput" name="description" id="description" type="text" value="`+html.EscapeString(ui.description)+`" /> </td></tr>
-<tr><td align="right"> Year: </td><td> <input class="biginput" name="year" id="year" type="text" value="`+html.EscapeString(ui.year)+`" /> </td></tr>
-<tr><td align="right"> Month: </td><td> <input class="biginput" name="month" id="month" type="text" value="`+html.EscapeString(ui.month)+`" /> </td></tr>
-<tr><td align="right"> Day of month: </td><td> <input class="biginput" name="dom" id="dom" type="text" value="`+html.EscapeString(ui.dom)+`" /> </td></tr>
+<tr><td align="right"> Description: </td><td> <textarea class="smallinput" name="description" id="description" rows="4" cols="60">`+html.EscapeString(ui.description)+`</textarea> </td></tr>
+<tr><td align="right"> Year: </td><td> <input class="smallinput" name="year" id="year" type="text" value="`+html.EscapeString(ui.year)+`" /> </td></tr>
+<tr><td align="right"> Month: </td><td> <input class="smallinput" name="month" id="month" type="text" value="`+html.EscapeString(ui.month)+`" /> </td></tr>
+<tr><td align="right"> Day of month: </td><td> <input class="smallinput" name="dom" id="dom" type="text" value="`+html.EscapeString(ui.dom)+`" /> </td></tr>
 <tr><td colspan="2" align="center" style="border-bottom: 1px solid #000000;"> </td></tr>
-<tr><td align="right"> Day of week: </td><td> <input class="biginput" name="dow" id="dow" type="text" value="`+html.EscapeString(ui.dow)+`" /> </td></tr>
-<tr><td align="right"> Nth day of day of week this month: </td><td> <input class="biginput" name="nth" id="nth" type="text" value="`+html.EscapeString(ui.nth)+`" /> </td></tr>
+<tr><td align="right"> Day of week: </td><td> <input class="smallinput" name="dow" id="dow" type="text" value="`+html.EscapeString(ui.dow)+`" /> </td></tr>
+<tr><td align="right"> Nth day of day of week this month: </td><td> <input class="smallinput" name="nth" id="nth" type="text" value="`+html.EscapeString(ui.nth)+`" /> </td></tr>
 <tr><td colspan="2" align="center" style="border-bottom: 1px solid #000000;"> </td></tr>
-<tr><td align="right"> Day of eternity </td><td> <input class="biginput" name="doe" id="doe" type="text" value="`+html.EscapeString(ui.doe)+`" /> </td></tr>
+<tr><td align="right"> Day of eternity </td><td> <input class="smallinput" name="doe" id="doe" type="text" value="`+html.EscapeString(ui.doe)+`" /> </td></tr>
 <tr><td colspan="2" align="center" style="border-bottom: 1px solid #000000;"> </td></tr>
-<tr><td align="right"> Hour: </td><td> <input class="biginput" name="hour" id="hour" type="text" value="`+html.EscapeString(ui.hour)+`" /> </td></tr>
-<tr><td align="right"> Minute: </td><td> <input class="biginput" name="minute" id="minute" type="text" value="`+html.EscapeString(ui.minute)+`" /> </td></tr>
-<tr><td align="right"> Second: </td><td> <input class="biginput" name="second" id="second" type="text" value="`+html.EscapeString(ui.second)+`" /> </td></tr>
+<tr><td align="right"> Hour: </td><td> <input class="smallinput" name="hour" id="hour" type="text" value="`+html.EscapeString(ui.hour)+`" /> </td></tr>
+<tr><td align="right"> Minute: </td><td> <input class="smallinput" name="minute" id="minute" type="text" value="`+html.EscapeString(ui.minute)+`" /> </td></tr>
+<tr><td align="right"> Second: </td><td> <input class="smallinput" name="second" id="second" type="text" value="`+html.EscapeString(ui.second)+`" /> </td></tr>
 
-<tr><td colspan="2" align="center"> <input class="infield" type="submit"> </td></tr>
+<tr><td colspan="2" align="center"> <input class="infield" type="submit" value="Save"> </td></tr>
 
 </table>
 </form>
@@ -1940,7 +1945,7 @@ func showViewPage(w http.ResponseWriter, r *http.Request, op string, userid uint
 	fmt.Fprint(w, getDoctype()+getStyle())
 	db := accessdb.GetDbConnection()
 	defer db.Close()
-	fmt.Fprint(w, `<title>CalCron Entry View</title>
+	fmt.Fprint(w, `<title>Chimes Entry View</title>
 
 </head>
 <body>
@@ -1948,7 +1953,7 @@ func showViewPage(w http.ResponseWriter, r *http.Request, op string, userid uint
 `)
 	showCalcronMenuBar(w, userName)
 	fmt.Fprint(w, `
-    <h1>CalCron Entry View</h1>
+    <h1>Chimes Entry View</h1>
 
 `)
 	fmt.Fprint(w, `
@@ -2173,7 +2178,7 @@ func showSuspendPage(w http.ResponseWriter, r *http.Request, op string, userid u
 		fmt.Fprint(w, getDoctype()+getStyle())
 		db := accessdb.GetDbConnection()
 		defer db.Close()
-		fmt.Fprint(w, `<title>CalCron Entry</title>
+		fmt.Fprint(w, `<title>Chimes Entry</title>
 </head>
 <body>
   <section>
