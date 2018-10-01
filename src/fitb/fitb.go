@@ -882,7 +882,7 @@ func calculateLnum(str string) float64 {
 	var rv float64
 	fmt.Println(str)
 	for idx, char := range str {
-		fmt.Println("    ", char) // uncomment this line to debug bad character issues.
+		// fmt.Println("    ", char) // uncomment this line to debug bad character issues.
 		if char == rune("_"[0]) {
 			inAnswer = !inAnswer
 		} else {
@@ -1238,9 +1238,13 @@ func calculateLnum(str string) float64 {
 				// C//
 				l = 204.56578 // upper case + 200 for the diatric
 			}
+			if char == 94 {
+				// ^ by itself
+				l = 500
+			}
 			if inAnswer {
 				if l == 0.0 {
-					panic("Encountered uncountable character in input: character '" + string(char) + "' value " + intToStr(int(char)) + " position " + intToStr(idx))
+					panic("Encountered uncountable character in input: character '" + string(char) + "' value " + intToStr(int(char)) + " position " + intToStr(idx) + " of " + `"` + str + `"`)
 				}
 				rv = rv + math.Log(l) + 5.0 // makes e 5.0
 			}
@@ -1669,14 +1673,14 @@ func showListQuestionsPage(w http.ResponseWriter, r *http.Request, op string, us
 	}
 }
 
-func getOrCreateChapter(db mysql.Conn, chaptName string, userid uint64, topicid uint64) uint64 {
-	sql := "SELECT id_chapter FROM fitb_chapter WHERE (id_user = ?) AND (id_topic = ?) AND (name = ?);"
+func getOrCreateChapter(db mysql.Conn, chaptName string, topicid uint64) uint64 {
+	sql := "SELECT id_chapter FROM fitb_chapter WHERE (id_topic = ?) AND (name = ?);"
 	sel, err := db.Prepare(sql)
 	if err != nil {
 		fmt.Println(err)
 		panic("Prepare failed")
 	}
-	sel.Bind(userid, topicid, chaptName)
+	sel.Bind(topicid, chaptName)
 	rows, _, err := sel.Exec()
 	if err != nil {
 		fmt.Println(err)
@@ -1689,28 +1693,49 @@ func getOrCreateChapter(db mysql.Conn, chaptName string, userid uint64, topicid 
 		chapterid = row.Uint64(0)
 	}
 	if !chapterExists {
-		stmt, err := db.Prepare("INSERT INTO fitb_chapter (id_topic, name) VALUES (?, ?);")
-		if err != nil {
-			fmt.Println(err)
-			panic("Prepare failed")
-		}
-		// defer stmt.Close();
-		stmt.Bind(topicid, chaptName)
-		_, _, err = stmt.Exec()
-		if err != nil {
-			fmt.Println(err)
-			panic("Exec failed")
-		}
-		// chapterid, err = res.LastInsertId()
-		// LastInsertId method doesn't exist because our version is too old. So we have to find our own ID with a stupid query
-		sql = "SELECT id_chapter FROM fitb_chapter WHERE (id_topic = ?) AND (name = ?);"
+		// sequence number
+		sql = "SELECT MAX(sequence_num) FROM fitb_chapter WHERE (id_topic = ?);"
 		sel, err := db.Prepare(sql)
 		if err != nil {
 			fmt.Println(err)
 			panic("Prepare failed")
 		}
-		sel.Bind(userid, topicid, chaptName)
+		sel.Bind(topicid)
 		rows, _, err := sel.Exec()
+		if err != nil {
+			fmt.Println(err)
+			panic("Bind/Exec failed")
+		}
+		var seqNum int64 // does this really need to be 64-bit?
+		seqNum = 0
+		for _, row := range rows {
+			seqNum = row.Int64(0)
+		}
+		seqNum++
+		// do it
+		stmt, err := db.Prepare("INSERT INTO fitb_chapter (id_topic, sequence_num, name) VALUES (?, ?, ?);")
+		if err != nil {
+			fmt.Println(err)
+			panic("Prepare failed")
+		}
+		// defer stmt.Close();
+		stmt.Bind(topicid, seqNum, chaptName)
+		_, _, err = stmt.Exec()
+		if err != nil {
+			fmt.Println(err)
+			panic("Exec failed")
+		}
+		// find out our ID
+		// chapterid, err = res.LastInsertId()
+		// LastInsertId method doesn't exist because our version is too old. So we have to find our own ID with a stupid query
+		sql = "SELECT id_chapter FROM fitb_chapter WHERE (id_topic = ?) AND (name = ?);"
+		sel, err = db.Prepare(sql)
+		if err != nil {
+			fmt.Println(err)
+			panic("Prepare failed")
+		}
+		sel.Bind(topicid, chaptName)
+		rows, _, err = sel.Exec()
 		if err != nil {
 			fmt.Println(err)
 			panic("Bind/Exec failed")
@@ -1719,6 +1744,7 @@ func getOrCreateChapter(db mysql.Conn, chaptName string, userid uint64, topicid 
 		for _, row := range rows {
 			chapterid = row.Uint64(0)
 		}
+		// sanity check
 		if chapterid == 0 {
 			// this should be impossible
 			panic("Retrieval of chapter ID failed")
@@ -1853,7 +1879,7 @@ func showAddBulkQuestionsPage(w http.ResponseWriter, r *http.Request, op string,
 					if len(trEnt) > 8 {
 						if trEnt[0:9] == "#chapter " {
 							chaptName := trEnt[9:]
-							chapterid = getOrCreateChapter(db, chaptName, userid, topicid)
+							chapterid = getOrCreateChapter(db, chaptName, topicid)
 						}
 					}
 					if trEnt[0:1] == "#" {
