@@ -1601,23 +1601,31 @@ function InstantiateFadeCandy() {
             remoteVoiceNum = 5;
             break;
         }
-	remoteVoiceNum *= 6;
-        skip = instSpecificParams.skip;
-	remoteVoiceNum += skip;
+        remoteVoiceNum *= 6;
+        skip = parseInt(instSpecificParams.skip, 10);
+        remoteVoiceNum += skip;
         remoteVoiceNum *= 2;
-        direction = instSpecificParams.direction;
-	remoteVoiceNum += direction;
+        direction = parseInt(instSpecificParams.direction, 10);
+        remoteVoiceNum += direction;
         originalNote = originalNote - Math.floor(originalNote); // strip off octave, use only note
         startHue = startHue + Math.floor(originalNote * 256);
         if (startHue > 255) {
             startHue = startHue - 256;
         }
-        twist = Math.floor(instSpecificParams.twist * 128);
+        console.log("instSpecificParams.twist");
+        console.log(instSpecificParams.twist);
+        twist = Math.floor(parseFloat(instSpecificParams.twist) * 128);
+        console.log("twist");
+        console.log(twist);
         stopHue = startHue + twist;
+        console.log("stopHue");
+        console.log(stopHue);
         if (stopHue > 255) {
             stopHue = stopHue - 256;
         }
-        saturation = (1.0 - instSpecificParams.pastelness) * 254.0;
+        console.log("stopHue");
+        console.log(stopHue);
+        saturation = (1.0 - parseInt(instSpecificParams.pastelness, 10)) * 254.0;
         saturation = Math.floor(saturation);
         umtSendLocalMsg(currentTime + "," + startMoment + "," + duration + ",fadeCandy," + remoteVoiceNum + "," + startHue + "," + saturation + "," + stopHue + "," + skip + "," + direction);
     };
