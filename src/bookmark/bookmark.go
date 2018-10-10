@@ -95,14 +95,14 @@ func showEditPage(w http.ResponseWriter, r *http.Request, op string, userid uint
 	errorOccurred := false
 	method := r.Method
 	var ui struct {
-		name   string
+		title  string
 		target string
 	}
 	var bookmarkid uint64
 	bookmarkid = 0
 	if method == "GET" {
 		// set defaults
-		ui.name = ""
+		ui.title = ""
 		ui.target = ""
 		showform = true
 		err := r.ParseForm()
@@ -116,7 +116,7 @@ func showEditPage(w http.ResponseWriter, r *http.Request, op string, userid uint
 			bookmarkid = strToUint(getform["bookmark"][0])
 			db := accessdb.GetDbConnection()
 			defer db.Close()
-			sql := "SELECT name, target FROM bookmark_link WHERE (id_bookmark = ?) AND (id_user = ?);"
+			sql := "SELECT title, target FROM bookmark_link WHERE (id_bookmark = ?) AND (id_user = ?);"
 			sel, err := db.Prepare(sql)
 			if err != nil {
 				fmt.Println(err)
@@ -129,7 +129,7 @@ func showEditPage(w http.ResponseWriter, r *http.Request, op string, userid uint
 				panic("Bind/Exec failed")
 			}
 			for _, row := range rows {
-				ui.name = row.Str(0)
+				ui.title = row.Str(0)
 				ui.target = row.Str(1)
 			}
 		}
@@ -144,10 +144,10 @@ func showEditPage(w http.ResponseWriter, r *http.Request, op string, userid uint
 		postform := r.Form
 		// error checking
 		bookmarkid = strToUint(postform["bookmark"][0])
-		ui.name = strings.Trim(postform["name"][0], " \r\n\t")
+		ui.title = strings.Trim(postform["title"][0], " \r\n\t")
 		ui.target = strings.Trim(postform["target"][0], " \r\n\t")
-		if ui.name == "" {
-			errorList["name"] = "Name is blank"
+		if ui.title == "" {
+			errorList["title"] = "Name is blank"
 			errorOccurred = true
 		}
 		if ui.target == "" {
@@ -163,13 +163,13 @@ func showEditPage(w http.ResponseWriter, r *http.Request, op string, userid uint
 			var save struct {
 				idBookmark   uint64
 				idUser       uint64
-				name         string
+				title        string
 				target       string
 				lastAccessed uint64
 			}
 			save.idBookmark = bookmarkid
 			save.idUser = userid
-			save.name = ui.name
+			save.title = ui.title
 			save.target = ui.target
 			save.lastAccessed = uint64(time.Now().Unix())
 			// query, if there, update, if not, create new
@@ -192,21 +192,21 @@ func showEditPage(w http.ResponseWriter, r *http.Request, op string, userid uint
 				}
 			}
 			if alreadyExists {
-				stmt, err := db.Prepare("UPDATE bookmark_link SET name = ?, target = ?, last_accessed = ? WHERE (id_bookmark = ?) AND (id_user = ?);")
+				stmt, err := db.Prepare("UPDATE bookmark_link SET title = ?, target = ?, last_accessed = ? WHERE (id_bookmark = ?) AND (id_user = ?);")
 				if err != nil {
 					fmt.Println(err)
 					panic("Prepare failed")
 				}
-				stmt.Bind(save.name, save.target, save.lastAccessed, bookmarkid, userid)
+				stmt.Bind(save.title, save.target, save.lastAccessed, bookmarkid, userid)
 				_, _, err = stmt.Exec()
 			} else {
-				stmt, err := db.Prepare("INSERT INTO bookmark_link (id_user, name, target, last_accessed) VALUES (?, ?, ?, ?);")
+				stmt, err := db.Prepare("INSERT INTO bookmark_link (id_user, title, target, last_accessed) VALUES (?, ?, ?, ?);")
 				if err != nil {
 					fmt.Println(err)
 					panic("Prepare failed")
 				}
 				// defer stmt.Close();
-				stmt.Bind(save.idUser, save.name, save.target, save.lastAccessed)
+				stmt.Bind(save.idUser, save.title, save.target, save.lastAccessed)
 				_, _, err = stmt.Exec()
 			}
 			if err != nil {
@@ -242,7 +242,7 @@ func showEditPage(w http.ResponseWriter, r *http.Request, op string, userid uint
 		fmt.Fprint(w, `
 <table border="0" cellpadding="4">
 <tr><td align="right"> Target: </td><td> <input type="hidden" name="bookmark" value="`+uintToStr(bookmarkid)+`"/><input size="40" name="target" id="target" class="infield" type="text" value="`+html.EscapeString(ui.target)+`" /> </td></tr>
-<tr><td align="right"> Name: </td><td> <input size="40" name="name" id="name" class="infield" type="text" value="`+html.EscapeString(ui.name)+`" /> </td></tr>
+<tr><td align="right"> Title: </td><td> <input size="40" name="title" id="title" class="infield" type="text" value="`+html.EscapeString(ui.title)+`" /> </td></tr>
 <tr><td colspan="2" align="center"> <input class="infield" type="submit"> </td></tr>
 </table>
 </form>
@@ -256,7 +256,7 @@ func showListPage(w http.ResponseWriter, r *http.Request, op string, userid uint
 	var sql string
 	var entry struct {
 		idBookmark uint64
-		name       string
+		title      string
 		target     string
 	}
 	header := w.Header()
@@ -279,13 +279,13 @@ func showListPage(w http.ResponseWriter, r *http.Request, op string, userid uint
 		fmt.Fprintln(w, err)
 		return
 	}
-	sql = "SELECT id_bookmark, name, target FROM bookmark_link WHERE id_user = ? ORDER BY id_user, last_accessed DESC LIMIT 0, ?;"
+	sql = "SELECT id_bookmark, title, target FROM bookmark_link WHERE id_user = ? ORDER BY id_user, last_accessed DESC LIMIT 0, ?;"
 	sel, err := db.Prepare(sql)
 	if err != nil {
 		fmt.Println(err)
 		panic("Prepare failed")
 	}
-	number := 100
+	number := 200
 	getform := r.Form
 	_, ok := getform["number"]
 	if ok {
@@ -305,7 +305,7 @@ func showListPage(w http.ResponseWriter, r *http.Request, op string, userid uint
 	count := 0
 	for _, row := range rows {
 		entry.idBookmark = row.Uint64(0)
-		entry.name = row.Str(1)
+		entry.title = row.Str(1)
 		entry.target = row.Str(2)
 		if !started {
 			fmt.Fprint(w, `<form><table border="0" cellpadding="2">
@@ -319,7 +319,7 @@ func showListPage(w http.ResponseWriter, r *http.Request, op string, userid uint
 			backgroundColor = " style=\"background-color: #E8F0E8;\""
 		}
 		fmt.Fprint(w, "<tr "+backgroundColor+">")
-		fmt.Fprint(w, `<td> <b><a href="evoke?bookmark=`+uintToStr(entry.idBookmark)+`" title="`+htm(entry.target)+`">`+html.EscapeString(entry.name)+`</a></b>`)
+		fmt.Fprint(w, `<td> <b><a href="evoke?bookmark=`+uintToStr(entry.idBookmark)+`" title="`+htm(entry.target)+`">`+html.EscapeString(entry.title)+`</a></b>`)
 		if showedits {
 			fmt.Fprint(w, ` &middot; <font size="1"><a href="edit?bookmark=`+uintToStr(entry.idBookmark)+`">Edit</a> &middot; <a href="delete?bookmark=`+uintToStr(entry.idBookmark)+`">Delete</a>`)
 		}
@@ -327,7 +327,7 @@ func showListPage(w http.ResponseWriter, r *http.Request, op string, userid uint
 			fmt.Fprint(w, ` &middot; `+htm(entry.target))
 		}
 		fmt.Fprint(w, `</font> </td>`)
-		// fmt.Fprint(w, "<td> "+html.EscapeString(entry.name)+" </td><td> "+html.EscapeString(entry.target)+" </td>")
+		// fmt.Fprint(w, "<td> "+html.EscapeString(entry.title)+" </td><td> "+html.EscapeString(entry.target)+" </td>")
 		fmt.Fprint(w, `</tr>
 `)
 	}
@@ -401,14 +401,14 @@ func showDeletePage(w http.ResponseWriter, r *http.Request, op string, userid ui
 	errorOccurred := false
 	method := r.Method
 	var ui struct {
-		name   string
+		title  string
 		target string
 	}
 	var bookmarkid uint64
 	bookmarkid = 0
 	if method == "GET" {
 		// set defaults
-		ui.name = ""
+		ui.title = ""
 		ui.target = ""
 		showform = true
 		err := r.ParseForm()
@@ -422,7 +422,7 @@ func showDeletePage(w http.ResponseWriter, r *http.Request, op string, userid ui
 			bookmarkid = strToUint(getform["bookmark"][0])
 			db := accessdb.GetDbConnection()
 			defer db.Close()
-			sql := "SELECT name, target FROM bookmark_link WHERE (id_bookmark = ?) AND (id_user = ?);"
+			sql := "SELECT title, target FROM bookmark_link WHERE (id_bookmark = ?) AND (id_user = ?);"
 			sel, err := db.Prepare(sql)
 			if err != nil {
 				fmt.Println(err)
@@ -435,7 +435,7 @@ func showDeletePage(w http.ResponseWriter, r *http.Request, op string, userid ui
 				panic("Bind/Exec failed")
 			}
 			for _, row := range rows {
-				ui.name = row.Str(0)
+				ui.title = row.Str(0)
 				ui.target = row.Str(1)
 			}
 		}
@@ -495,7 +495,7 @@ func showDeletePage(w http.ResponseWriter, r *http.Request, op string, userid ui
 		}
 		fmt.Fprint(w, `
 <p>Do you want to delete:</p>
-<p><b>`+htm(ui.name)+`</b><p>
+<p><b>`+htm(ui.title)+`</b><p>
 <p>Target: `+htm(ui.target)+`</p>
 <p><input type="hidden" name="bookmark" value="`+uintToStr(bookmarkid)+`"/>
 <input type="submit" value="Delete">
