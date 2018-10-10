@@ -74,7 +74,7 @@ func testReplaceMapDoesntHaveSubEntries(replaceMap []replaceEntry) {
 }
 
 func constructReplaceMap() []replaceEntry {
-	replaceMap := make([]replaceEntry, 272)
+	replaceMap := make([]replaceEntry, 274)
 	backslash := "\\"
 
 	replaceMap[0] = mkReplaceEntry("!!!", 161)
@@ -351,7 +351,12 @@ func constructReplaceMap() []replaceEntry {
 	replaceMap[268] = mkReplaceEntry(backslash+"clubsuit", 9827)
 	replaceMap[269] = mkReplaceEntry(backslash+"heartsuit", 9829)
 	replaceMap[270] = mkReplaceEntry(backslash+"diamondsuit", 9830)
-	replaceMap[271] = mkReplaceEntry("'''", 0) // special entry to solve L'''e problem
+
+	// for Camel''ia, Romanian characters
+	replaceMap[271] = mkReplaceEntry("T//", 354)
+	replaceMap[272] = mkReplaceEntry("t//", 355)
+
+	replaceMap[273] = mkReplaceEntry("'''", 0) // special entry to solve L'''e problem
 	return replaceMap
 }
 
