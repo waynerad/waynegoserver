@@ -245,6 +245,9 @@ func ShowLangTextForm(w http.ResponseWriter, errorList map[string]string, userIn
 <tr><td align="right"> <span class="gives">&#352;</span> </td><td> <span class="utyp">^vSv</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#353;</span> </td><td> <span class="utyp">^vsv</span> </td></tr>
 
+<tr><td align="right"> <span class="gives">&#354;</span> </td><td> <span class="utyp">T//</span> </td></tr>
+<tr><td align="right"> <span class="gives">&#355;</span> </td><td> <span class="utyp">t//</span> </td></tr>
+
 <tr><td align="right"> <span class="gives">&#215;</span> </td><td> <span class="utyp">\times</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#247;</span> </td><td> <span class="utyp">\div</span> </td></tr>
 <tr><td align="right"> <span class="gives">&#402;</span> </td><td> <span class="utyp">\fnof</span> </td></tr>
