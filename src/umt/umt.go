@@ -1545,6 +1545,8 @@ function InstantiateFadeCandy() {
         return {
             percussion: true,
             fixed: [
+                { name: "effect", display: "Effect", type: "list", values: ["full=Full fade", "half=Half fade", "solid=Solid" ], default: "solid" },
+                { name: "strip", display: "Strip", type: "list", values: ["0=0","2=2","4=4","6=6"], default: "0" },
                 { name: "basecolor", display: "Base Color", type: "list", values: ["red=Red", "yellow=Yellow", "green=Green", "cyan=Cyan", "blue=Blue", "magenta=Magenta"], default: "red" },
                 { name: "skip", display: "Skip", type: "list", values: ["1=1", "2=2", "3=3", "4=4", "5=5", "6=6", "7=7"], default: "2" },
                 { name: "direction", display: "Direction", type: "list", values: ["-1=Up", "1=Down" ], default: "1" }
@@ -1556,7 +1558,7 @@ function InstantiateFadeCandy() {
         };
     };
     this.queUpANote = function (startMoment, frequency, duration, amplitude, instSpecificParams, originalNote, originalStartTime) {
-        var currentTime, startHue, stopHue, saturation, twist, skip, direction, remoteVoiceNum;
+        var currentTime, startHue, stopHue, saturation, twist, skip, direction, remoteVoiceNum, effect, strip;
         console.log("startMoment");
         console.log(startMoment);
         console.log("frequency");
@@ -1575,6 +1577,8 @@ function InstantiateFadeCandy() {
         // time now, start time, duration, instrument, instrument specific params...
         // our inst specific params: hue, saturation
         currentTime = gUmt.globalCtx.currentTime;
+        effect = instSpecificParams.effect;
+        strip = instSpecificParams.strip;
         switch (instSpecificParams.basecolor) {
         case 'red':
             startHue = 0;
@@ -1627,7 +1631,7 @@ function InstantiateFadeCandy() {
         console.log(stopHue);
         saturation = (1.0 - parseInt(instSpecificParams.pastelness, 10)) * 254.0;
         saturation = Math.floor(saturation);
-        umtSendLocalMsg(currentTime + "," + startMoment + "," + duration + ",fadeCandy," + remoteVoiceNum + "," + startHue + "," + saturation + "," + stopHue + "," + skip + "," + direction);
+        umtSendLocalMsg(currentTime + "," + startMoment + "," + duration + ",fadeCandy," + remoteVoiceNum + "," + effect + "," + strip + "," + startHue + "," + saturation + "," + stopHue + "," + skip + "," + direction);
     };
 }
 
@@ -2965,7 +2969,7 @@ function umtSchedulePlayOfSegment() {
                         originalStartTime = gUmt.loop[lpnum].score.songTab[tab].voice[voicenum].notes[notenum].starttime;
                         // adjust for skew
                         adjustedStartTime = originalStartTime + gUmt.loop[lpnum].score.songTab[tab].voice[voicenum].notes[notenum].skew;
-			// adjust to tempo
+                        // adjust to tempo
                         adjustedStartTime = adjustedStartTime * tempoScalar;
                         // loop is one tab, so move to place within loop
                         floatLoopTabCycles = (windowStart - adjustedStartTime) / loopLen;
