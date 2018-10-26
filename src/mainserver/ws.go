@@ -20,6 +20,7 @@ import (
 	"time"
 	"umt"
 	"youtube"
+"zorpcore"
 )
 
 func dumpRequestInfoToBrowser(w http.ResponseWriter, r *http.Request, parseform bool) {
@@ -350,6 +351,10 @@ func (self wayneGoServerHandler) ServeHTTP(w http.ResponseWriter, r *http.Reques
 	}
 	if operationIsApp("waynetype", operation) {
 		langtext.Handler(w, r, operationForApp("waynetype", operation), userInfo)
+		return
+	}
+	if operationIsApp("zorp", operation) {
+		zorpcore.Handler(w, r, operationForApp("zorp", operation), userInfo)
 		return
 	}
 	if operationIsApp("files", operation) {
