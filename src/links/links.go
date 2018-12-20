@@ -123,18 +123,19 @@ func showLinksMenuBar(w http.ResponseWriter, userName string) {
 func showExposition(w http.ResponseWriter, db mysql.Conn, targetUrl string, imageUrl string, description string, myComment string, title string, createTimeGMT uint64) {
 	fmt.Fprint(w, `
       <p> (full post) Google+ / <a href="https://www.facebook.com/">Facebook</a> / <a href="http://www.linkedin.com/">LinkedIn</a> / <a href="https://www.tumblr.com/blog/waynerad/new/link">Tumblr</a> / <a href="https://mewe.com/myworld">MeWe</a> / <a href="https://www.minds.com/therealwaynerad">Minds</a> / <a href="https://vk.com/feed">VKontakte</a> / (Twitter-style) <a href="http://www.twitter.com/">Twitter</a> / <a href="https://gab.com/home">Gab</a> / <a href="https://mastodon.social/web/web">Mastodon</a> / (special case) <a href="https://pluspora.com/stream">Pluspora</a> </p>
-      <p><textarea class="infield" cols="80" rows="20">`)
+      <p><textarea class="infield" cols="80" rows="10">`)
 	fmt.Fprint(w, description)
 	fmt.Fprint(w, `
+
 `)
 	fmt.Fprint(w, targetUrl)
-	fmt.Fprint(w, `</textarea> <textarea class="infield" cols="80" rows="20">`)
-	fmt.Fprint(w, myComment)
 	fmt.Fprint(w, `</textarea> <textarea class="infield" cols="80" rows="4">`)
+	fmt.Fprint(w, myComment)
+	fmt.Fprint(w, `</textarea> <textarea class="infield" cols="80" rows="4">[`)
 	fmt.Fprint(w, title)
-	fmt.Fprint(w, ` `)
+	fmt.Fprint(w, `](`)
 	fmt.Fprint(w, targetUrl)
-	fmt.Fprint(w, `</textarea> </p>
+	fmt.Fprint(w, `)</textarea> </p>
 <p> <img src="`+imageUrl+`" alt="Thumbnail" /> </p>
 `)
 	showTrentExposition(w, db, targetUrl, imageUrl, description, myComment, title, createTimeGMT)
@@ -560,6 +561,9 @@ function replaceQuotesWithHyphens(str) {
             break;
         case 8221:
             result = result + '"';
+            break;
+        case 8722:
+            result = result + "-";
             break;
         default:
             result = result + str.charAt(i);
