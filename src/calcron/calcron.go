@@ -89,6 +89,10 @@ func intToStr(z int) string {
 	return strconv.FormatInt(int64(z), 10)
 }
 
+func uint64ToStr(z uint64) string {
+	return strconv.FormatUint(z, 10)
+}
+
 func checkIsNumeric(str string) bool {
 	for i := 0; i < len(str); i++ {
 		c := str[i]
@@ -940,7 +944,7 @@ func showEditPage(w http.ResponseWriter, r *http.Request, op string, userid uint
 
 /*jslint browser: true, devel: true */
 
-// (C) 2013-2017 Wayne Radinsky
+// (C) 2013-2019 Wayne Radinsky
 
 // jsabort, cx, and ctstr are debugging functions that will be REMOVED from the final product
 
@@ -1146,7 +1150,7 @@ func showListPage(w http.ResponseWriter, r *http.Request, op string, userid uint
 // have to pre-declare some globals to pass jslint
 /*global jQuery */
 
-`)
+// ` + uint64ToStr(rightNow))
 	showHumanIntervalJS(w)
 	fmt.Fprint(w, `
 
@@ -1535,7 +1539,7 @@ func showChimesPage(w http.ResponseWriter, r *http.Request, op string, userid ui
 
 <script>
 
-// (C) 2017 Wayne Radinsky
+// (C) 2017-2019 Wayne Radinsky
 
 /*jslint browser: true, devel: true, passfail: true */
 
