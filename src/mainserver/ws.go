@@ -333,6 +333,10 @@ func (self wayneGoServerHandler) ServeHTTP(w http.ResponseWriter, r *http.Reques
 		static.StaticDirHandler(w, r, "bpm", operation)
 		return
 	}
+	if operationIsApp("focusoninfinity", operation) {
+		static.StaticDirHandler(w, r, "focusoninfinity", operation)
+		return
+	}
 	if operationIsApp("datascience", operation) {
 		static.StaticDirHandler(w, r, "datascience", operation)
 		return
