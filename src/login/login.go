@@ -750,6 +750,7 @@ func showPrograms(w http.ResponseWriter) {
         <li><a href="../stopwatch/index.html">Stopwatch</a></li>
         <li><a href="../nato/nato.html">NATO Alphabet</a></li>
         <li><a href="../bpm/bpm.html">BPM</a></li>
+        <li><a href="../focusoninfinity/focusoninfinity.html">Focus On Infinity</a></li>
     </ul>
   </section>
  </body></html`)
