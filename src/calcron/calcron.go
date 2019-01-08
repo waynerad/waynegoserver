@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"wutil"
 )
 
 type timenumbers struct {
@@ -1150,7 +1151,7 @@ func showListPage(w http.ResponseWriter, r *http.Request, op string, userid uint
 // have to pre-declare some globals to pass jslint
 /*global jQuery */
 
-// ` + uint64ToStr(rightNow))
+// `+uint64ToStr(rightNow))
 	showHumanIntervalJS(w)
 	fmt.Fprint(w, `
 
@@ -1825,7 +1826,7 @@ jQuery(function () {
 	fmt.Fprint(w, `</b></h1>
 <p id="description">
 `)
-	fmt.Fprint(w, html.EscapeString(theDescription))
+	fmt.Fprint(w, wutil.Linkize(html.EscapeString(theDescription)))
 	fmt.Fprint(w, `
 </p>
 <table border="0" cellpadding="5"><tr><td>
