@@ -19,8 +19,9 @@ import (
 	"strings"
 	"time"
 	"umt"
+	"wikicore"
 	"youtube"
-"zorpcore"
+	"zorpcore"
 )
 
 func dumpRequestInfoToBrowser(w http.ResponseWriter, r *http.Request, parseform bool) {
@@ -273,7 +274,6 @@ func (self wayneGoServerHandler) ServeHTTP(w http.ResponseWriter, r *http.Reques
 	// static.StaticDirHandler(w, r, "secure", "/index.txt")
 	// return
 
-	fmt.Println("userid", userid, "operation", operation)
 	if strings.Contains(operation, "..") {
 		w.WriteHeader(404)
 		return
@@ -361,6 +361,10 @@ func (self wayneGoServerHandler) ServeHTTP(w http.ResponseWriter, r *http.Reques
 		zorpcore.Handler(w, r, operationForApp("zorp", operation), userInfo)
 		return
 	}
+	if operationIsApp("wiki", operation) {
+		wikicore.Handler(w, r, operationForApp("wiki", operation), userInfo)
+		return
+	}
 	if operationIsApp("files", operation) {
 		static.StaticDirHandler(w, r, "files", operation)
 		return
@@ -423,7 +427,11 @@ func startRegularServer() {
 
 	fmt.Println("Starting regular server")
 	err := regularSrv.ListenAndServe()
-	fmt.Println(err)
+	if err == nil {
+		fmt.Println("Regular server started")
+	} else {
+		fmt.Println(err)
+	}
 
 	// log.Fatal
 }
@@ -450,13 +458,6 @@ func startSecureServer() {
 }
 
 func main() {
-	// This commented-out code is the old code for when our server was "one" server (http only). Now it is two! http and https!
-	// http.HandleFunc("/", handler)
-	// err := http.ListenAndServeTLS(":443", "/home/ec2-user/wayneserver/certificate-677199.crt", "/home/ec2-user/wayneserver/server-677199.key", handle)
-	// fmt.Println(err)
-	// err := http.ListenAndServe(":4000", handler)
-	// fmt.Println(err)
-
 	// This code creates two servers, one for http (port 80) and one for https (port 443)
 	// Both work by passing a wayneGoServer as "Handler", which results in the same wayneGoServer
 	// ServeHTTP() function getting called for both. Inside the ServeHTTP() function, it checks
