@@ -131,7 +131,11 @@ func showExposition(w http.ResponseWriter, db mysql.Conn, targetUrl string, imag
 	fmt.Fprint(w, targetUrl)
 	fmt.Fprint(w, `</textarea> <textarea class="infield" cols="80" rows="4">`)
 	fmt.Fprint(w, myComment)
-	fmt.Fprint(w, `</textarea> <textarea class="infield" cols="80" rows="4">[`)
+	fmt.Fprint(w, `</textarea> <textarea class="infield" cols="80" rows="4">`)
+	fmt.Fprint(w, description)
+	fmt.Fprint(w, `
+
+[`)
 	fmt.Fprint(w, title)
 	fmt.Fprint(w, `](`)
 	fmt.Fprint(w, targetUrl)
