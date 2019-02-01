@@ -663,7 +663,8 @@ func doLogin(w http.ResponseWriter, r *http.Request, operation string) {
 					}
 					expiretime := time.Now()
 					// duration, err := time.ParseDuration("86400s") // 1 day
-					duration, err := time.ParseDuration("604800s") // 1 week
+					// duration, err := time.ParseDuration("604800s") // 1 week
+					duration, err := time.ParseDuration("2629744s") // 1 month
 					if err != nil {
 						fmt.Fprintln(w, err)
 						panic("point 661")
