@@ -224,5 +224,7 @@ func ShowWikiPageShowForm(w http.ResponseWriter, errorList map[string]string, us
 	showErrorList(w, errorList)
 	fmt.Fprint(w, `
     `+displayInfo["content"]+`
+    <hr />
+    <p><a href="wikipageedit?page=`+userInput["page"]+`">Edit this page</a></p>
 `)
 }
